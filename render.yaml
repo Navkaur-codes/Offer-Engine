@@ -1,0 +1,30 @@
+# Render Blueprint: New + → Blueprint → pick this repo. Secrets are entered in the Render dashboard (sync: false).
+services:
+  - type: web
+    name: offer-engine
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: ADMIN_TELEGRAM_IDS
+        sync: false
+      - key: ADMIN_PASSCODE
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: http://localhost:5173
+      - key: TZ
+        value: Asia/Kolkata
