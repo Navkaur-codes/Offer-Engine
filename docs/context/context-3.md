@@ -115,7 +115,17 @@ The main session mounts your webhook route.
 4. Optional: an offer card image (Pillow, Ledger palette), sent as a photo with the caption. Use text only if time is short.
 
 ## Stub strategy
-Use `app.ports.decide`. Until Session B merges, it returns fixture Decisions (`app.stubs`), cycling through SENT, NO_OFFER and BLOCKED examples. Build and test all rendering against these fixtures.
+Use `app.ports.decide`. Until Session B merges, it returns fixture Decisions from `app.stubs`. They are deterministic by input:
+- policy `vip` (customer `C000003`) gives NO_OFFER;
+- trigger `manual` gives BLOCKED;
+- everything else gives SENT.
+
+Build and test all rendering against these fixtures.
+
+**Local testing bot (important):** never run `--polling` with the production Offer bot token. Polling deletes the live webhook on Render, so classmates stop getting replies.
+- Create a separate **dev bot** in BotFather (e.g. `<name>_dev_bot`).
+- Put its token in your worktree's own `.env`.
+- `backend/app/bot/app.py` is the Phase-0 hello version. Replace it, keeping the `build_application()` name.
 
 ## Tests
 ```

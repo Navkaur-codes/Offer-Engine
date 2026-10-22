@@ -7,8 +7,8 @@
 ## Version status
 | Version | Target | Milestone | Status |
 |---|---|---|---|
-| v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ◐ |
-| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☐ |
+| v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
+| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ◐ |
 | v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☐ |
 | v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☐ |
 | v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
@@ -17,7 +17,7 @@
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ◐ Step 0 | ☐ | ☐ | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ◐ watch P1 | ☐ | ☐ | ☐ |
 | A: Data & Scoring | ☐ | ☐ | ☐ | ☐ |
 | B: Decision Core | ☐ | ☐ | ☐ | ☐ |
 | C: Telegram + Lab | ☐ | ☐ | ☐ | ☐ |
@@ -27,6 +27,7 @@
 | Version/Phase | Written | Summary of temporary rules |
 |---|---|---|
 | v0.1 / Phase 0 | 22 Oct | Scaffold only; contracts may change until the gate |
+| v0.2 / Phase 1 | 22 Oct | Contracts v1 frozen; everything through ports/stubs; never poll with the prod token; shared venv; no real Groq calls |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -64,3 +65,19 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Contract change requests:** (also add to sessions.md)
 - **Next:** first task for the next phase
 -->
+
+### 2026-10-22 · Main · Step 0 foundation + deploy (GATE-0)
+- **Version/Phase:** v0.1 / Phase 0. Done; gate passed.
+- **Did:**
+  - Scaffold, contracts v1 (frozen), config with IST clock and time-travel, db with 13 tables, ports and stubs (21 ports).
+  - FastAPI `/health` and a secured webhook; hello bot; Dockerfile and render.yaml.
+  - Deployed to Render (https://offer-engine-n4jx.onrender.com) on Neon, with the cron-job.org ping.
+  - One-page status report: `docs/reports/status-v0.1.pdf`.
+- **Fixes:** blank `.env` values crashed startup; the bot token was leaking into httpx logs.
+- **Commits:** a73db39 initial docs · ee4c27a scaffold + contracts · 98fa675 config/db/models · 263d388 ports/stubs · b8d28ce entrypoint/webhook/bot/deploy · 3cb8857 env + log fix
+- **Tests:** `python -m pytest -q` (backend) → 19 passed · ruff clean · live `/health` 200 · wrong-secret webhook 403
+- **Open issues / risks:**
+  - LLM budget guard awaits a decision.
+  - Lab bots still to create (by Sun).
+  - Session C needs a dev bot.
+- **Next:** the user creates the branches and worktrees, then starts sessions A1–D1.

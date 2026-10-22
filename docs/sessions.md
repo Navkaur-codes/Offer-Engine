@@ -5,11 +5,11 @@
 ## 1. Session board
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
-| Main / Integrator | `main` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 (Step 0) | ◐ | v1 draft | none | 22 Oct |
-| A: Data & Scoring | `feat/data-scoring` | `docs/context/context-1.md` | not started | ☐ | — | waits for Step 0 | — |
-| B: Decision Core | `feat/decision-core` | `docs/context/context-2.md` | not started | ☐ | — | waits for Step 0 | — |
-| C: Telegram + Lab | `feat/telegram-lab` | `docs/context/context-3.md` | not started | ☐ | — | waits for Step 0, BotFather tokens | — |
-| D: Dashboard | `feat/dashboard` | `docs/context/context-4.md` | not started | ☐ | — | waits for Step 0 | — |
+| Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 done → watching Phase 1 | ☑ P0 | v1 frozen | none | 22 Oct |
+| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 ready | ☐ | v1 | none | — |
+| B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 ready | ☐ | v1 | none | — |
+| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 ready | ☐ | v1 | needs a **dev bot** token in its own `.env` | — |
+| D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 ready | ☐ | v1 | none | — |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
 ```
@@ -45,7 +45,7 @@ A (data/scoring) ──profile, uplift, impact, festivals──► B (rules/agen
 ## 5. Health log (newest first)
 | Date/time | Gate | Tests | Deploy | Smoke test | Notes |
 |---|---|---|---|---|---|
-| — | — | — | — | — | first entry at the Phase-0 gate |
+| 22 Oct 17:38 | GATE-0 | `pytest` 19 passed · ruff clean | Render live: `/health` ok, bot true, 0.8 s | wrong-secret webhook returns 403 ✓; `/start` hello (user) ✓ | all 21 ports are stubs except `build_application` |
 
 ## 6. Contract change requests
 Format: `ID · date · from session · what change · why · status (open/accepted/rejected) · contract version`
@@ -53,7 +53,11 @@ Format: `ID · date · from session · what change · why · status (open/accept
 
 ## 7. Notes for other sessions
 Format: `date · from → to · note`
-- _none yet_
+- 22 Oct · Main → all · Live backend: https://offer-engine-n4jx.onrender.com. `/health` shows which ports are `stub` and which are `real`.
+- 22 Oct · Main → all · Stubs are deterministic: `C000003`/vip gives NO_OFFER, trigger `manual` gives BLOCKED, everything else gives SENT. There are 5 fixture customers, `C000001`–`C000005`.
+- 22 Oct · Main → all · Implement exactly the module path and function name from `contracts.md §3`, and the port flips to real on its own.
+- 22 Oct · Main → C · `bot/app.py` is a Phase-0 hello; replace it. **Never poll with the production token.** Use a dev bot.
+- 22 Oct · Main → all · Use the shared venv `D:\hackathon-2\.venv`. Run `python -m pytest` from your worktree's `backend/` folder.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:

@@ -2,7 +2,7 @@
 
 > This is the single source of truth for everything that crosses session boundaries.
 > `backend/app/contracts.py` must mirror this file exactly. The **main session** owns both files.
-> **Status:** v1 draft. It freezes at the Phase-0 gate. After that, changes go only through "Contract change requests" in `docs/sessions.md`, followed by a version bump here.
+> **Status: v1 FROZEN (22 Oct 2026, Phase-0 gate).** Changes now go only through "Contract change requests" in `docs/sessions.md`, followed by a version bump here.
 
 ---
 
@@ -168,6 +168,12 @@ class Kpis:
 ```
 
 ## 3. Python interfaces between sessions (through `app.ports`; stubbed in `app.stubs`)
+**Call them through `app.ports`, never by importing the other session's module.** The port names are:
+- A: `seed_run`, `festivals()`, `create_profile_from_answers`, `build_profile`, `assign_policy`, `uplift_predict`, `impact_estimate`, `realism_compute`, `experiments_compute`
+- B: `effective_policy`, `allowed_offers`, `evaluate`, `describe_rule`, `rule_impact`, `get_context`, `decide`, `explain`, `daily_digest`
+- C: `deliver`, `build_application`, `run_rounds`
+
+Implement the **module path + function name exactly as listed below**. `ports.status()` (shown in `/health`) then flips that port from `stub` to `real` automatically.
 ```python
 # Session A provides
 data.seed.run(n_customers: int = 5000, seed: int = 42) -> None
@@ -257,4 +263,4 @@ A **light decision** is the `DecisionLight` model in `contracts.py`. It contains
 ```
 
 ## 6. Changelog
-- **v1** (22 Oct): initial draft.
+- **v1** (22 Oct): initial draft. Added `DecisionLight` and the port-name list, then **frozen** at the Phase-0 gate.
