@@ -13,7 +13,8 @@ IST = ZoneInfo("Asia/Kolkata")
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
+    # env_ignore_empty: a blank `KEY=` line in .env means "not set", so the default applies
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore", env_ignore_empty=True)
 
     # telegram
     telegram_bot_token: str = ""

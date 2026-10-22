@@ -19,6 +19,7 @@ VERSION = "0.1.0"
 WEBHOOK_PATH = "/telegram/webhook/{secret}"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+logging.getLogger("httpx").setLevel(logging.WARNING)  # its INFO lines contain the bot token in the URL
 log = logging.getLogger("app")
 
 
