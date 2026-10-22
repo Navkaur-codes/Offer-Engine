@@ -1,0 +1,69 @@
+# sessions.md: overview of all sessions and integration health
+
+> This is the control tower. Each session updates **only its own row** and adds notes. The **main session** runs the gate checklist and health log, and decides on contract change requests.
+
+## 1. Session board
+| Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
+|---|---|---|---|---|---|---|---|
+| Main / Integrator | `main` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 (Step 0) | ◐ | v1 draft | none | 22 Oct |
+| A: Data & Scoring | `feat/data-scoring` | `docs/context/context-1.md` | not started | ☐ | — | waits for Step 0 | — |
+| B: Decision Core | `feat/decision-core` | `docs/context/context-2.md` | not started | ☐ | — | waits for Step 0 | — |
+| C: Telegram + Lab | `feat/telegram-lab` | `docs/context/context-3.md` | not started | ☐ | — | waits for Step 0, BotFather tokens | — |
+| D: Dashboard | `feat/dashboard` | `docs/context/context-4.md` | not started | ☐ | — | waits for Step 0 | — |
+
+## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
+```
+A (data/scoring) ──profile, uplift, impact, festivals──► B (rules/agent) ──decide(), explain()──► C (bot/lab)
+        │                                                     │                                   │
+        └──────── realism, experiments ────────► Main API ◄───┴── decisions, rules ───────────────┘
+                                                    │
+                                                    ▼
+                                              D (dashboard)
+```
+**Merge order at each gate:** A → B → C → D → Main API wiring. After each merge, swap the stub for the real module in `ports.py`.
+
+## 3. Phase gate checklist (main session runs this; see `prompts.md → GATE-N`)
+> **The user does all git writes** (commit, push, merge). The main session gives the exact commands one step at a time and checks each result.
+- [ ] Every session's branch has its phase "Done when" items met (check its context file) and its tests green on its branch.
+- [ ] Every 📌 checkpoint for the phase is confirmed "committed" **and pushed** (`git log origin/<branch>` shows it).
+- [ ] The user merges into `main` in the order above, following the main session's commands one branch at a time. Resolve conflicts. Conflicts should only appear in `progress.md`/`sessions.md`; anything else means a boundary was broken, so log it.
+- [ ] `pytest backend/tests -q` and `ruff check backend` are green on `main`. `cd frontend && npm run build` is green.
+- [ ] In `ports.py`, replace the stubs with the merged real modules, then run the integration smoke test (below).
+- [ ] Deploy (Render + Vercel) and check `/health`, `getWebhookInfo`, and that the dashboard loads real data.
+- [ ] Update the health log (§5), the version/phase tables in `progress.md`, and **rewrite `claude-progressive.md`** for the next phase.
+- [ ] Rebase or merge `main` back into each feature branch so every session starts the next phase up to date.
+
+## 4. Integration smoke test (run after every gate)
+1. `python -m app.data.seed --customers 500 --seed 1` completes.
+2. `POST /api/playground/run` for 5 fixture customers (one per main policy) returns a valid `Decision` with an `explanation`.
+3. Telegram: `/start` gives a welcome card. `/simulate cart` gives a card. `/why` gives the explanation. `/simulate purchase` then `/simulate cart` gives NO_OFFER with the 48 h reason.
+4. Kill switch ON, then `/simulate cart` gives BLOCKED. Turn it OFF again.
+5. Force an LLM failure (env `FORCE_LLM_FAIL=1` or the Playground toggle) and check the RULES_FALLBACK decision is still compliant.
+6. The dashboard Decisions page shows all of the above, with correct badges.
+7. (From v0.4) `/lab run 3` in the Lab group gives 3 readable exchanges.
+
+## 5. Health log (newest first)
+| Date/time | Gate | Tests | Deploy | Smoke test | Notes |
+|---|---|---|---|---|---|
+| — | — | — | — | — | first entry at the Phase-0 gate |
+
+## 6. Contract change requests
+Format: `ID · date · from session · what change · why · status (open/accepted/rejected) · contract version`
+- _none yet_
+
+## 7. Notes for other sessions
+Format: `date · from → to · note`
+- _none yet_
+
+## 8. Manual setup the user must do (not code)
+- [ ] BotFather:
+  - create the **Offer bot**;
+  - create **10 customer bots** (names/avatars by persona);
+  - for the Offer bot, run `/setprivacy` → Disable, so it can see `/lab` commands in the group.
+- [ ] Create the Telegram group **"Customer Lab"**, add all 11 bots, and get `LAB_GROUP_CHAT_ID`.
+- [ ] Create a private **shadow channel**, add the Offer bot as admin, and get `SHADOW_CHANNEL_ID`.
+- [ ] Find your own Telegram user ID (for `ADMIN_TELEGRAM_IDS`).
+- [ ] Create the Groq API key.
+- [ ] Accounts: GitHub repo, Neon (DB URL), Render (web service), Vercel (frontend), cron-job.org (ping `/health` every 10 min).
+- [ ] Put all values in `.env` locally and in the Render/Vercel env settings. **Never commit them.**
+- [ ] Share the Offer bot link with classmates on day 1.
