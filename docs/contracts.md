@@ -230,7 +230,7 @@ Base URL is `VITE_API_URL`. Writes require the header `X-Admin-Passcode`. Everyt
 | GET | `/api/budget` | `{"today_used","today_cap","festival": {...}}` |
 | GET | `/api/meta` | `{"bot_username","lab_group_link","now","demo_time_override"}` |
 
-A **light decision** contains: `id, ts, customer_id, first_name, policy, trigger, decided_by, status, final_offer_id, headline, cost, expected_incremental_profit, outcome, explanation.title`.
+A **light decision** is the `DecisionLight` model in `contracts.py`. It contains `id, ts, customer_id, first_name, policy, trigger, decided_by, status, final_offer_id, headline, cost, expected_incremental_profit, outcome, explanation_title`. Build one with `DecisionLight.from_decision(d)`.
 
 ## 5. Example Decision (use as mock fixture)
 ```json
