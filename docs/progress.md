@@ -194,3 +194,22 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - live check;
   - fast-forward the 4 worktrees;
   - send A2–D2.
+
+### 2026-10-25 · Session A · Phase 2: RFM, churn, live profiles + policies, onboarding (A2)
+- **Version/Phase:** v0.3 / Phase 2. Done; all "Done when" items met.
+- **Did:**
+  - `scoring/rfm.py`: R/F/M quintiles over the last 365 days of buyers, mapped to segments (Champions, Loyal, Potential, At Risk, Hibernating, New, Lost).
+  - `scoring/churn.py`: logistic regression on recency, orders in 90 days, purchase-frequency trend, session decline, return rate, tenure and AOV. Labels are "no purchase in the next 60 days", taken at 3 snapshot dates in the simulation, with a per-customer split. **AUC 0.78** on 1,709 held-out snapshots. Retrain with `python -m app.scoring.churn`.
+  - The model is saved as generated Python (`scoring/churn_model.py`) instead of `churn.joblib`, for two reasons: the Docker `pip install .` packages only `.py` files, and this way there's no pickle to load and no scikit-learn version coupling in production.
+  - `scoring/profile.py`: `build_profile()` from live DB rows (customer, events, orders, points, sent decisions) with no per-customer cache, so `/simulate` events and time-travel apply instantly. It takes ~5 ms p50 / ~12 ms p95 on SQLite with 5,000 customers.
+  - `assign_policy()` uses the single `POLICY_THRESHOLDS` config dict. On the 5,000-customer seed: default 38%, at_risk 18%, dormant 13%, window_shopper 12%, new_user 7%, deal_hunter 4%, cart_abandoner 3%, vip 3%, high_returner 2%.
+  - `data/onboarding.py`: `create_profile_from_answers()` maps the taps to a persona and runs a one-customer simulation of ~180 days of history, using the same model as the generator. A top-up guarantees a believable minimum number of orders. It writes the customer row before its history (foreign keys). Re-onboarding keeps `/simulate` events.
+- **Detective/deviation notes:**
+  - Real Telegram users get `is_holdout=False` (contract: "assigned once, 10%"), so classmates never see a silent bot. Main can change this in one line.
+  - Extra activity keys go inside `profile.rfm` instead of a contract change.
+- **Files:** `backend/app/scoring/{rfm,churn,churn_model,profile}.py`, `backend/app/data/onboarding.py`, `backend/tests/data/test_profile_policy.py`, `docs/sessions.md`, `docs/progress.md`
+- **Commits:** _pending the user's commit_
+- **Tests:** `python -m pytest tests/data -q` → 69 passed · full backend 151 passed, 1 failed (`tests/api/test_ports.py::test_evaluate_flags_over_limit_discount`, a Main-owned test that relied on the stub fixture `C000002`; one-line fix requested in sessions.md §7) · `ruff check .` clean
+- **Open issues / risks:** `uplift` is still a prior (≥ 0) until Phase 3, so `sleeping_dog` can't trigger yet. On Neon each `build_profile` makes about 5 network round-trips; measure p95 on Render after GATE-2.
+- **Contract change requests:** none
+- **Next:** Phase 3: `scoring/uplift.py` (T-learner on campaign_history + Qini), `scoring/impact.py`, `scoring/realism.py`, `scoring/experiments.py`.
