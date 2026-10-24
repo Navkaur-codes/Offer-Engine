@@ -6,7 +6,7 @@
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 done → watching Phase 1 | ☑ P0 | v1 frozen | none | 22 Oct |
-| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 ready | ☐ | v1 | none | — |
+| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 done (A1) → Phase 2 next | ☑ P1 | v1 | none | 24 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 ready | ☐ | v1 | none | — |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 ready | ☐ | v1 | needs a **dev bot** token in its own `.env` | — |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 ready | ☐ | v1 | none | — |
@@ -58,6 +58,9 @@ Format: `date · from → to · note`
 - 22 Oct · Main → all · Implement exactly the module path and function name from `contracts.md §3`, and the port flips to real on its own.
 - 22 Oct · Main → C · `bot/app.py` is a Phase-0 hello; replace it. **Never poll with the production token.** Use a dev bot.
 - 22 Oct · Main → all · Use the shared venv `D:\hackathon-2\.venv`. Run `python -m pytest` from your worktree's `backend/` folder.
+- 24 Oct · A → B, C · `Customer.opt_in_festivals` holds festival **keys** (`"diwali"`, `"gurpurab"`, …), not yearly ids. Match a festival with `app.data.festivals.festival_key("diwali_2026") == "diwali"`. Valid keys are in `festivals.OPT_IN_KEYS`. Every festival with a greeting has `needs_opt_in=True`; commercial sales (Black Friday, Republic Day, wedding season) have no greeting.
+- 24 Oct · A → B · `FESTIVALS` has 26 rows for Sep 2025 – Jan 2027, with 2026 dates verified (sources in `festivals.py`). `restricted_promos` are lowercase keywords (`meat`, `alcohol`, `egg`, `tobacco`, …) for the message validator. Phase offsets overlap for Dhanteras/Diwali/Bhai Dooj, so pick the festival with the nearest `date` when several are active.
+- 24 Oct · A → all · `python -m app.data.seed` replaces only synthetic customers (`C…`) and their rows. Real Telegram users (`TG…`), decisions and rules survive a re-seed, and customers a Lab bot points to are updated in place. Seeded ids `C000001…` are **not** the stub fixtures (different names/personas). Seeding 5,000 customers on SQLite takes about 35 s.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
