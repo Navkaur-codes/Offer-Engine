@@ -15,15 +15,17 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot import commands, onboarding
+from app.bot import commands, onboarding, simulate
 from app.config import settings
 
 log = logging.getLogger(__name__)
 
 COMMANDS = [
     BotCommand("start", "Set up or change your preferences"),
+    BotCommand("simulate", "Pretend to shop and watch the engine decide"),
     BotCommand("offers", "Your active offers"),
     BotCommand("why", "Why you got the last message"),
+    BotCommand("history", "Your last 5 decisions"),
     BotCommand("profile", "What we know about you"),
     BotCommand("pause", "No offers for a while"),
     BotCommand("resume", "Start offers again"),
@@ -56,7 +58,10 @@ def register_handlers(application: Application) -> None:
     application.add_handler(CommandHandler("start", onboarding.start, filters=private))
     application.add_handler(CallbackQueryHandler(onboarding.on_button, pattern=r"^ob:"))
     application.add_handler(CallbackQueryHandler(commands.on_offer_button, pattern=r"^o:"))
+    application.add_handler(CallbackQueryHandler(simulate.on_menu_button, pattern=r"^sim:"))
     for name, handler in {
+        "simulate": simulate.simulate_cmd,
+        "history": commands.history_cmd,
         "help": commands.help_cmd,
         "profile": commands.profile_cmd,
         "offers": commands.offers_cmd,

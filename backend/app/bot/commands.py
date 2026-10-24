@@ -12,7 +12,7 @@ from telegram.ext import ContextTypes
 from app import ports
 from app.bot import sender, store
 from app.bot.onboarding import FESTIVALS
-from app.bot.render import CATEGORY_LABELS, escape, inr, offer_value, render_why
+from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why
 from app.config import IST, now
 from app.contracts import Decision
 
@@ -20,8 +20,10 @@ NOT_REGISTERED = "You're not set up yet. Tap /start, it takes 20 seconds."
 HELP_TEXT = (
     "<b>Offer Engine</b> · a student demo with synthetic offers\n\n"
     "/start · set up or change your preferences\n"
+    "/simulate · pretend to shop (cart, browse, buy, go quiet…) and see the engine decide\n"
     "/offers · your active offers\n"
     "/why · why you got the last message\n"
+    "/history · your last 5 decisions, including the ones where we sent nothing\n"
     "/profile · what we know about you, in plain words\n"
     "/pause · no offers for 7 days (/pause 3 for 3 days)\n"
     "/resume · start offers again\n"
@@ -207,8 +209,26 @@ async def _remind(context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+FINAL_OUTCOMES = ("claimed", "declined", "redeemed")
+SUPPRESS_DAYS = 14
+
+
+async def _record(decision: Decision, outcome: str, event_type: str | None = None) -> bool:
+    """Outcome on the decision log + an event row. False if the offer was already claimed or declined."""
+    if decision.outcome in FINAL_OUTCOMES:
+        return False
+    at = now()
+    if not await asyncio.to_thread(store.record_outcome, decision, outcome, at):
+        return False
+    if event_type:
+        meta = {"decision_id": decision.id, "offer_id": decision.final_offer_id}
+        event = {"type": event_type, "ts": at, "category": offer_category(decision), "meta": meta}
+        await asyncio.to_thread(store.add_events, decision.customer_id, [event])
+    sender.remember(decision.model_copy(update={"outcome": outcome, "outcome_at": at}))
+    return True
+
+
 async def on_offer_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Phase 1: buttons respond. Phase 2 records claims/declines as events and outcomes."""
     query = update.callback_query
     _, action, decision_id = query.data.split(":", 2)
     decision = await _find(decision_id)
@@ -219,20 +239,60 @@ async def on_offer_button(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await query.answer()
         await update.effective_message.reply_text(render_why(decision), parse_mode=ParseMode.HTML)
     elif action == "claim":
+        code = f"<code>{escape(decision.coupon_code or '')}</code>"
+        if not await _record(decision, "claimed", "offer_claimed"):
+            await query.answer(f"Already handled ({decision.outcome}).")
+            return
         await query.answer("Saved! ✅")
         await update.effective_message.reply_text(
-            f"✅ Saved! Use code <code>{escape(decision.coupon_code or '')}</code> at checkout "
-            "<i>(demo: no real purchase)</i>.",
+            f"✅ Saved! Use code {code} at checkout <i>(demo: no real purchase)</i>.",
             parse_mode=ParseMode.HTML,
         )
     elif action == "remind":
+        if not await _record(decision, "remind_later"):
+            await query.answer(f"Already handled ({decision.outcome}).")
+            return
         when = next_evening(now())
-        if context.job_queue is not None:
-            context.job_queue.run_once(
-                _remind, when, chat_id=update.effective_chat.id, data=decision, name=f"remind:{decision_id}"
-            )
+        name = f"remind:{decision_id}"
+        if context.job_queue is not None and not list(context.job_queue.get_jobs_by_name(name)):
+            chat_id = update.effective_chat.id
+            context.job_queue.run_once(_remind, when, chat_id=chat_id, data=decision, name=name)
         await query.answer(f"⏰ I'll remind you at {when:%H:%M} on {when:%d %b}.")
     elif action == "decline":
-        await query.answer("Got it, thanks for telling us. 🙏")
+        if not await _record(decision, "declined", "offer_declined"):
+            await query.answer(f"Already handled ({decision.outcome}).")
+            return
+        category = offer_category(decision)
+        if category:
+            until = now() + timedelta(days=SUPPRESS_DAYS)
+            await asyncio.to_thread(store.suppress_category, decision.customer_id, category, until)
+            label = CATEGORY_LABELS.get(category, category)
+            await query.answer(f"Got it. No {label} offers for {SUPPRESS_DAYS} days. 🙏", show_alert=True)
+        else:
+            await query.answer("Got it, thanks for telling us. 🙏")
     else:
         await query.answer()
+
+
+STATUS_ICONS = {
+    "SENT": "✅", "QUEUED": "⏰", "NO_OFFER": "➖", "BLOCKED": "✗", "HELD_OUT": "➖", "DRY_RUN": "🧪"
+}
+
+
+def history_line(d: Decision) -> str:
+    # HELD_OUT reads as a plain "no offer": customers never learn they're in the control group
+    title = "No offer this time" if d.status == "HELD_OUT" else d.explanation.title
+    outcome = f" · <i>{d.outcome.replace('_', ' ')}</i>" if d.outcome != "pending" else ""
+    trigger = d.trigger.replace("_", " ")
+    return f"{STATUS_ICONS.get(d.status, '•')} {d.ts:%d %b %H:%M} · {trigger}\n    {escape(title)}{outcome}"
+
+
+async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cid = _customer_id(update)
+    decisions = _decisions_for(cid, await asyncio.to_thread(store.recent_decisions, cid, 5))[:5]
+    if not decisions:
+        await _reply(update, "No decisions yet. Try /simulate to see the engine at work.")
+        return
+    lines = ["<b>Your last decisions</b> (newest first)", *map(history_line, decisions)]
+    lines.append("\n<i>✅ sent · ➖ no offer · ✗ blocked by a rule · /why explains the latest</i>")
+    await _reply(update, "\n".join(lines))

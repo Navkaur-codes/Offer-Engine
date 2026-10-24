@@ -194,3 +194,19 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - live check;
   - fast-forward the 4 worktrees;
   - send A2–D2.
+
+### 2026-10-24 · Session C · Phase 2: /simulate, recorded buttons, /why, /history
+- **Version/Phase:** v0.3 / Phase 2. Code done, tests green; live check on the dev bot pending; "Done when" outcomes need B's real harness.
+- **Did:**
+  - `bot/simulate.py`: `/simulate cart [category] · browse <category> · purchase · inactive [days] · points_expiry · festival <name> [phase] · payday · persona <name>`, plus a button menu for `/simulate` with no args. Each writes realistic rows (session → view → add_to_cart 35 min ago; 3 views; order + purchase event closing the open cart; history shifted N days back; +500 points expiring in 3 days), replies "🧪 Simulated: …" first, then calls `ports.decide` with the matching trigger and sends the card. Products come from the `products` table (small fallback list when unseeded). `purchase` and `persona` don't decide.
+  - Buttons are recorded: Claim → `offer_claimed` event + outcome `claimed`; Remind → outcome `remind_later` + one 19:00 IST job; Not for me → `offer_declined` event + outcome `declined` + `customers.suppressed[category]` for 14 days. Claimed/declined are final ("Already handled").
+  - `/history`: last 5 decisions incl. blocked/no-offer with one-line reasons (holdout shown as plain "no offer"). Rate limit: 1 simulate per 10 s per user, with friendly copy.
+- **Files:** `backend/app/bot/{simulate,commands,store,render,app}.py`, `backend/tests/bot/{test_simulate,test_handlers}.py`
+- **Commits:** pending (see checkpoint)
+- **Tests:** `python -m pytest -q` (backend) → 141 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - Decision outcomes are written only if the harness logged the decision row; until then only the event rows record taps.
+  - "purchase → cart = no offer (<48 h)" and "inactive 60 → win-back" depend on B's harness + A's real `build_profile`; the bot passes the harness's reason through (tested with a fake harness).
+  - Stub decision ids are per second; the 10 s rate limit avoids collisions until the real harness lands.
+- **Contract change requests:** none
+- **Next:** Phase 3: Customer Lab (`lab/registry.py`, `scripts.py`, `runner.py`, `/lab` admin commands, shadow channel). Needs the 10 customer bots + group from the user.
