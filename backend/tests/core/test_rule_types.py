@@ -134,7 +134,8 @@ def test_exclusion_sleeping_dog_post_purchase_and_suppressed():
     assert not check("P_SLEEPING_DOG", dog, ctx, None).passed  # blocks even the pre-gate
     just_bought = make_profile("C000002", recency_days=1)
     assert not check("G_POST_PURCHASE", just_bought, ctx, "OF_PCT_CAT", {"pct": 5}).passed
-    assert check("G_POST_PURCHASE", just_bought, ctx, "OF_FREE_SHIP").passed
+    assert not check("G_POST_PURCHASE", just_bought, ctx, "OF_FREE_SHIP").passed  # no offers at all for 48 h
+    assert not check("G_POST_PURCHASE", just_bought, ctx, None).passed
     assert check(
         "G_POST_PURCHASE", make_profile("C000002", recency_days=2), ctx, "OF_PCT_CAT", {"pct": 5}
     ).passed

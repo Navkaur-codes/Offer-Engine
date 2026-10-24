@@ -153,6 +153,7 @@ def assert_inside_hard_limits(p: CustomerProfile, ctx: Context, offer_id, params
     assert p.active_coupon is None, "approved a second active coupon"
     assert p.policy != "sleeping_dog" and p.customer_id != "C004242", "approved a blocked customer"
     assert ctx.budget_left_today > 0
+    assert p.recency_days * 24 >= 48, "approved within 48 h of a purchase"
     if message is not None:
         assert len(message) <= 280
         assert not any(w in message.lower() for w in BANNED_WORDS[:5])
@@ -172,7 +173,6 @@ def assert_inside_hard_limits(p: CustomerProfile, ctx: Context, offer_id, params
     allowed_types = PERSONA_TYPES.get(p.policy)
     assert allowed_types is None or offer.type in allowed_types, f"{offer.type} approved for {p.policy}"
     if offer.type in DISCOUNTS:
-        assert p.recency_days * 24 >= 48, "discount approved within 48 h of a purchase"
         assert cat not in p.suppressed_categories
     if pct is not None:
         margin = CATEGORY_MARGINS.get(cat, min(CATEGORY_MARGINS.values()))

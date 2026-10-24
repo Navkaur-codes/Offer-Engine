@@ -603,6 +603,10 @@ class Exclusion(RuleSpec):
     def blocks_all(self) -> bool:
         return self.p.get("offer_types") == "all"
 
+    def _after_purchase(self) -> str:
+        h = self.p.get("within_purchase_h")
+        return f" within {fmt_hours(h)} of a purchase" if h is not None else ""
+
     def _active(self, profile: CustomerProfile) -> bool:
         h = self.p.get("within_purchase_h")
         return h is None or profile.recency_days * 24 < h
@@ -629,7 +633,7 @@ class Exclusion(RuleSpec):
         if not self._active(profile):
             return True, "not active (no recent purchase)"
         if self.blocks_all:
-            return False, "no proactive offers for this customer"
+            return False, "no proactive offers for this customer" + self._after_purchase()
         if offer_type is None:
             return True, "no offer to check"
         types = self.p.get("offer_types") or []
@@ -657,7 +661,7 @@ class Exclusion(RuleSpec):
     def describe(self):
         lead, subject = self._parts()
         if self.blocks_all:
-            return sentence(lead, f"{subject} must not get any proactive offers.")
+            return sentence(lead, f"{subject} must not get any proactive offers{self._after_purchase()}.")
         bits = []
         if isinstance(self.p.get("offer_types"), list):
             what = offer_labels(self.p["offer_types"])

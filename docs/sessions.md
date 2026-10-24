@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-1 passed → Phase 2 (+ MAIN-API) | ☑ P0 ☑ GATE-1 | v1 frozen | none | 24 Oct |
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 done (A1) → Phase 2 next | ☑ P1 (`8b2e903`) | v1 | none | 24 Oct |
-| B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 done (rules engine) → Phase 2 next | ☑ P1 (`0202dd8`) | v1 | none | 24 Oct |
+| B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer) → Phase 3 next | ◐ P2 awaiting commit | v1 | P3 waits for the LLM budget-guard decision | 24 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 done (53 tests green) → Phase 2 next; phone check of `/start` on the dev bot still pending | ☑ P1 (`1e5e102`) | v1 | none (dev bot `@navpreet_offers_dev_bot` in worktree `.env`) | 24 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 done (shell, Signal theme, mocks) → Phase 2 next; Lighthouse not yet measured | ☑ P1 (`e5d9116`) | v1 | none | 24 Oct |
 
@@ -69,6 +69,12 @@ Format: `date · from → to · note`
 - 24 Oct · C → A · `create_profile_from_answers` gets `answers = {"categories": [Category], "frequency": "weekly|monthly|occasionally|rarely", "style": "deal|quality|balanced", "festivals": ["diwali","gurpurab","lohri","karwa_chauth","christmas"]}`. Festival opt-in keys are festival ids without the year, so please keep `Festival.id = <key>_<year>`. The bot upserts the returned Customer itself.
 - 24 Oct · C → B · The bot calls `decide()` and sends the card itself. Please don't call `deliver()` inside `decide()` for bot triggers, or users get two cards. `/stop` sets `customers.opted_out`; `/pause` sets `customers.paused_until`, and the pre-gate should read both.
 - 24 Oct · C → Main · `deliver` and `build_application` are now real. Optional: call `await app.bot.app.set_commands(tg)` after `tg.initialize()` in `main._start_bot` to fill the prod bot's "/" menu.
+
+- 24 Oct · B → Main · `decide` is now real. `tests/api/test_ports.py::test_decide_covers_sent_no_offer_and_blocked` assumes the stub rule "manual → BLOCKED"; the real harness has no such rule, so please update or drop that line.
+- 24 Oct · B → C · `tests/bot/test_handlers.py::test_offers_and_why_after_welcome` uses the real clock. Between 21:00 and 09:00 IST the welcome decision is QUEUED (quiet hours), so `/offers` shows none. Pin the time in the test with `config.set_time_override(datetime(2026, 10, 24, 14, 0, tzinfo=IST))`. Also render QUEUED decisions with a "we'll send this at 09:00" card.
+- 24 Oct · B → Main · At startup, call `app.rules.offers.ensure_offers_seeded()` next to `seed_rules.ensure_seeded()`; it seeds the 10 default offers into `offers`. QUEUED decisions are stored with status `QUEUED` and the channel already set. A 09:00 scheduler job should deliver them and flip them to SENT (via `decision_store.save`). Because `spent_on` counts SENT only, queued costs reach the budget once they are flipped.
+- 24 Oct · B → A · `build_profile` must fill `recency_days` (days since the last purchase), `offers_7d`, `last_offer_at` (from SENT decisions) and `active_coupon` (an unexpired SENT decision with a coupon and outcome pending/claimed). Without them, the post-purchase (now: no offers for 48 h), frequency and one-coupon rules can't fire.
+- 24 Oct · B → Main/user · **Decision needed:** quiet hours also queue replies to customer-initiated `/start` and `/simulate` at night, so a judge testing at 22:00 gets "Queued for 09:00". Option: exempt customer-initiated triggers (`welcome`, `lab`, `/simulate` from the user themself) from quiet hours. Unsolicited sends (campaign, festival, inactivity) would stay queued. That relaxes non-negotiable §10, so only Main/the user can decide.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
