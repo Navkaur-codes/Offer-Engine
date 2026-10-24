@@ -6,9 +6,9 @@
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 done → watching Phase 1 | ☑ P0 | v1 frozen | none | 22 Oct |
-| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 done (A1) → Phase 2 next | ☑ P1 | v1 | none | 24 Oct |
+| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 done (A1) → Phase 2 next | ☑ P1 (`8b2e903`) | v1 | none | 24 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 done (rules engine) → Phase 2 next | ☑ P1 (`0202dd8`) | v1 | none | 24 Oct |
-| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 ready | ☐ | v1 | needs a **dev bot** token in its own `.env` | — |
+| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 done (53 tests green) → Phase 2 next; phone check of `/start` on the dev bot still pending | ☑ P1 (`1e5e102`) | v1 | none (dev bot `@navpreet_offers_dev_bot` in worktree `.env`) | 24 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 ready | ☐ | v1 | none | — |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
@@ -65,6 +65,9 @@ Format: `date · from → to · note`
 - 24 Oct · B → Main/A · Rules are read from the `rules` table, falling back to `SEED_RULES` when it's empty. Call `app.rules.seed_rules.ensure_seeded()` from the seed CLI or at startup. The catalogue is read from the `offers` table, falling back to `stubs.CATALOGUE`.
 - 24 Oct · B → A · Offer param names the engine understands: `pct`, `amount` (flat ₹), `min_basket`, `multiplier`, `category`. Please use these in the catalogue.
 - 24 Oct · B → C/D · `evaluate(profile, ctx, None, {})` is the pre-gate check, and `RuleCheck.description` is always the live `describe()` sentence. `screen_offers()` also returns the rejected offers with plain-English reasons, ready for "alternatives rejected".
+- 24 Oct · C → A · `create_profile_from_answers` gets `answers = {"categories": [Category], "frequency": "weekly|monthly|occasionally|rarely", "style": "deal|quality|balanced", "festivals": ["diwali","gurpurab","lohri","karwa_chauth","christmas"]}`. Festival opt-in keys are festival ids without the year, so please keep `Festival.id = <key>_<year>`. The bot upserts the returned Customer itself.
+- 24 Oct · C → B · The bot calls `decide()` and sends the card itself. Please don't call `deliver()` inside `decide()` for bot triggers, or users get two cards. `/stop` sets `customers.opted_out`; `/pause` sets `customers.paused_until`, and the pre-gate should read both.
+- 24 Oct · C → Main · `deliver` and `build_application` are now real. Optional: call `await app.bot.app.set_commands(tg)` after `tg.initialize()` in `main._start_bot` to fill the prod bot's "/" menu.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
