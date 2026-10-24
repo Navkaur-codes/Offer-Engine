@@ -41,6 +41,7 @@
 | T25 | **Agent can write data**: tools that update the DB or send messages | One injection away from abuse | Read-only tools. The harness writes |
 | T26 | **One giant LLM prompt per batch of 5,000 customers** | Free-tier rate limits, plus cost and latency | Use the agent for live triggers and the Lab. Batch campaigns use the fallback scorer, with the agent only on the top-N |
 | T27 | **Undocumented behaviour**: features missing from the README | Judges won't find them | README "Demo in 5 minutes" section and a "Why this page" note on each page |
+| T29 | **Trusting SQLite for Postgres behaviour**: integer sizes, timezones, JSON queries, strict types | Local tests pass and production crashes. GATE-2 broke onboarding: Telegram IDs overflowed 32-bit INTEGER on Neon | Use BIGINT for external IDs; run a smoke test on the deployed app after every gate; read the Render logs |
 | T28 | **Customer bots trying to receive DMs** | Telegram blocks bot-to-bot messages | The backend orchestrates the Lab group (PLAN §5 Customer Lab) |
 
 ## Time-based alarms (Claude raises these on its own)

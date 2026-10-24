@@ -79,6 +79,11 @@ The deployable Vite app for Vercel. `VITE_API_URL` points at the Render backend.
 **Done when:** both pages work on mocks *and* on the real API (once main deploys it), and a decision can be found and understood in fewer than 3 clicks.
 
 ## Phase 3 (v0.4): Rules editor + Customers
+**Before starting:**
+- Switch to the **real API**. It's live at `https://offer-engine-n4jx.onrender.com` with real decisions, and locally at `uvicorn app.main:app --app-dir backend`.
+- Adopt contracts **v1.1**: `Kpis.deltas` keys are the KPI field names with fractional changes (null = no arrow); `DecisionLight.festival`; the `festival=` filter.
+- Keep mocks only as a fallback (`VITE_USE_MOCKS=1`).
+- Deploy to **Vercel** happens in this phase. Main gives the user the steps; make sure `VITE_API_URL` is read at build time.
 **Tasks:**
 1. **Rules & Policies** (the most important page for usability):
    - Tabs for the layers: Global · Festival · Persona · Individual.

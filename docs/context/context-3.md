@@ -78,6 +78,10 @@ The main session mounts your webhook route.
 - All buttons are recorded in the DB.
 
 ## Phase 3 (v0.4): Customer Lab (10 persona bots)
+**Before starting:**
+1. The user is creating the 10 customer bots and the "Customer Lab" group. Ask for `CUSTOMER_BOT_TOKENS` in your worktree `.env` when you need it; never ask for tokens in chat.
+2. There is **no** shadow channel, and `/lab here` auto-detects the group (items 5–6).
+3. Also verify on the dev bot that `/simulate cart` → card → buttons → `/why` work against the **real** harness. It's merged now; until A3/B3 land, many results will be "No offer".
 **Background:** a bot cannot DM another bot, and bots don't see each other's group messages. **The backend orchestrates everything**, and the customer bots only *send*.
 
 **Tasks:**

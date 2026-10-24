@@ -81,6 +81,12 @@ This session covers the **core functionality** criterion and most of the **advan
 - A purchase within 48 h gives NO_OFFER with the reason.
 
 ## Phase 3 (v0.4): Real Groq agent + message validator
+**PRIORITY 1: fix "No offer for everyone" first (found live at GATE-2, 25 Oct).** Commit this as its own checkpoint before anything else.
+- **Zero-cost offers** (`cart_nudge`, `early_access`, `points_reminder`) may be sent when expected incremental profit is **≥ 0**. Only paid offers need > 0, so a free perk is never refused for "not paying for itself".
+- **Welcome guarantee.** For `trigger="welcome"`, a customer with no prior decisions always gets the best **allowed** zero-cost perk (or free shipping if a rule allows it) instead of NO_OFFER. It still goes through `evaluate()`, so consent, kill switch and frequency still win.
+- **Tests:** a new user's welcome is SENT with a zero-cost offer; a sure-thing VIP still gets NO_OFFER for paid offers.
+- **Check:** on a 500-customer scratch seed, the NO_OFFER share for customer-initiated triggers drops well below today's ~70%. Report the before/after numbers in progress.md.
+
 **Tasks:**
 1. `agent/groq_client.py`: `LLMClient` on the Groq SDK.
    - Model `GROQ_MODEL_AGENT`, tool calling, JSON output, temperature 0.3, 20 s timeout.

@@ -79,6 +79,15 @@ If you need a new field, write a contract change request in `docs/sessions.md`.
 - An inactivity simulation flips the policy.
 
 ## Phase 3 (v0.4): Uplift, impact, realism and experiment stats
+**PRIORITY 1 (found live at GATE-2, 25 Oct).**
+- **Problem:** real customers currently have prior uplifts of about 0.03–0.04 and impact is still the stub. The engine (correctly, given those numbers) sends **no offer to almost anyone**.
+- **Do first:** `scoring/uplift.py` and `scoring/impact.py`, so the `uplift_predict` / `impact_estimate` ports turn real. Commit them as their own checkpoint.
+- **Targets on a 500-customer scratch seed:**
+  - persuadables get positive expected profit for at least one offer type;
+  - sure-things and sleeping dogs stay ≤ 0;
+  - the overall NO_OFFER share for customer-initiated triggers is roughly 30–40%.
+- **Report** the share per policy in progress.md.
+
 **Tasks:**
 1. `scoring/uplift.py`: a T-learner (two `GradientBoostingClassifier` models, treated vs. control) per offer-type family, trained on the past campaigns.
    - `predict()` returns `P(buy|offer) − P(buy|no offer)`.

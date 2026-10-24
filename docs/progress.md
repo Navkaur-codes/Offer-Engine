@@ -8,8 +8,8 @@
 | Version | Target | Milestone | Status |
 |---|---|---|---|
 | v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
-| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ◐ Phase 1 merged (GATE-1, 24 Oct); `/simulate` comes in Phase 2 |
-| v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☐ |
+| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☑ GATE-2 (25 Oct): the real pipeline is live in production |
+| v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ◐ API live; dashboard verified locally; Vercel in Phase 3 |
 | v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☐ |
 | v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
 | Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ |
@@ -17,11 +17,11 @@
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ◐ MAIN-API | ☐ | ☐ |
-| A: Data & Scoring | ☑ `8b2e903` | ◐ | ☐ | ☐ |
-| B: Decision Core | ☑ `0202dd8` | ◐ | ☐ | ☐ |
-| C: Telegram + Lab | ☑ `1e5e102` | ◐ | ☐ | ☐ |
-| D: Dashboard | ☑ `e5d9116` | ◐ | ☐ | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ◐ | ☐ |
+| A: Data & Scoring | ☑ `8b2e903` | ☑ | ◐ | ☐ |
+| B: Decision Core | ☑ `0202dd8` | ☑ | ◐ | ☐ |
+| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ◐ | ☐ |
+| D: Dashboard | ☑ `e5d9116` | ☑ | ◐ | ☐ |
 
 ## claude-progressive.md history
 | Version/Phase | Written | Summary of temporary rules |
@@ -29,6 +29,7 @@
 | v0.1 / Phase 0 | 22 Oct | Scaffold only; contracts may change until the gate |
 | v0.2 / Phase 1 | 22 Oct | Contracts v1 frozen; everything through ports/stubs; never poll with the prod token; shared venv; no real Groq calls |
 | v0.3 / Phase 2 | 24 Oct | Compressed schedule; real modules replace stubs as they merge; Neon seeded small (≈1,500 customers); still no real Groq calls |
+| v0.4 / Phase 3 | 25 Oct | PRIORITY 1: the no-offer fix (A uplift/impact, B zero-cost + welcome); conftest pins foreign ports in unit tests; Groq only via budget guard |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -330,3 +331,27 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - `db.upgrade_bigint_columns()` runs from `init_db()` and ALTERs any existing Postgres INTEGER column to BIGINT, once and idempotently.
   - New test `test_telegram_ids_are_bigint`; the Postgres DDL was checked to emit `BIGINT`.
 - **Lesson (for detective.md):** test anything ID- or number-heavy against Postgres semantics, not only SQLite.
+
+### 2026-10-25 · Main · GATE-2
+- **Merged:**
+  - A `1646fe0` → `ef46d32`
+  - B `0302b17`, `3d1f941` → `939a94e`
+  - C `9cfaf33`, `21e43d9` → `9488b5a`
+  - D `a9aa536`, `181eb92`, `fc08f23` → `f0183d5`
+- **Conflicts:** only docs (`progress.md`, `sessions.md`), resolved with every entry kept.
+- **Integration:**
+  - New `tests/conftest.py` pins each folder's foreign ports to stubs, since unit tests were written against fixtures.
+  - `test_ports.py` stub tests now call `stubs` directly.
+  - Full suite: **214 passed**; the frontend builds.
+- **Smoke (scratch SQLite, 500 customers):**
+  - 40 real decisions in 1.1 s, all stored with explanations;
+  - SENT / QUEUED (campaign at night) / HELD_OUT / BLOCKED by kill switch all correct;
+  - onboarding creates `TG…` with history.
+- **Production:**
+  - **Bug found:** `DataError` at the end of onboarding, because Telegram IDs overflowed a 32-bit INTEGER on Neon. Fixed with BIGINT plus an auto-migration (`7c8d629`), and verified live: your customer is stored and decisions are logged.
+  - **Found:** every decision is NO_OFFER (uplift prior plus stub impact). This is **Phase 3 priority 1** for A and B.
+- **Next (Phase 3 is prepared, not started; it waits for the user):**
+  - sync the worktrees;
+  - the user sends A3–D3 when ready;
+  - the user creates the Customer Lab bots;
+  - the dashboard goes to Vercel in D3.

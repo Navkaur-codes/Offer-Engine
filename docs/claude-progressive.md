@@ -7,37 +7,45 @@
 ---
 
 ## Now
-- **Version:** v0.3 (target Sun 25 Oct, 12:00). The schedule is compressed because we're about a day behind.
-- **Phase:** 2. Sessions A–D work in parallel in their worktree folders; Main builds the REST API (MAIN-API).
-- **GATE-1 passed (24 Oct).** `main` has all four Phase-1 merges. 118 backend tests pass and the frontend builds.
-- **Live:** https://offer-engine-n4jx.onrender.com, bot `@navpreet_offers_bot`. Neon is seeded with about 1,500 synthetic customers (production uses fewer than 5,000 because of Neon's free 0.5 GB limit).
-- **Contracts:** **v1.1 FROZEN** (CR-D1 and CR-D2 accepted on 24 Oct). Changes only through `sessions.md → Contract change requests`.
-- **Real ports now:** `seed_run`, `festivals`, `effective_policy`, `allowed_offers`, `evaluate`, `describe_rule`, `deliver`, `build_application`, `set_bot_commands`. Everything else is still a stub. Check with `ports.status()` or `/health`.
-- **Next gate:** GATE-2, which must show `/simulate cart` working end-to-end on the live bot: event → real profile → harness → `evaluate` → card → decision log → `/why`.
+- **Version:** v0.4 (target Sun 25 Oct, night). The freeze is **Mon 26 Oct 18:00**.
+- **Phase:** 3, **prepared but not started.** Sessions A–D begin only when the user sends A3–D3.
+- **GATE-2 passed (25 Oct).**
+  - `main` has all Phase-2 merges; 214 backend tests pass and the frontend builds.
+  - **Production runs the real pipeline:** onboarding → real profile → harness → `evaluate` → card → decision log.
+  - The `TG…` BIGINT fix is live.
+- **Live:** https://offer-engine-n4jx.onrender.com (API v0.3, contracts v1.1), bot `@navpreet_offers_bot`, Neon with about 1,500 seeded customers.
+- **Still stubs:** `uplift_predict`, `impact_estimate`, `realism_compute`, `experiments_compute`, `daily_digest`, `rule_impact`, `run_rounds`. Check with `/health`.
+- **Next gate:** GATE-3. Needs real offers going to classmates (not "No offer" for everyone), the Lab running in the group, and the dashboard on Vercel with real data.
 
-## Phase-2 goals (details in each context file)
-- **A:** `scoring/rfm.py`, `churn.py`, `profile.py` (`build_profile` < 50 ms from real DB rows, `assign_policy`), `data/onboarding.py` (`create_profile_from_answers`).
-- **B:** `agent/context.py`, `harness.py` (full pipeline, pre-gate reads `opted_out` / `paused_until`, holdout, dry_run), `fallback.py`, `llm.py` (MockLLM), `explainer.py`. **Never call `deliver()` from `decide()`**, because the bot sends the card itself.
-- **C:** `/simulate …` commands, recorded button outcomes (claim / decline → 14-day suppression), `/why`, `/history`, per-user rate limit.
-- **D:** Overview (bento, live stream) and Decisions log (Pipeline Lens, explanation drawer) on mocks. Switch to the real API as soon as MAIN-API lands.
-- **Main:** `app/api/` endpoints from `contracts.md §4` (starting with kpis, decisions, customers, rules, playground), the admin passcode guard, CORS, and calling `seed_rules.ensure_seeded()` at startup.
+## 🔴 PRIORITY 1 for Phase 3: "No offer for everyone"
+Found live at GATE-2: every decision is NO_OFFER, because uplift is a ~0.04 prior and impact is a stub.
+- **A:** real `uplift.py` and `impact.py` first, as their own checkpoint.
+- **B:** zero-cost offers allowed at profit ≥ 0, plus the welcome guarantee, first, as their own checkpoint.
+
+Both are detailed at the top of each session's Phase 3 in its context file. Nothing else in A or B ships before these.
+
+## Phase-3 goals (details in each context file)
+- **A:** uplift T-learner + Qini, impact, realism stats, experiment stats.
+- **B:** priority fix; then the real Groq agent with the **single-call design**, `agent/budget.py` (70B → 8B at 80% → rules at 100%), the top-5 batch rule, and the message + festival_restriction validators.
+- **C:** Customer Lab (registry, scripts, runner, `/lab here | run | persona | date | reset`). There is no shadow channel. Also verify `/simulate` against the real harness on the dev bot.
+- **D:** switch to the real API and contracts v1.1; Rules editor (sentence cards, impact preview, versions/revert); Customers (scatter, drawer, simulate); Vercel deploy.
+- **Main:** watch the gates, answer contract requests, deploy, set `CORS_ORIGINS` for Vercel.
 
 ## Temporary rules for this phase
-- Notes from sessions in `sessions.md §7` are binding. Key ones:
-  - festival opt-in keys come without the year (`diwali`);
+- Notes in `sessions.md §7` are binding:
+  - festival keys don't include the year;
   - offer params are `pct`, `amount`, `min_basket`, `multiplier`, `category`;
-  - seeded `C000001…` customers are **not** the stub fixtures.
-- **Never run `--polling` with the production bot token.** C uses the dev bot in its worktree `.env`.
-- **Python:** use the shared venv `D:\hackathon-2\.venv\Scripts\python`, and run `-m pytest` from *your* worktree's `backend/`.
-- **LLM budget:** no real Groq calls until B3. The budget guard is approved (single call, 70B → 8B → rules).
-- 📌 Give a commit checkpoint after every finished task. The user commits, pushes and merges.
-- End every phase with a `docs/progress.md` entry **in your own branch** (D forgot this in Phase 1).
+  - write decisions only via `decision_store`;
+  - quiet hours apply to proactive sends only (`runtime.quiet_hours_apply`).
+- `tests/conftest.py` pins other sessions' ports to stubs in your unit tests. To test against real modules, mark the test `@pytest.mark.real_ports`.
+- **Never** run `--polling` with the production token. C uses the dev bot.
+- **Real Groq calls** are allowed from B3 on, but only through `agent/budget.py`. Keep the 20 test runs small.
+- 📌 Give a checkpoint after every finished task, and record progress in your own branch.
+- Use BIGINT for any external ID column (detective T29). Postgres is stricter than SQLite.
 
-## Known issues / decisions pending
-- **LLM budget guard: APPROVED (24 Oct)**. It is in context-2 Phase 3 and prompt B3.
-- **Customer Lab bots** (10 bots plus the "Customer Lab" group) are needed by Sun, before C3. There is no shadow channel and no manual chat ID; `/lab here` detects the group.
-- D: Lighthouse score not measured yet; the 615 kB bundle needs code-splitting in Phase 4.
-- C: the phone check of `/start` on the dev bot is pending with the user.
+## Known issues
+- D: Lighthouse score not measured yet; the ~620 kB bundle needs code-splitting in Phase 4.
+- Real Telegram users get `is_holdout=False` (A's choice, so classmates never get a silent bot). Synthetic customers keep the 10% holdout.
 
 ## Worktree folders
 | Session | Folder | Branch |

@@ -5,7 +5,7 @@
 ## 1. Session board
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
-| Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-1 passed → Phase 2 (+ MAIN-API) | ☑ P0 ☑ GATE-1 | v1 frozen | none | 24 Oct |
+| Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-2 passed → Phase 3 (deploys, contract requests) | ☑ GATE-1 ☑ MAIN-API ☑ GATE-2 | v1.1 frozen | none | 25 Oct |
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 2 done (A2) → Phase 3 next | ☑ P2 `1646fe0` (P1 `8b2e903`) | v1.1 | none (the `test_ports` fix was applied by Main at GATE-2) | 25 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer, quiet hours) → Phase 3 next | ☑ P2 `0302b17`, `3d1f941` | v1.1 | none (budget guard approved) | 25 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 2 done (/simulate, recorded buttons, /why, /history, rate limit, `initiated_by`) → Phase 3 next | ☑ P2 `9cfaf33`, `21e43d9` (P1 `1e5e102`) | v1.1 | P3 needs the 10 Lab bots + group (user) | 25 Oct |
@@ -45,6 +45,7 @@ A (data/scoring) ──profile, uplift, impact, festivals──► B (rules/agen
 ## 5. Health log (newest first)
 | Date/time | Gate | Tests | Deploy | Smoke test | Notes |
 |---|---|---|---|---|---|
+| 25 Oct 00:10 | GATE-2 | `pytest` 214 passed · ruff clean · frontend lint + build ✓ | Render redeployed (real pipeline) | scratch smoke ✓ (40 real decisions in 1.1 s; SENT/QUEUED/HELD_OUT/BLOCKED); live onboarding ✓ after the BIGINT fix `7c8d629`; decisions logged in Neon ✓ | every decision is NO_OFFER (uplift prior + stub impact) → Phase 3 priority 1 for A and B |
 | 24 Oct 20:01 | GATE-1 | `pytest` 118 passed · ruff clean · frontend lint + build ✓ | pending (push main) | scratch seed of 500 customers in 7 s ✓; real rules: 50% off blocked, 10% + ₹999 allowed ✓; stub decide gives SENT / NO_OFFER / BLOCKED ✓; app boots, 8/21 ports real (+ `set_bot_commands`) | merges `948bcb1` A · `90670b6` B · `9bd7391` C · `62a4065` D; only progress/sessions docs conflicted (resolved, all entries kept); the stub test was updated for the real ₹999 deal-hunter rule |
 | 22 Oct 17:38 | GATE-0 | `pytest` 19 passed · ruff clean | Render live: `/health` ok, bot true, 0.8 s | wrong-secret webhook returns 403 ✓; `/start` hello (user) ✓ | all 21 ports are stubs except `build_application` |
 
