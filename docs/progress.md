@@ -230,7 +230,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - `backend/app/rules/offers.py`
   - `backend/app/rules/{seed_rules,rule_types}.py` (post-purchase rule and its wording)
   - `backend/tests/core/{test_harness,test_rule_types,test_property}.py`
-- **Commits:** _pending_
+- **Commits:** `0302b17` feat(agent): decision harness with pre-gate, holdout, retry and rules fallback; deterministic explainer
 - **Tests:**
   - `python -m pytest tests/core -q` → 53 passed. `ruff check .` is clean.
   - Every "Done when" case has a test: over-limit → retry → compliant fallback; timeout and invalid JSON → fallback; kill switch → BLOCKED; quiet hours → QUEUED; holdout → HELD_OUT (logged, not sent); purchase < 48 h → NO_OFFER with the reason.
