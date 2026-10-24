@@ -41,4 +41,5 @@ def test_evaluate_flags_over_limit_discount():
     p = ports.build_profile("C000002", NOW)
     ctx = ports.get_context(NOW)
     assert ports.evaluate(p, ctx, "OF_PCT_CAT", {"pct": 50}).ok is False
-    assert ports.evaluate(p, ctx, "OF_PCT_CAT", {"pct": 10}).ok is True
+    # deal hunters need a ₹999 minimum basket (real rules engine, P_DEAL_CAP)
+    assert ports.evaluate(p, ctx, "OF_PCT_CAT", {"pct": 10, "min_basket": 999}).ok is True
