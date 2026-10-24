@@ -11,7 +11,7 @@
 - **Phase:** 2. Sessions A–D work in parallel in their worktree folders; Main builds the REST API (MAIN-API).
 - **GATE-1 passed (24 Oct).** `main` has all four Phase-1 merges. 118 backend tests pass and the frontend builds.
 - **Live:** https://offer-engine-n4jx.onrender.com, bot `@navpreet_offers_bot`. Neon is seeded with about 1,500 synthetic customers (production uses fewer than 5,000 because of Neon's free 0.5 GB limit).
-- **Contracts:** **v1 FROZEN.** Changes only through `sessions.md → Contract change requests`.
+- **Contracts:** **v1.1 FROZEN** (CR-D1 and CR-D2 accepted on 24 Oct). Changes only through `sessions.md → Contract change requests`.
 - **Real ports now:** `seed_run`, `festivals`, `effective_policy`, `allowed_offers`, `evaluate`, `describe_rule`, `deliver`, `build_application`, `set_bot_commands`. Everything else is still a stub. Check with `ports.status()` or `/health`.
 - **Next gate:** GATE-2, which must show `/simulate cart` working end-to-end on the live bot: event → real profile → harness → `evaluate` → card → decision log → `/why`.
 
@@ -29,13 +29,13 @@
   - seeded `C000001…` customers are **not** the stub fixtures.
 - **Never run `--polling` with the production bot token.** C uses the dev bot in its worktree `.env`.
 - **Python:** use the shared venv `D:\hackathon-2\.venv\Scripts\python`, and run `-m pytest` from *your* worktree's `backend/`.
-- **LLM budget:** still no real Groq calls (B uses MockLLM). The decision on the budget guard is still pending with the user.
+- **LLM budget:** no real Groq calls until B3. The budget guard is approved (single call, 70B → 8B → rules).
 - 📌 Give a commit checkpoint after every finished task. The user commits, pushes and merges.
 - End every phase with a `docs/progress.md` entry **in your own branch** (D forgot this in Phase 1).
 
 ## Known issues / decisions pending
-- **LLM budget guard** (single-call agent, daily token budget, 70B → 8B → rules fallback) is awaiting the user's OK before B3.
-- **Customer Lab bots** (10 bots, the "Customer Lab" group, the shadow channel) are needed by Sun, before C3.
+- **LLM budget guard: APPROVED (24 Oct)**. It is in context-2 Phase 3 and prompt B3.
+- **Customer Lab bots** (10 bots plus the "Customer Lab" group) are needed by Sun, before C3. There is no shadow channel and no manual chat ID; `/lab here` detects the group.
 - D: Lighthouse score not measured yet; the 615 kB bundle needs code-splitting in Phase 4.
 - C: the phone check of `/start` on the dev bot is pending with the user.
 

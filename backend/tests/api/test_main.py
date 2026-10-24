@@ -13,7 +13,7 @@ def _client(monkeypatch) -> TestClient:
 def test_health(monkeypatch):
     with _client(monkeypatch) as client:
         body = client.get("/health").json()
-    assert body["ok"] is True and body["contracts"] == "v1" and body["bot"] is False
+    assert body["ok"] is True and body["contracts"] == "v1.1" and body["bot"] is False
     assert "decide" in body["ports"]
 
 

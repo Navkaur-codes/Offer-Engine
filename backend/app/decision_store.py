@@ -68,9 +68,13 @@ def set_outcome(decision_id: str, outcome: Outcome, at: datetime, revenue: int |
 
 def query(*, status: str | None = None, decided_by: str | None = None, policy: str | None = None,
           trigger: str | None = None, customer_id: str | None = None, q: str | None = None,
-          before: datetime | None = None, after: datetime | None = None, limit: int = 50) -> list[Decision]:
+          festival: str | None = None, before: datetime | None = None, after: datetime | None = None,
+          limit: int = 50) -> list[Decision]:
     """Newest first. `before` pages backwards; `after` returns only rows newer than it (live stream)."""
     stmt = select(DecisionRow)
+    if festival:  # active at decision time, any trigger (CR-D2); "diwali" or "diwali_2026"
+        active = DecisionRow.payload["context"]["festival"].as_string()
+        stmt = stmt.where((active == festival) | active.startswith(f"{festival}_"))
     for col, val in ((DecisionRow.status, status), (DecisionRow.decided_by, decided_by),
                      (DecisionRow.policy, policy), (DecisionRow.trigger, trigger),
                      (DecisionRow.customer_id, customer_id)):

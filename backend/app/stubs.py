@@ -621,5 +621,9 @@ async def set_bot_commands(application) -> None:
     return None
 
 
+def ensure_rules_seeded() -> int:
+    return 0
+
+
 def run_rounds(n: int) -> list[Decision]:
     return [decide(cid, "lab") for cid in list(PROFILES)[:n]]

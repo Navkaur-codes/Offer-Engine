@@ -20,8 +20,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = "dev-secret"
     customer_bot_tokens: str = "[]"  # JSON list: [{"token","customer_id","persona"}]
-    lab_group_chat_id: int | None = None
-    shadow_channel_id: int | None = None
+    lab_group_chat_id: int | None = None  # optional override; normally saved by `/lab here`
     admin_telegram_ids: str = ""  # comma-separated
 
     # llm
@@ -29,6 +28,8 @@ class Settings(BaseSettings):
     groq_model_agent: str = "llama-3.3-70b-versatile"
     groq_model_fast: str = "llama-3.1-8b-instant"
     force_llm_fail: bool = False
+    llm_daily_tokens_agent: int = 80_000  # budget guard: 70B tokens per IST day
+    llm_daily_tokens_fast: int = 400_000  # budget guard: 8B tokens per IST day
 
     # app
     database_url: str = "sqlite:///./offer_engine.db"

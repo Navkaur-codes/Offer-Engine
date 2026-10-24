@@ -86,7 +86,7 @@ Telegram (classmates)                         Analytics Dashboard (React · Verc
 ## 3. Agent design and harness (`backend/app/agent/`)
 
 ### Harness layers, in order (all deterministic code; the LLM can't skip them)
-1. **Pre-gate (before any LLM call).** Kill switch, consent/opt-out, frequency cap, quiet hours (the send is queued until 09:00), budget left, and holdout check. A holdout customer is logged as "would have sent" and nothing is sent.
+1. **Pre-gate (before any LLM call).** Kill switch, consent/opt-out, frequency cap, quiet hours (**proactive** sends are queued until 09:00; replies to customer- or admin-initiated actions are exempt, see CLAUDE.md §2.10), budget left, and holdout check. A holdout customer is logged as "would have sent" and nothing is sent.
 2. **Policy resolution.** Merge the global, persona and individual rules into an **effective policy** for this customer.
 3. **Candidate set.** The rules engine lists allowed offers with their parameter ranges. If the list is empty, the run stops with the reason `NO_ELIGIBLE_OFFER`.
 4. **Agent loop.**
@@ -321,7 +321,7 @@ The `Festival` schema goes in `contracts.py` in Step 0.
 - **Your own account can play any customer.**
   - `/simulate persona <name>` switches your persona.
   - Admin `/impersonate <customer_id>` makes the bot send you the offer meant for any synthetic customer.
-- **Shadow inbox channel.** A private Telegram channel where the bot posts the offer card for every synthetic-customer decision, marked "would send to Priya (Deal hunter)". This makes a demo with 5,000 customers visible without spamming anyone.
+- ~~Shadow inbox channel~~ **Removed (24 Oct).** The dashboard's live decision stream and Decisions log already show every synthetic-customer decision with its card preview.
 - **Bulk testing.** A Playground and `scripts/load_test.py` run thousands of synthetic decisions through the pipeline without sending; the results go into the dashboard.
 - **Real users.** The bot link goes to classmates on day 1, and the bot works for any number of real users.
 
@@ -577,5 +577,5 @@ It also has a **main-session prompt for each phase gate**:
    - LLM times out or returns 429: fallback.
    - Prompt injection in a user reply: ignored.
 3. **Bot flow:** `/simulate purchase` then `/simulate cart` returns "no offer, here's why" (48 h rule). `/simulate inactive 60` flips the policy to At-risk and a win-back offer is sent.
-4. **Controls:** kill switch on means nothing is sent. Quiet hours mean the offer is queued for 09:00.
+4. **Controls:** kill switch on means nothing is sent. Quiet hours queue *proactive* offers for 09:00; `/simulate` at night still answers immediately.
 5. **Production:** `/health` returns OK, `getWebhookInfo` is fine, and 3 classmates' decisions show in the deployed log with explanations.
