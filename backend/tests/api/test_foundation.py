@@ -19,9 +19,8 @@ def test_now_is_ist_and_overridable():
 
 def test_blank_env_values_mean_unset(monkeypatch):
     monkeypatch.setenv("LAB_GROUP_CHAT_ID", "")
-    monkeypatch.setenv("SHADOW_CHANNEL_ID", "")
     s = config.Settings(_env_file=None)
-    assert s.lab_group_chat_id is None and s.shadow_channel_id is None
+    assert s.lab_group_chat_id is None
 
 
 def test_httpx_logs_are_quiet():

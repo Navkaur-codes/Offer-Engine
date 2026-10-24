@@ -42,6 +42,20 @@ def test_outcome_updates_row_and_payload():
     assert decision_store.set_outcome("missing", "claimed", NOW) is False
 
 
+def test_lab_group_saved_by_lab_here():
+    assert runtime.lab_group_chat_id() is None
+    runtime.set_lab_group(-1001234567890, "Customer Lab")
+    assert runtime.lab_group_chat_id() == -1001234567890
+
+
+def test_quiet_hours_only_for_proactive_triggers():
+    assert runtime.quiet_hours_apply("campaign", {}) is True
+    assert runtime.quiet_hours_apply("cart_abandoned", None) is True
+    assert runtime.quiet_hours_apply("cart_abandoned", {"initiated_by": "customer"}) is False
+    assert runtime.quiet_hours_apply("manual", {"initiated_by": "admin"}) is False
+    assert runtime.quiet_hours_apply("lab", {}) is False
+
+
 def test_killswitch_roundtrip():
     assert runtime.killswitch_on() is False
     runtime.set_killswitch(True)

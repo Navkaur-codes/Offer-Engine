@@ -58,7 +58,7 @@ This session covers the **core functionality** criterion and most of the **advan
 **Tasks:**
 1. `agent/context.py`: `get_context(now)` covers quiet hours, payday window (1st–5th), and the active festival and phase from `FESTIVALS`. It returns days-to-festival, hero categories, delivery cutoff, greeting (only used if the customer opted in), budget left, and the pacing factor.
 2. `agent/harness.py`: `decide()` runs this pipeline exactly:
-   1. **Pre-gate:** kill switch, opted_out/paused, quiet hours (QUEUED), frequency cap, budget, and **holdout** (HELD_OUT: log "would send X", do not send).
+   1. **Pre-gate:** kill switch, opted_out/paused, quiet hours (QUEUED, **proactive triggers only**: skip when `trigger_meta.get("initiated_by") in {"customer", "admin"}` or `trigger == "lab"`; decided 24 Oct), frequency cap, budget, and **holdout** (HELD_OUT: log "would send X", do not send).
    2. Effective policy, then candidates. If there are no candidates: NO_OFFER with the reason.
    3. Agent loop (Phase 3; in this phase, a `MockLLM` through the `LLMClient` interface).
    4. Final `evaluate()`.
@@ -76,7 +76,7 @@ This session covers the **core functionality** criterion and most of the **advan
 - A timeout leads to the fallback.
 - Invalid JSON leads to the fallback.
 - The kill switch blocks the send.
-- Quiet hours queue the send.
+- Quiet hours queue a proactive send, while a customer-initiated one at 22:00 is answered immediately.
 - A holdout customer is logged and not sent.
 - A purchase within 48 h gives NO_OFFER with the reason.
 

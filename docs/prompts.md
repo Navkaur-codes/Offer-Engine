@@ -208,7 +208,8 @@ Verify the "Done when" scenarios. Owned paths only. END OF SESSION routine.
 SESSION C, Phase 3 of docs/context/context-3.md. Build lab/registry.py (CUSTOMER_BOT_TOKENS → 10 lab customers
 with distinct personas), lab/scripts.py (festival-aware persona activity), lab/runner.py (customer bot posts →
 event → decide(trigger="lab") → Offer bot replies with @mention → customer bot reacts in character via persona
-response model → outcome stored; 2–4 s spacing), /lab run|persona|date|reset, reply-/why, shadow channel delivery.
+response model → outcome stored; 2–4 s spacing), /lab here (auto-detect + save the Lab group via runtime.set_lab_group; no chat-ID setup), /lab run|persona|date|reset,
+reply-/why. No shadow channel (removed).
 Remember: bots cannot DM bots; backend orchestrates all. Test with /lab run 5 in the real group. END OF SESSION routine.
 ```
 

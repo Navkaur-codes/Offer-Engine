@@ -35,7 +35,7 @@
 
 ## Known issues / decisions pending
 - **LLM budget guard: APPROVED (24 Oct)**. It is in context-2 Phase 3 and prompt B3.
-- **Customer Lab bots** (10 bots, the "Customer Lab" group, the shadow channel) are needed by Sun, before C3.
+- **Customer Lab bots** (10 bots plus the "Customer Lab" group) are needed by Sun, before C3. There is no shadow channel and no manual chat ID; `/lab here` detects the group.
 - D: Lighthouse score not measured yet; the 615 kB bundle needs code-splitting in Phase 4.
 - C: the phone check of `/start` on the dev bot is pending with the user.
 

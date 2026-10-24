@@ -20,8 +20,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = "dev-secret"
     customer_bot_tokens: str = "[]"  # JSON list: [{"token","customer_id","persona"}]
-    lab_group_chat_id: int | None = None
-    shadow_channel_id: int | None = None
+    lab_group_chat_id: int | None = None  # optional override; normally saved by `/lab here`
     admin_telegram_ids: str = ""  # comma-separated
 
     # llm

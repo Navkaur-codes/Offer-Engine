@@ -29,7 +29,11 @@ Build an **analytics + agentic decisioning platform**. It decides which offer ea
    - Never infer religion from a name. Festival-specific greetings only go to customers who opted in.
    - Greetings come from the `festivals` table, never from the LLM.
    - Restricted promotions per festival are enforced by the validator.
-10. **Consent:** `/stop` and `/pause` are honoured immediately by the pre-gate. No sends during quiet hours (21:00–09:00 IST); those sends are queued.
+10. **Consent:**
+    - `/stop` and `/pause` are honoured immediately by the pre-gate.
+    - No **proactive** sends during quiet hours (21:00–09:00 IST); those sends are queued until 09:00. Proactive means campaigns, scheduled nudges, inactivity, points expiry, festival and payday triggers.
+    - Replies to something the customer asked for just now are **not** queued, because the person is awake and waiting. These are marked `trigger_meta["initiated_by"] = "customer"` (`/start` welcome, `/simulate`, button taps) or `"admin"` (dashboard simulate). Lab rounds (`trigger="lab"`) are also exempt, because they post to a group of bots.
+    - Kill switch, `/stop`, `/pause`, frequency caps and every other rule still apply to them.
 11. **Stay within your session's owned paths** (see §4). Shared contracts change **only** through the main session.
 12. **The user does all commits and pushes to GitHub.** Claude never runs `git add`, `git commit`, `git push`, `git merge` or `git rebase`. Claude also never runs destructive git commands (`reset`, `checkout -- .`, `restore`, `stash`, `clean`, branch delete). Read-only git is fine (`status`, `diff`, `log`, `branch`). Instead, Claude raises a **📌 COMMIT CHECKPOINT** (see §5a) and waits.
 
@@ -167,7 +171,7 @@ cd frontend && npm i && npm run dev                      # :5173, VITE_USE_MOCKS
 ```
 
 **Environment variable names** (values never go in the repo):
-- Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `CUSTOMER_BOT_TOKENS` (JSON), `LAB_GROUP_CHAT_ID`, `SHADOW_CHANNEL_ID`, `ADMIN_TELEGRAM_IDS`.
+- Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `CUSTOMER_BOT_TOKENS` (JSON), `ADMIN_TELEGRAM_IDS`, and optionally `LAB_GROUP_CHAT_ID` (normally auto-detected with `/lab here`). There is no shadow channel; it was removed on 24 Oct.
 - Groq: `GROQ_API_KEY`, `GROQ_MODEL_AGENT=llama-3.3-70b-versatile`, `GROQ_MODEL_FAST=llama-3.1-8b-instant`, `LLM_DAILY_TOKENS_AGENT`, `LLM_DAILY_TOKENS_FAST` (budget guard).
 - App: `DATABASE_URL`, `ADMIN_PASSCODE`, `PUBLIC_BASE_URL`, `TZ=Asia/Kolkata`, `DEMO_TIME_OVERRIDE`.
 - Frontend: `VITE_API_URL`, `VITE_USE_MOCKS`.

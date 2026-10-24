@@ -89,7 +89,7 @@ def get_customer(customer_id: str) -> dict:
 @router.post("/customers/{customer_id}/simulate", dependencies=[Depends(require_admin)])
 def simulate(customer_id: str, body: SimulateIn) -> Decision:
     """Runs the real pipeline (the harness stores and the bot delivers); not a dry run."""
-    return ports.decide(customer_id, body.trigger, body.meta)
+    return ports.decide(customer_id, body.trigger, {**body.meta, "initiated_by": "admin"})
 
 
 @router.post("/playground/run")
