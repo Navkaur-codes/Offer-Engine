@@ -1,0 +1,20 @@
+{
+  "id": "D20261023-0042", "ts": "2026-10-23T19:42:10+05:30", "customer_id": "TG55512345",
+  "trigger": "cart_abandoned", "trigger_meta": {"category": "fashion", "item": "Cotton Kurta", "value": 1450, "minutes": 35},
+  "decided_by": "AGENT", "status": "SENT", "fallback_reason": null,
+  "final_offer_id": "OF_FREE_SHIP", "final_params": {"min_basket": 0},
+  "coupon_code": "SHIPNAV7Q", "expires_at": "2026-10-25T23:59:00+05:30",
+  "headline": "Your kurta is waiting, shipping's on us",
+  "message": "Hi Navpreet! The Cotton Kurta (₹1,450) is still in your cart. Free shipping till 25 Oct, code SHIPNAV7Q.",
+  "cost": 60, "expected_incremental_profit": 210, "channel": "dm", "is_holdout": false, "outcome": "pending",
+  "explanation": {
+    "title": "Sent: Free shipping on Fashion (exp. 25 Oct)",
+    "why_customer": "Cart ₹1,450 open 35 min; churn risk 0.42; uplift 0.18 (persuadable).",
+    "why_offer": "Cheapest step on the cart ladder; ₹60 cost vs ₹210 expected incremental profit.",
+    "rejected": ["10% off: exceeds cart-abandoner ladder before 24 h", "2× points: low points engagement"],
+    "rules_line": "11 passed · 0 violations · policy Cart abandoner v3",
+    "decided_by_line": "Agent (3 tool calls, 1.8 s)",
+    "telegram_text": "Why you got this: your kurta is still in the cart, so free shipping is the smallest nudge that helps. 11 rules checked ✓"
+  },
+  "llm_tokens": 1840, "latency_ms": 1800
+}

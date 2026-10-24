@@ -1,0 +1,105 @@
+/*
+ * "Signal" design tokens (CLAUDE.md §7).
+ * Cool monochrome + ONE orange signal. Violet = second series / rules fallback.
+ * Amber = warnings + upcoming moments. Danger always paired with ✗ + label.
+ * The *-text variants exist only for small text, where the raw accent fails WCAG AA.
+ */
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --ink: #0a0a0b;
+  --line: #e7e7ea;
+  --muted: #71717a;
+  --rail: #0b0b0d;
+  --rail-ink: #f4f4f5;
+  --rail-muted: #a1a1aa;
+  --rail-line: #1f1f24;
+
+  --signal: #ff4f00;
+  --signal-fg: #0a0a0b;
+  --signal-text: #c23c00;
+  --signal-soft: #fff1ea;
+  --violet: #7a5af8;
+  --violet-text: #5b3fd9;
+  --violet-soft: #f1edff;
+  --amber: #f5a524;
+  --amber-text: #8a5a00;
+  --amber-soft: #fff6e5;
+  --danger: #dc2626;
+  --danger-text: #b91c1c;
+  --danger-soft: #fdecec;
+  --ok: #0a0a0b;
+  --slate: #64748b;
+
+  --dot: #d4d4d8;
+  --shadow-menu: 0 8px 24px -6px rgb(10 10 11 / 0.16), 0 0 0 1px var(--line);
+  color-scheme: light;
+}
+
+:root.dark {
+  --bg: #0b0b0d;
+  --surface: #141417;
+  --surface-2: #1b1b1f;
+  --ink: #f4f4f5;
+  --line: #26262b;
+  --muted: #a1a1aa;
+  --rail: #0b0b0d;
+  --rail-ink: #f4f4f5;
+  --rail-muted: #a1a1aa;
+  --rail-line: #1f1f24;
+
+  --signal: #ff6a1f;
+  --signal-fg: #0a0a0b;
+  --signal-text: #ff8a4c;
+  --signal-soft: #2a1408;
+  --violet: #9b85ff;
+  --violet-text: #b3a3ff;
+  --violet-soft: #1d1733;
+  --amber: #ffc35a;
+  --amber-text: #ffc35a;
+  --amber-soft: #2a2110;
+  --danger: #f87171;
+  --danger-text: #fca5a5;
+  --danger-soft: #2a1414;
+  --ok: #f4f4f5;
+  --slate: #94a3b8;
+
+  --dot: #2a2a30;
+  --shadow-menu: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 0 0 1px var(--line);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-line: var(--rail-line);
+  --color-signal: var(--signal);
+  --color-signal-fg: var(--signal-fg);
+  --color-signal-text: var(--signal-text);
+  --color-signal-soft: var(--signal-soft);
+  --color-violet: var(--violet);
+  --color-violet-text: var(--violet-text);
+  --color-violet-soft: var(--violet-soft);
+  --color-amber: var(--amber);
+  --color-amber-text: var(--amber-text);
+  --color-amber-soft: var(--amber-soft);
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-slate: var(--slate);
+
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-card: 8px;
+  --radius-ctl: 6px;
+  --shadow-menu: var(--shadow-menu);
+}
