@@ -39,6 +39,7 @@ async def _start_bot(app: FastAPI) -> None:
         await tg.bot.set_webhook(
             url, secret_token=settings.telegram_webhook_secret, allowed_updates=Update.ALL_TYPES
         )
+        await ports.set_bot_commands(tg)
         log.info("webhook registered")
 
 

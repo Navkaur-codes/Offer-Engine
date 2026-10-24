@@ -66,6 +66,7 @@ _PORTS: dict[str, tuple[str, str, Any]] = {
     # Session C — telegram & lab
     "deliver": ("app.bot.sender", "deliver", stubs.deliver),
     "build_application": ("app.bot.app", "build_application", stubs.build_application),
+    "set_bot_commands": ("app.bot.app", "set_commands", stubs.set_bot_commands),
     "run_rounds": ("app.lab.runner", "run_rounds", stubs.run_rounds),
 }
 
@@ -191,6 +192,11 @@ def deliver(decision: Decision, channel: Channel) -> None:
 
 def build_application():
     return _call("build_application")()
+
+
+async def set_bot_commands(application) -> None:
+    """Fills the bot's "/" menu; post_init only runs under polling, so the webhook boot calls this."""
+    await _call("set_bot_commands")(application)
 
 
 def run_rounds(n: int) -> list[Decision]:

@@ -8,7 +8,7 @@
 | Version | Target | Milestone | Status |
 |---|---|---|---|
 | v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
-| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ◐ |
+| v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ◐ Phase 1 merged (GATE-1, 24 Oct); `/simulate` comes in Phase 2 |
 | v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☐ |
 | v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☐ |
 | v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
@@ -17,17 +17,18 @@
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ◐ watch P1 | ☐ | ☐ | ☐ |
-| A: Data & Scoring | ☐ | ☐ | ☐ | ☐ |
-| B: Decision Core | ☐ | ☐ | ☐ | ☐ |
-| C: Telegram + Lab | ☐ | ☐ | ☐ | ☐ |
-| D: Dashboard | ☐ | ☐ | ☐ | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ◐ MAIN-API | ☐ | ☐ |
+| A: Data & Scoring | ☑ `8b2e903` | ◐ | ☐ | ☐ |
+| B: Decision Core | ☑ `0202dd8` | ◐ | ☐ | ☐ |
+| C: Telegram + Lab | ☑ `1e5e102` | ◐ | ☐ | ☐ |
+| D: Dashboard | ☑ `e5d9116` | ◐ | ☐ | ☐ |
 
 ## claude-progressive.md history
 | Version/Phase | Written | Summary of temporary rules |
 |---|---|---|
 | v0.1 / Phase 0 | 22 Oct | Scaffold only; contracts may change until the gate |
 | v0.2 / Phase 1 | 22 Oct | Contracts v1 frozen; everything through ports/stubs; never poll with the prod token; shared venv; no real Groq calls |
+| v0.3 / Phase 2 | 24 Oct | Compressed schedule; real modules replace stubs as they merge; Neon seeded small (≈1,500 customers); still no real Groq calls |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -161,3 +162,35 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - B's harness must not call `deliver()` itself for bot-originated triggers (double card).
 - **Contract change requests:** none
 - **Next:** Phase 2: `/simulate …`, recorded button outcomes, `/history`, rate limit.
+
+### 2026-10-24 · Session D · Phase 1: Signal theme, app shell, ⌘K, mocks (recorded by Main at GATE-1)
+- **Version/Phase:** v0.2 / Phase 1. Done. D's own progress entry was not in its branch, so Main recorded it here.
+- **Did:**
+  - Vite + React + TS + Tailwind v4 + shadcn scaffold in `frontend/`.
+  - Signal tokens in light and dark mode; Geist / Geist Mono.
+  - Dark sidebar; top bar with kill switch, budget meter, "Upcoming moments" chip, bot QR and passcode.
+  - ⌘K palette; typed `api.ts` with mocks.
+  - Shared components (Kpi, PipelineLens, DataTable, ExplanationCard, RuleCheckList, badges, Money, EmptyState, WhyThisPage).
+  - Early Overview and Decisions pages.
+- **Commits:** `e5d9116` (merged as `62a4065`)
+- **Tests:** `npm run lint` ✓ · `npm run build` ✓. Main bundle is 615 kB (size warning; code-split in Phase 4).
+- **Open issues:** the Lighthouse accessibility score is not measured yet.
+
+### 2026-10-24 · Main · GATE-1
+- **Merged:**
+  - A `8b2e903` → `948bcb1`
+  - B `0202dd8` → `90670b6`
+  - C `1e5e102` → `9bd7391`
+  - D `e5d9116` → `62a4065`
+- **Conflicts:** only `docs/progress.md` and `docs/sessions.md`, resolved with every entry kept.
+- **Fixes on main:**
+  - `tests/api/test_ports.py` updated for the real deal-hunter rule (`min_basket ≥ 999`), as B requested.
+  - New port `set_bot_commands`; `main._start_bot` now fills the production bot's "/" menu after setting the webhook, as C requested.
+- **Tests:** backend 118 passed · ruff clean · frontend lint + build ✓
+- **Smoke (scratch SQLite):** seed of 500 customers in 7 s · real `effective_policy` / `evaluate` · stub `decide` gives SENT / NO_OFFER / BLOCKED · app boots with 8/21 real ports.
+- **Next:**
+  - push main, so Render redeploys;
+  - seed Neon with about 1,500 customers;
+  - live check;
+  - fast-forward the 4 worktrees;
+  - send A2–D2.

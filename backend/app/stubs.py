@@ -617,5 +617,9 @@ def build_application():
     raise NotImplementedError("Telegram application not built yet (Session C)")
 
 
+async def set_bot_commands(application) -> None:
+    return None
+
+
 def run_rounds(n: int) -> list[Decision]:
     return [decide(cid, "lab") for cid in list(PROFILES)[:n]]
