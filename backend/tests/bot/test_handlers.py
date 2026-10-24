@@ -122,14 +122,14 @@ async def test_offer_buttons_respond(chat):
     await _onboard(chat)
     decision_id = chat.sent[-1][2].inline_keyboard[0][0].callback_data.split(":", 2)[2]
     ctx = chat.context()
-    await commands.on_offer_button(chat.button_update(f"o:claim:{decision_id}"), ctx)
-    assert chat.last_text.startswith("✅ Saved! Use code <code>")
-    await commands.on_offer_button(chat.button_update(f"o:why:{decision_id}"), ctx)
-    assert "Why you got this" in chat.last_text
     update = chat.button_update(f"o:remind:{decision_id}")
     await commands.on_offer_button(update, ctx)
     ctx.job_queue.run_once.assert_called_once()
     assert "remind you at 19:00" in update.callback_query.answer.call_args.args[0]
+    await commands.on_offer_button(chat.button_update(f"o:claim:{decision_id}"), ctx)
+    assert chat.last_text.startswith("✅ Saved! Use code <code>")
+    await commands.on_offer_button(chat.button_update(f"o:why:{decision_id}"), ctx)
+    assert "Why you got this" in chat.last_text
     update = chat.button_update("o:claim:D-unknown")
     await commands.on_offer_button(update, ctx)
     assert update.callback_query.answer.call_args.kwargs["show_alert"] is True
@@ -164,3 +164,16 @@ def test_register_handlers_without_token():
 def test_customer_row_shape_matches_contract():
     needed = {"opted_out", "paused_until", "opt_in_festivals", "telegram_chat_id"}
     assert needed <= set(CustomerRow.model_fields)
+
+
+async def test_welcome_decision_is_customer_initiated(chat, monkeypatch):
+    from app import ports, stubs
+
+    seen = {}
+    def spy(cid, t, m, **k):
+        seen.update(t=t, m=m)
+        return stubs.decide(cid, t, m)
+
+    monkeypatch.setattr(ports, "decide", spy)
+    await _onboard(chat)
+    assert seen == {"t": "welcome", "m": {"source": "onboarding", "initiated_by": "customer"}}

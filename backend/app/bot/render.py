@@ -59,6 +59,10 @@ def _offer_type_and_category(d: Decision) -> tuple[str | None, str | None]:
     return None, None
 
 
+def offer_category(d: Decision) -> str | None:
+    return _offer_type_and_category(d)[1] or d.final_params.get("category") or d.trigger_meta.get("category")
+
+
 def offer_value(d: Decision) -> str:
     """Plain value line, e.g. "Free shipping on Fashion" or "10% off Ethnic wear above ₹999"."""
     otype, category = _offer_type_and_category(d)
