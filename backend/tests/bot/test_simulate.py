@@ -63,7 +63,10 @@ async def test_cart_writes_funnel_events_status_first_then_card(member, memory_d
         (
             CID,
             "cart_abandoned",
-            {"category": "ethnic_wear", "item": cart.item, "value": cart.value, "minutes": 35},
+            {
+                "category": "ethnic_wear", "item": cart.item, "value": cart.value, "minutes": 35,
+                "initiated_by": "customer",
+            },
         )
     ]
 
@@ -110,7 +113,7 @@ async def test_inactive_moves_history_back(member, memory_db, monkeypatch):
     await _sim(member, "inactive", "60")
     newest = max(e.ts for e in _events(memory_db))
     assert timedelta(days=59) < datetime.now() - newest < timedelta(days=61)  # SQLite: naive IST
-    assert seen == {"t": "inactivity", "m": {"days": 60}}
+    assert seen == {"t": "inactivity", "m": {"days": 60, "initiated_by": "customer"}}
     assert "no visits or orders for 60 days" in member.sent[-2][1]
 
 

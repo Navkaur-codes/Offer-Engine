@@ -164,3 +164,16 @@ def test_register_handlers_without_token():
 def test_customer_row_shape_matches_contract():
     needed = {"opted_out", "paused_until", "opt_in_festivals", "telegram_chat_id"}
     assert needed <= set(CustomerRow.model_fields)
+
+
+async def test_welcome_decision_is_customer_initiated(chat, monkeypatch):
+    from app import ports, stubs
+
+    seen = {}
+    def spy(cid, t, m, **k):
+        seen.update(t=t, m=m)
+        return stubs.decide(cid, t, m)
+
+    monkeypatch.setattr(ports, "decide", spy)
+    await _onboard(chat)
+    assert seen == {"t": "welcome", "m": {"source": "onboarding", "initiated_by": "customer"}}

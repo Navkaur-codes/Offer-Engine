@@ -144,6 +144,7 @@ async def run(update: Update, context: ContextTypes.DEFAULT_TYPE, action: str, a
     await _say(update, f"🧪 Simulated: {status}")
     if trigger is None:
         return
+    meta = {**meta, "initiated_by": "customer"}  # customer asked: answered even in quiet hours
     decision = await asyncio.to_thread(ports.decide, cid, trigger, meta)
     await sender.send_decision(context.bot, update.effective_chat.id, decision)
 

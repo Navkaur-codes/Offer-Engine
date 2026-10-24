@@ -178,6 +178,7 @@ async def finish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
     await asyncio.to_thread(store.save_customer, customer, answers)
     await _edit(update, summary_text(answers))
-    decision = await asyncio.to_thread(ports.decide, customer.id, "welcome", {"source": "onboarding"})
+    meta = {"source": "onboarding", "initiated_by": "customer"}  # customer asked: exempt from quiet hours
+    decision = await asyncio.to_thread(ports.decide, customer.id, "welcome", meta)
     await sender.send_decision(context.bot, update.effective_chat.id, decision)
     log.info("onboarded %s → welcome decision %s (%s)", customer.id, decision.id, decision.status)
