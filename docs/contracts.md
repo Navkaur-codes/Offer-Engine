@@ -2,7 +2,7 @@
 
 > This is the single source of truth for everything that crosses session boundaries.
 > `backend/app/contracts.py` must mirror this file exactly. The **main session** owns both files.
-> **Status: v1 FROZEN (22 Oct 2026, Phase-0 gate).** Changes now go only through "Contract change requests" in `docs/sessions.md`, followed by a version bump here.
+> **Status: v1.1 FROZEN (v1 frozen 22 Oct 2026; v1.1 adds CR-D1 and CR-D2 on 24 Oct).** Changes now go only through "Contract change requests" in `docs/sessions.md`, followed by a version bump here.
 
 ---
 
@@ -164,7 +164,8 @@ class ExperimentStats:
 class Kpis:
     sent_today: int; claim_rate: float; incremental_revenue: int; budget_used_pct: float
     blocked_by_rules: int; agent_share: float; fallback_share: float; margin_saved: int
-    deltas: dict   # vs yesterday, for ▲▼
+    deltas: dict   # v1.1: keys sent_today, claim_rate, incremental_revenue, budget_used_pct, blocked_by_rules,
+                   # margin_saved; fractional change vs yesterday (0.12 = +12%), null when yesterday was 0
 ```
 
 ## 3. Python interfaces between sessions (through `app.ports`; stubbed in `app.stubs`)
@@ -216,7 +217,7 @@ Base URL is `VITE_API_URL`. Writes require the header `X-Admin-Passcode`. Everyt
 |---|---|---|
 | GET | `/health` | `{"ok":true,"version":"0.1"}` |
 | GET | `/api/kpis?day=` | `Kpis` |
-| GET | `/api/decisions?status=&decided_by=&policy=&trigger=&q=&limit=&cursor=` | `{"items": Decision[] (light), "next": str\|null}` |
+| GET | `/api/decisions?status=&decided_by=&policy=&trigger=&q=&festival=&limit=&cursor=` | `{"items": Decision[] (light), "next": str\|null}` |
 | GET | `/api/decisions/{id}` | `Decision` (full, with trace + explanation) |
 | GET | `/api/decisions/stream` | SSE of new Decision (light) for the live feed |
 | GET | `/api/customers?q=&policy=&limit=&cursor=` | `{"items": CustomerProfile[], "next"}` |
@@ -238,7 +239,7 @@ Base URL is `VITE_API_URL`. Writes require the header `X-Admin-Passcode`. Everyt
 | GET | `/api/budget` | `{"today_used","today_cap","festival": {...}}` |
 | GET | `/api/meta` | `{"bot_username","lab_group_link","now","demo_time_override"}` |
 
-A **light decision** is the `DecisionLight` model in `contracts.py`. It contains `id, ts, customer_id, first_name, policy, trigger, decided_by, status, final_offer_id, headline, cost, expected_incremental_profit, outcome, explanation_title`. Build one with `DecisionLight.from_decision(d)`.
+A **light decision** is the `DecisionLight` model in `contracts.py`. It contains `id, ts, customer_id, first_name, policy, trigger, decided_by, status, final_offer_id, headline, cost, expected_incremental_profit, outcome, explanation_title, festival` (`festival` added in v1.1; it is the festival active when the decision was made, or null). Build one with `DecisionLight.from_decision(d)`.
 
 ## 5. Example Decision (use as mock fixture)
 ```json
@@ -266,3 +267,4 @@ A **light decision** is the `DecisionLight` model in `contracts.py`. It contains
 
 ## 6. Changelog
 - **v1** (22 Oct): initial draft. Added `DecisionLight` and the port-name list, then **frozen** at the Phase-0 gate.
+- **v1.1** (24 Oct): CR-D1 (`Kpis.deltas` now has one fractional delta per KPI field) and CR-D2 (`DecisionLight.festival` plus the `festival=` filter on `GET /api/decisions`). Both changes are backward-compatible.

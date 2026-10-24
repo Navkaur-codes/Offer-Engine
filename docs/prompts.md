@@ -164,10 +164,13 @@ Owned paths only. END OF SESSION routine.
 ```
 SESSION B, Phase 3 of docs/context/context-2.md. Build agent/groq_client.py (tool calling, JSON, 20 s timeout,
 token bucket, 429 → fallback), tools.py (read-only whitelist, never expose response_type), prompts.py (system prompt
-from PLAN §3; customer text wrapped as data), the ≤6-step loop, and message + festival_restriction rule types
-(numbers in text match params, expiry, banned phrases, greeting only if opted in and exact, restricted promos).
-Run 20 real Groq decisions across policies; log compliance + latency. Include a prompt-injection test.
-Owned paths only. END OF SESSION routine.
+from PLAN §3; customer text wrapped as data), the SINGLE-CALL agent design (harness pre-computes profile/policy/
+candidates/impact into the first prompt; max one check_offer; ≤3 tool steps), agent/budget.py LLM budget guard
+(daily token budgets per model in runtime settings; 70B → 8B at 80% → rules fallback at 100%; budget.status()),
+the batch rule (agent for top 5 only), and message + festival_restriction rule types (numbers in text match params,
+expiry, banned phrases, greeting only if opted in and exact, restricted promos).
+Run 20 real Groq decisions across policies; log compliance, latency and tokens per decision (target ≤ 3k).
+Include a prompt-injection test. Owned paths only. 📌 checkpoints. END OF SESSION routine.
 ```
 
 ### B4 (v1.0): Digest, impact preview, batch mode

@@ -91,6 +91,24 @@ def test_decisions_list_detail_and_filters(client):
     assert len(page["items"]) == 2 and page["next"]
 
 
+def test_festival_filter_and_light_field(client):
+    base = ports.decide("C000001", "cart_abandoned", now=NOW)
+    diwali = base.model_copy(
+        update={
+            "id": "D-diwali",
+            "context": base.context.model_copy(
+                update={"festival": "diwali_2026", "festival_phase": "build_up"}
+            ),
+        }
+    )
+    decision_store.save(base)
+    decision_store.save(diwali)
+    for key in ("diwali", "diwali_2026"):
+        items = client.get(f"/api/decisions?festival={key}").json()["items"]
+        assert [d["id"] for d in items] == ["D-diwali"] and items[0]["festival"] == "diwali_2026"
+    assert client.get("/api/decisions?festival=lohri").json()["items"] == []
+
+
 def test_customers_playground_and_campaign(client):
     _customer("C000002", "Priya")
     listed = client.get("/api/customers").json()
@@ -111,6 +129,16 @@ def test_analytics(client):
     decision_store.save(ports.decide("C000001", "cart_abandoned"))
     k = client.get("/api/kpis").json()
     assert k["sent_today"] == 1 and 0 <= k["budget_used_pct"] <= 1
+    # CR-D1: one delta per KPI tile, as a fractional change; None when yesterday had nothing
+    assert set(k["deltas"]) == {
+        "sent_today",
+        "claim_rate",
+        "incremental_revenue",
+        "budget_used_pct",
+        "blocked_by_rules",
+        "margin_saved",
+    }
+    assert k["deltas"]["sent_today"] is None and k["deltas"]["incremental_revenue"] == 0.0
     assert client.get("/api/experiments").json()["treatment"]
     assert client.get("/api/realism").json()["benchmarks"]
     assert client.get("/api/digest").json()["text"]

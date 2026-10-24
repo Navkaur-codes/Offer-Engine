@@ -92,3 +92,5 @@ Format: `date · from → to · note`
   - The SSE feed is `GET /api/decisions/stream`, sending `event: decision` with a DecisionLight; keepalive comments arrive every 20 s.
   - Lists page with `next`: an ISO timestamp for decisions, a customer id for customers. Pass it back as `cursor`.
   - Extras beyond the contract: `/api/meta` also returns `bot_link` and `ports`; `/api/budget` also returns `today_used_pct`; campaign `totals` also include `over_budget`.
+- 24 Oct · Main → all · **Contracts v1.1:** CR-D1 and CR-D2 are accepted and implemented on main (see contracts.md §6). `CONTRACT_VERSION="v1.1"`.
+- 24 Oct · Main → B · **LLM budget guard approved** by the user. context-2 Phase 3 and prompt B3 now cover the single-call agent, `agent/budget.py` (70B → 8B at 80% → rules at 100%), and the top-5 batch rule. Config: `settings.llm_daily_tokens_agent` / `llm_daily_tokens_fast`.

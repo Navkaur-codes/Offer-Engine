@@ -31,23 +31,42 @@ def _day_numbers(day: date) -> dict:
     }
 
 
+def _kpi_values(day: date, cap: int) -> dict:
+    n = _day_numbers(day)
+    exp = ports.experiments_compute(day - timedelta(days=30), day)
+    return {
+        "sent_today": n["sent"],
+        "claim_rate": round(n["claim_rate"], 4),
+        "incremental_revenue": exp.incremental_revenue,
+        "budget_used_pct": round(n["spent"] / cap, 4) if cap else 0.0,
+        "blocked_by_rules": n["blocked"],
+        "agent_share": round(n["agent_share"], 4),
+        "fallback_share": round(n["fallback_share"], 4),
+        "margin_saved": exp.margin_saved_sure_things,
+    }
+
+
+def _relative(now_v: float, then_v: float) -> float | None:
+    """Fractional change vs yesterday (0.12 = +12%); None when yesterday was 0, so the UI shows no arrow."""
+    return round((now_v - then_v) / then_v, 4) if then_v else None
+
+
+DELTA_KEYS = (
+    "sent_today",
+    "claim_rate",
+    "incremental_revenue",
+    "budget_used_pct",
+    "blocked_by_rules",
+    "margin_saved",
+)
+
+
 @router.get("/kpis")
 def kpis(day: date | None = None) -> Kpis:
     day = day or now().date()
-    today, yday = _day_numbers(day), _day_numbers(day - timedelta(days=1))
-    exp = ports.experiments_compute(day - timedelta(days=30), day)
     cap = daily_cap()
-    return Kpis(
-        sent_today=today["sent"],
-        claim_rate=round(today["claim_rate"], 4),
-        incremental_revenue=exp.incremental_revenue,
-        budget_used_pct=round(today["spent"] / cap, 4) if cap else 0.0,
-        blocked_by_rules=today["blocked"],
-        agent_share=round(today["agent_share"], 4),
-        fallback_share=round(today["fallback_share"], 4),
-        margin_saved=exp.margin_saved_sure_things,
-        deltas={k: round(today[k] - yday[k], 4) for k in ("sent", "claim_rate", "blocked")},
-    )
+    today, yday = _kpi_values(day, cap), _kpi_values(day - timedelta(days=1), cap)
+    return Kpis(**today, deltas={k: _relative(today[k], yday[k]) for k in DELTA_KEYS})
 
 
 @router.get("/experiments")

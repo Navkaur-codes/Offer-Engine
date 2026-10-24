@@ -29,6 +29,7 @@ def list_decisions(
     trigger: str | None = None,
     customer_id: str | None = None,
     q: str | None = None,
+    festival: str | None = None,
     limit: int = 50,
     cursor: datetime | None = None,
 ) -> dict:
@@ -40,6 +41,7 @@ def list_decisions(
         trigger=trigger,
         customer_id=customer_id,
         q=q,
+        festival=festival,
         before=cursor,
         limit=limit + 1,
     )
