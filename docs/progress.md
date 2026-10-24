@@ -90,3 +90,21 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Signature elements: Decision Pipeline Lens, bento Overview, terminal-style stream.
 - **Files:** `CLAUDE.md §7`, `docs/PLAN.md §7`, `docs/context/context-4.md`, `docs/context/context-3.md` (card image), `docs/prompts.md` (D1), `docs/detective.md` (T06), `docs/claude-progressive.md`
 - **Next:** the user fast-forwards all 4 feature branches to main, then starts sessions A1–D1.
+
+### 2026-10-24 · Session C · Phase 1: onboarding, offer cards, customer commands
+- **Version/Phase:** v0.2 / Phase 1. Code done, tests green; phone check on the dev bot pending.
+- **Did:**
+  - `bot/app.py`: factory (`build_application()` kept), handler registration, `/` command menu, error handler that logs type + update id only and replies with friendly copy.
+  - `bot/onboarding.py`: `/start` with inline buttons only: consent (synthetic demo) → categories (multi-select) → frequency → deal vs quality → optional festival greetings (opt-in) → `create_profile_from_answers` → upsert customer → `decide(trigger="welcome")` → card.
+  - `bot/render.py`: Decision → Telegram HTML card (bold headline, 2 personal lines, `🎟 value · till DD Mon`, coupon in `<code>`, muted footer) + buttons ✅ Claim · ⏰ Remind me tonight · 🙅 Not for me · ❓ Why this?; NO_OFFER / BLOCKED / HELD_OUT (never reveals holdout) / DRY_RUN variants; ₹ with Indian grouping; all text HTML-escaped.
+  - `/profile` (plain words, no hidden response type), `/help`, `/offers`, `/why`, `/pause [days]`, `/resume`, `/stop` (sets `opted_out`). Buttons respond; "Remind me tonight" schedules a 19:00 IST job (in-memory). Free text gets "use buttons/commands" (never sent to an LLM).
+  - `bot/sender.py`: `send_decision` (interactive) + `deliver(decision, channel)` port (proactive, SENT only). `bot/store.py`: the bot's DB access.
+- **Files:** `backend/app/bot/{app,onboarding,render,commands,sender,store}.py`, `backend/tests/bot/{conftest,test_render,test_handlers}.py`, `backend/tests/bot/snapshots/*.html`
+- **Commits:** pending (see checkpoints)
+- **Tests:** `python -m pytest -q` (backend) → 53 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - Claim/decline are not recorded yet (Phase 2). Reminder jobs are lost on restart.
+  - Festival opt-in keys are ids without the year (`diwali`); A must keep `Festival.id = <key>_<year>`.
+  - B's harness must not call `deliver()` itself for bot-originated triggers (double card).
+- **Contract change requests:** none
+- **Next:** Phase 2: `/simulate …`, recorded button outcomes, `/history`, rate limit.

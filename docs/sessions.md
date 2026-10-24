@@ -8,7 +8,7 @@
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | Phase 0 done → watching Phase 1 | ☑ P0 | v1 frozen | none | 22 Oct |
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 ready | ☐ | v1 | none | — |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 ready | ☐ | v1 | none | — |
-| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 ready | ☐ | v1 | needs a **dev bot** token in its own `.env` | — |
+| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 code done (53 tests green); phone check pending | ◐ | v1 | none (dev bot `@navpreet_offers_dev_bot` in worktree `.env`) | 24 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 ready | ☐ | v1 | none | — |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
@@ -58,6 +58,9 @@ Format: `date · from → to · note`
 - 22 Oct · Main → all · Implement exactly the module path and function name from `contracts.md §3`, and the port flips to real on its own.
 - 22 Oct · Main → C · `bot/app.py` is a Phase-0 hello; replace it. **Never poll with the production token.** Use a dev bot.
 - 22 Oct · Main → all · Use the shared venv `D:\hackathon-2\.venv`. Run `python -m pytest` from your worktree's `backend/` folder.
+- 24 Oct · C → A · `create_profile_from_answers` gets `answers = {"categories": [Category], "frequency": "weekly|monthly|occasionally|rarely", "style": "deal|quality|balanced", "festivals": ["diwali","gurpurab","lohri","karwa_chauth","christmas"]}`. Festival opt-in keys are festival ids without the year, so please keep `Festival.id = <key>_<year>`. The bot upserts the returned Customer itself.
+- 24 Oct · C → B · The bot calls `decide()` and sends the card itself. Please don't call `deliver()` inside `decide()` for bot triggers, or users get two cards. `/stop` sets `customers.opted_out`; `/pause` sets `customers.paused_until`, and the pre-gate should read both.
+- 24 Oct · C → Main · `deliver` and `build_application` are now real. Optional: call `await app.bot.app.set_commands(tg)` after `tg.initialize()` in `main._start_bot` to fill the prod bot's "/" menu.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
