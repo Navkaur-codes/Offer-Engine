@@ -91,9 +91,9 @@ Format: `date · from → to · note`
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
   - create the **Offer bot**;
-  - create **10 customer bots** (names/avatars by persona);
+  - customer bots: **4 created** (BotFather rate limit on 25 Oct). Rename them `Lab Shopper 1–4` with `/setname`; they voice all 10 Lab customers;
   - for the Offer bot, run `/setprivacy` → Disable, so it can see `/lab` commands in the group.
-- [ ] Create the Telegram group **"Customer Lab"**, add the 10 customer bots + the Offer bot (+ dev bot), then type `/lab here` in it once C3 is live. No chat ID is needed.
+- [ ] Create the Telegram group **"Customer Lab"**, add the 4 Lab Shopper bots + the Offer bot (+ dev bot), then type `/lab here` in it once C3 is live. No chat ID is needed.
 - [ ] Find your own Telegram user ID (for `ADMIN_TELEGRAM_IDS`).
 - [ ] Create the Groq API key.
 - [ ] Accounts: GitHub repo, Neon (DB URL), Render (web service), Vercel (frontend), cron-job.org (ping `/health` every 10 min).
@@ -116,3 +116,7 @@ Format: `date · from → to · note`
      - The harness pre-gate calls `runtime.quiet_hours_apply(trigger, trigger_meta)` and queues only when it returns True.
      - C sets `trigger_meta["initiated_by"]="customer"` on `/start` welcome, `/simulate` and buttons. The API's simulate sets `"admin"`. Lab rounds (`trigger="lab"`) are exempt.
   2. **The shadow channel is removed, and the Lab group is auto-detected.** C implements `/lab here` (admin-only) with `runtime.set_lab_group(chat_id, title)`; everything reads the group from `runtime.lab_group_chat_id()`. `SHADOW_CHANNEL_ID` is gone from config.
+- 25 Oct · Main → C · **The Lab uses 4 bots for 10 customers.** BotFather rate-limited the user at 4 bots.
+  - Design for 1–10 bots: 10 fixed Lab customers `C900001`–`C900010`, assigned to bots round-robin.
+  - Every post starts with `👤 Name · persona`, and the Offer bot addresses the customer by name.
+  - `CUSTOMER_BOT_TOKENS` minimal format is `[{"token":"..."}]`; extra keys are ignored. See context-3 Phase 3.

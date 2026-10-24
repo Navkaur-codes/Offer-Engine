@@ -27,7 +27,7 @@ Both are detailed at the top of each session's Phase 3 in its context file. Noth
 ## Phase-3 goals (details in each context file)
 - **A:** uplift T-learner + Qini, impact, realism stats, experiment stats.
 - **B:** priority fix; then the real Groq agent with the **single-call design**, `agent/budget.py` (70B → 8B at 80% → rules at 100%), the top-5 batch rule, and the message + festival_restriction validators.
-- **C:** Customer Lab (registry, scripts, runner, `/lab here | run | persona | date | reset`). There is no shadow channel. Also verify `/simulate` against the real harness on the dev bot.
+- **C:** Customer Lab: 10 fixed Lab customers voiced round-robin by 1–10 bots (the user has **4**: "Lab Shopper 1–4"), each post starting with "👤 Name · persona"; `/lab here | run | who | persona <name> | date | reset`. There is no shadow channel. Also verify `/simulate` against the real harness on the dev bot.
 - **D:** switch to the real API and contracts v1.1; Rules editor (sentence cards, impact preview, versions/revert); Customers (scatter, drawer, simulate); Vercel deploy.
 - **Main:** watch the gates, answer contract requests, deploy, set `CORS_ORIGINS` for Vercel.
 

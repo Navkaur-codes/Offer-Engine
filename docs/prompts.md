@@ -205,8 +205,9 @@ Verify the "Done when" scenarios. Owned paths only. END OF SESSION routine.
 
 ### C3 (v0.4): Customer Lab
 ```
-SESSION C, Phase 3 of docs/context/context-3.md. Build lab/registry.py (CUSTOMER_BOT_TOKENS → 10 lab customers
-with distinct personas), lab/scripts.py (festival-aware persona activity), lab/runner.py (customer bot posts →
+SESSION C, Phase 3 of docs/context/context-3.md. Build lab/registry.py (10 fixed Lab customers C900001–C900010
+voiced round-robin by however many CUSTOMER_BOT_TOKENS exist, 1–10; user has 4 "Lab Shopper" bots; every post
+starts with "👤 Name · persona"), lab/scripts.py (festival-aware persona activity), lab/runner.py (customer bot posts →
 event → decide(trigger="lab") → Offer bot replies with @mention → customer bot reacts in character via persona
 response model → outcome stored; 2–4 s spacing), /lab here (auto-detect + save the Lab group via runtime.set_lab_group; no chat-ID setup), /lab run|persona|date|reset,
 reply-/why. No shadow channel (removed).

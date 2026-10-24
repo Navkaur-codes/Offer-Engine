@@ -43,7 +43,7 @@ Build an **analytics + agentic decisioning platform**. It decides which offer ea
 - **Backend:** FastAPI on Render. The bot runs inside it in webhook mode.
 - **Database:** Neon Postgres in production, SQLite locally.
 - **Dashboard:** React on Vercel.
-- **Customer Lab:** 10 customer bots, controlled entirely by the backend. They only *send* into one Telegram group.
+- **Customer Lab:** 10 synthetic customers voiced by 1–10 "Lab Shopper" bots (4 today, rotating). They are controlled entirely by the backend and only *send* into one Telegram group.
 
 ## 4. Ownership map (parallel sessions; each works on its own branch/worktree)
 | Session | Branch | Owns (may edit) |

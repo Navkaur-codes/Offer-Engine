@@ -5,7 +5,7 @@
 **Read first:** `CLAUDE.md`, `docs/claude-progressive.md`, `docs/contracts.md`, `docs/detective.md`, `docs/PLAN.md §5, §4b`
 
 ## Mission
-Make offers **reach real classmates** with clear, attractive messages. Turn the bot into a **simulation console** (`/simulate …`, `/why`). Build the **Customer Lab**, where 10 persona bots act out customer behaviour in a Telegram group and the Offer bot responds live.
+Make offers **reach real classmates** with clear, attractive messages. Turn the bot into a **simulation console** (`/simulate …`, `/why`). Build the **Customer Lab**, where a few "Lab Shopper" bots act out 10 personas in a Telegram group and the Offer bot responds live.
 This session covers the **core functionality (delivery)** and **design (messages)** criteria and is the centrepiece of the demo.
 
 ## Owned paths
@@ -77,30 +77,37 @@ The main session mounts your webhook route.
 - `/simulate inactive 60` gives a win-back offer.
 - All buttons are recorded in the DB.
 
-## Phase 3 (v0.4): Customer Lab (10 persona bots)
+## Phase 3 (v0.4): Customer Lab (10 customers voiced by 1–10 bots)
 **Before starting:**
-1. The user is creating the 10 customer bots and the "Customer Lab" group. Ask for `CUSTOMER_BOT_TOKENS` in your worktree `.env` when you need it; never ask for tokens in chat.
+1. BotFather's rate limit stopped the user at **4 bots** (25 Oct). They are renamed **"Lab Shopper 1–4"** and voice all 10 Lab customers in rotation, so the design must work with **any number of bots from 1 to 10**. Ask for `CUSTOMER_BOT_TOKENS` in your worktree `.env` when you need it; never ask for tokens in chat.
 2. There is **no** shadow channel, and `/lab here` auto-detects the group (items 5–6).
 3. Also verify on the dev bot that `/simulate cart` → card → buttons → `/why` work against the **real** harness. It's merged now; until A3/B3 land, many results will be "No offer".
 **Background:** a bot cannot DM another bot, and bots don't see each other's group messages. **The backend orchestrates everything**, and the customer bots only *send*.
 
 **Tasks:**
 1. `lab/registry.py`:
-   - Load `CUSTOMER_BOT_TOKENS` (JSON: `[{"token":..., "customer_id":..., "persona":...}]`).
-   - Make sure there are 10 synthetic customers (flag `is_lab_bot=True`) with distinct personas: VIP, deal hunter, at-risk, new user, cart abandoner, window shopper, high returner, sleeping dog, dormant, festive gifter.
+   - **10 fixed Lab customers** `C900001`–`C900010` in a constant `LAB_CUSTOMERS`, each with a name and persona:
+     - Arjun · VIP, Priya · deal hunter, Gurpreet · at-risk, Simran · new user, Rohan · cart abandoner;
+     - Aisha · window shopper, Vikram · high returner, Meera · sleeping dog, Karan · dormant, Neha · festive gifter.
+   - Ensure they exist with `is_lab_bot=True` and matching history (reuse A's generator/onboarding; "sleeping dog" is a hidden response type on a fitting persona).
+   - Load `CUSTOMER_BOT_TOKENS` as a JSON list. The minimal form is `[{"token": "..."}, ...]`. Extra keys (`customer_id`, `persona`) are allowed and ignored, so the old format still works.
+   - **Assign customers to bots round-robin:** customer *i* → bot *i mod n*, so 4 bots voice 3/3/2/2 customers and 10 bots voice one each.
+   - Never log a token. Store only the bot **username** (from `getMe`) in `customer_bots`. Each customer maps to the bot that voices them, and several rows per bot are fine.
+   - With 0 tokens, `/lab run` replies "No Lab Shopper bots configured" and the Offer bot runs nothing.
 2. `lab/scripts.py`: per-persona activity scripts that are realistic and festival-aware. Each step is an event plus a human line, e.g. "🛒 Priya added Silk Saree ₹3,499 to cart".
 3. `lab/runner.py`: `run_rounds(n)`. For each round:
-   1. Pick a customer bot.
-   2. The customer bot posts its activity in the Lab group (`runtime.lab_group_chat_id()`).
+   1. Pick a **Lab customer** (rotate so every persona appears; don't repeat one before all 10 have had a turn), then the bot that voices them.
+   2. That bot posts in the Lab group (`runtime.lab_group_chat_id()`). **Every post starts with who is acting**, e.g. `👤 Priya · Deal hunter`, then the activity line. The name line is what makes 4 shared voices read as 10 people.
    3. Write the event.
    4. `decide(trigger="lab")`.
-   5. The Offer bot **replies to that message**, @mentioning the customer bot, with the rendered card, or with "No offer for Arjun: VIP sure-thing, margin protected ₹X".
-   6. The customer bot answers in character. A persona response model (hidden response type plus noise) decides claim, ignore, decline or ask "why?". The line is short, either from templates or the fast Groq model with a template fallback.
+   5. The Offer bot **replies to that message** and addresses the **customer by name** (not the bot), with the rendered card, or with "No offer for Arjun: VIP sure-thing, margin protected ₹X".
+   6. The same bot answers **as that customer**, prefixed with the name ("Priya: Claimed ✅ …"), in character. A persona response model (hidden response type plus noise) decides claim, ignore, decline or ask "why?". The line is short, either from templates or the fast Groq model with a template fallback.
    7. Record the outcome.
    - Space messages 2–4 seconds apart so the conversation is readable and stays within Telegram limits.
 4. Group commands (admin only):
    - `/lab run [n]`
-   - `/lab persona @bot <state>`: force inactive, festival, etc.
+   - `/lab persona <name> <state>`: force inactive, festival, etc., by **customer name** (Priya, Arjun…), since bots are shared.
+   - `/lab who`: lists the 10 Lab customers and which Lab Shopper voices each.
    - `/lab date YYYY-MM-DD`: set `DEMO_TIME_OVERRIDE` through a port so you can time-travel to Dhanteras.
    - `/lab reset`
    - A reply of `/why` on an offer shows its explanation.
