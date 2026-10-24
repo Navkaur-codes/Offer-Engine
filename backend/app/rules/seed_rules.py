@@ -59,7 +59,7 @@ GLOBAL_RULES = [
     _rule("G_QUIET", "global", "quiet_hours", {"start": "21:00", "end": "09:00"}),
     _rule("G_BUDGET", "global", "budget", {"daily_cap": 50000}),
     _rule("G_ONE_COUPON", "global", "stacking", {"max_active": 1}),
-    _rule("G_POST_PURCHASE", "global", "exclusion", {"offer_types": DISCOUNTS, "within_purchase_h": 48}),
+    _rule("G_POST_PURCHASE", "global", "exclusion", {"offer_types": "all", "within_purchase_h": 48}),
     _rule(
         "G_MESSAGE",
         "global",

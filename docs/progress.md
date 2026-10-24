@@ -195,6 +195,59 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - fast-forward the 4 worktrees;
   - send A2–D2.
 
+### 2026-10-24 · B · Phase 2: harness, fallback, MockLLM, explainer
+- **Version/Phase:** v0.3 / Phase 2. Done, waiting for the commit.
+- **Did:**
+  - `agent/context.py`: `get_context(now)` covers:
+    - quiet hours, taken from the G_QUIET rule;
+    - the payday window (1st–5th);
+    - the active festival and phase (nearest date wins when phases overlap), days to the festival, hero categories, the greeting, and the delivery cutoff (slowest tier);
+    - budget left today (the G_BUDGET `daily_cap` minus `decision_store.spent_on(today)`), and the festival pool (`spent_on` summed over the festival window).
+    - The pacing factor is 1.0 up to 80% of the budget used, then falls linearly to 0.5 at 100%.
+  - `agent/harness.py`: `decide()` runs the exact pipeline.
+    1. Pre-gate: kill switch (`runtime.killswitch_on()`), `/stop`, `/pause`, then `evaluate(offer_id=None)`. Quiet hours queue the decision until 09:00 and re-check the rules at that time. Exclusions give NO_OFFER; frequency, stacking and budget give BLOCKED.
+    2. `screen_offers` builds the candidates.
+    3. Holdout customers get HELD_OUT: the fallback's choice is logged and nothing is sent, with no LLM call.
+    4. Agent → `evaluate` → one retry with the violations sent back → fallback. A timeout, 429 or invalid JSON goes straight to the fallback.
+    5. Coupon `<TYPE><NAME3><4>` and expiry (+2 days at 23:59, clamped to the festival delivery cutoff during build-up and last-minute).
+    6. Every decision is saved through `decision_store.save()` (Main's shared writer), including blocked, no-offer and held-out ones, with its `explain()` output. After Main's 66b3d3a merge I switched my own storage and kill-switch code to these helpers.
+    - `dry_run` persists nothing and creates no coupon. It **never** calls `deliver()`.
+  - `agent/llm.py`: the `LLMClient` protocol and `MockLLM` with these behaviours: good, no_offer, over_limit, fix_on_retry, invalid_json, timeout, rate_limited, injected.
+  - `agent/prompts.py`: the system prompt from PLAN §3. Customer text is wrapped in `<customer_text>`.
+  - `agent/fallback.py`: picks the best-profit candidate at its cheapest point (or NO_OFFER), with a template per offer type. The festival greeting is used only if the customer opted in.
+  - `agent/explainer.py`: deterministic. "Rejected" groups the offers screened out by the same rule.
+  - `rules/offers.py`: a default catalogue of 10 offers plus `ensure_offers_seeded()`.
+  - **Rule change you approved:** G_POST_PURCHASE now blocks *all* proactive offers for 48 h after a purchase. It used to block discounts only. This changes 0202dd8, and it makes the GATE-2 smoke step "purchase → cart → NO_OFFER" pass.
+- **3 example explanations (for C and D):**
+  1. **Sent: Free shipping (exp. 26 Oct)**
+     - Why customer: "Trigger cart abandoned: Cart abandoners policy; cart ₹1,450 open (Cotton Kurta); last order 12 days ago; churn risk 0.42; uplift 0.18 for free shipping."
+     - Rules: "14 passed · 0 violations · policy Cart abandoners (5426a9)"
+     - Telegram: "Why you got this: your Cotton Kurta is still in your cart, so free shipping is the smallest nudge that helps. 14 rules checked ✓"
+  2. **Sent: 5% off ethnic wear (exp. 26 Oct)**, decided by "Rules fallback — the agent's offer was rejected twice (CATALOGUE: pct=50 is above the catalogue maximum 30)". This is the over-limit mock.
+  3. **No offer for Arjun: no allowed offer is expected to pay for itself** (VIP, sure thing, margin protected). Rejected: "Cart reminder: VIP customers can only get early access, bonus points, free shipping, free express delivery or points reminders."
+- **Files:**
+  - `backend/app/agent/{context,harness,llm,prompts,fallback,explainer}.py`
+  - `backend/app/rules/offers.py`
+  - `backend/app/rules/{seed_rules,rule_types}.py` (post-purchase rule and its wording)
+  - `backend/tests/core/{test_harness,test_rule_types,test_property}.py`
+- **Commits:** `0302b17` feat(agent): decision harness with pre-gate, holdout, retry and rules fallback; deterministic explainer
+- **Tests:**
+  - `python -m pytest tests/core -q` → 53 passed. `ruff check .` is clean.
+  - Every "Done when" case has a test: over-limit → retry → compliant fallback; timeout and invalid JSON → fallback; kill switch → BLOCKED; quiet hours → QUEUED; holdout → HELD_OUT (logged, not sent); purchase < 48 h → NO_OFFER with the reason.
+  - Further tests: dry_run, consent, frequency cap, sleeping dog, an injected name, and a check that `deliver` is never called.
+- **Open issues / risks:**
+  - Two tests outside my folder fail now that `decide` is real (details in `sessions.md §7`):
+    - `tests/api/test_ports.py::test_decide_covers_sent_no_offer_and_blocked` assumes the stub rule "manual → BLOCKED".
+    - `tests/bot/test_handlers.py::test_offers_and_why_after_welcome` uses the real clock, so after 21:00 IST the welcome is QUEUED.
+  - **Demo risk:** quiet hours (non-negotiable §10) also queue replies to customer-initiated `/simulate` and `/start` between 21:00 and 09:00. Judges testing at night will see "Queued for 09:00". Needs a decision; see `sessions.md`.
+  - `build_profile` is still the stub. A's real profile must fill `recency_days`, `offers_7d`, `last_offer_at` and `active_coupon` from orders and decisions, or the post-purchase, frequency and stacking rules can't fire.
+- **Next (Phase 3):** `groq_client.py` (Groq behind `LLMClient`), read-only tools, the 6-step loop, and message number/expiry/greeting checks. This waits for the LLM budget-guard decision.
+
+### 2026-10-24 · B · Phase 2 follow-up: quiet hours only for proactive sends
+- **Did:** the harness pre-gate now queues for 09:00 only when `runtime.quiet_hours_apply(trigger, trigger_meta)` is True. This is the user's decision, recorded in CLAUDE.md §2.10 on main. Customer-initiated sends (`initiated_by` customer/admin) and `lab` sends go out now. They are evaluated without the quiet-hours rule; the kill switch, consent, frequency, budget and every other rule still apply. Until GATE-2 brings `runtime.quiet_hours_apply` to this branch, the harness uses an identical local copy.
+- **Tests:** `pytest tests/core -q` → 58 passed (new: a customer/admin/lab decision at 22:00 is SENT; a campaign at 22:00 is QUEUED; customer-initiated still respects the frequency cap). `ruff` is clean.
+- **Commits:** _pending_
+
 ### 2026-10-24 · Main · MAIN-API (Phase 2) + shared helpers
 - **Did:**
   - `app/decision_store.py` (save / get / set_outcome / query / spent_on) and `app/runtime.py` (kill switch, settings). Merged into B and C at `66b3d3a`.
