@@ -9,7 +9,7 @@
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 1 done (A1) → Phase 2 next | ☑ P1 (`8b2e903`) | v1 | none | 24 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 1 done (rules engine) → Phase 2 next | ☑ P1 (`0202dd8`) | v1 | none | 24 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 1 done (53 tests green) → Phase 2 next; phone check of `/start` on the dev bot still pending | ☑ P1 (`1e5e102`) | v1 | none (dev bot `@navpreet_offers_dev_bot` in worktree `.env`) | 24 Oct |
-| D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer); checked against the local real API; Lighthouse not yet measured | ☑ P1 (`e5d9116`) · ☑ P2 (`a9aa536` + D2b) | v1 | CR-D1, CR-D2 open; real decisions need B's harness | 24 Oct |
+| D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer); checked against the local real API; Lighthouse not yet measured | ☑ P1 (`e5d9116`) · ☑ P2 (`a9aa536`, `181eb92`) | v1 | CR-D1, CR-D2 open; real decisions need B's harness | 24 Oct |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
 ```

@@ -226,7 +226,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - the full `Decision` from simulate matches `types.ts` key for key;
   - the `/api/budget` festival object is `{name, phase, days_to, budget_left}`, and the type and meter now follow it.
   - The decision list stays empty until B's harness stores decisions (`decide` is still a stub).
-- **Commits:** `a9aa536` (Overview + drawer); D2b (filters, SSE fix, budget shape) is pending a hash.
+- **Commits:** `a9aa536` (Overview + drawer) · `181eb92` (Decisions filters + paging, SSE fix, budget shape, docs)
 - **Tests:** `npm run lint` clean · `npm run build` ✓
 - **Open issues / risks:**
   - The Lighthouse score has not been measured yet.
