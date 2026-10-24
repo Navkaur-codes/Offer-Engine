@@ -87,7 +87,7 @@ The main session mounts your webhook route.
 2. `lab/scripts.py`: per-persona activity scripts that are realistic and festival-aware. Each step is an event plus a human line, e.g. "🛒 Priya added Silk Saree ₹3,499 to cart".
 3. `lab/runner.py`: `run_rounds(n)`. For each round:
    1. Pick a customer bot.
-   2. The customer bot posts its activity in `LAB_GROUP_CHAT_ID`.
+   2. The customer bot posts its activity in the Lab group (`runtime.lab_group_chat_id()`).
    3. Write the event.
    4. `decide(trigger="lab")`.
    5. The Offer bot **replies to that message**, @mentioning the customer bot, with the rendered card, or with "No offer for Arjun: VIP sure-thing, margin protected ₹X".
@@ -100,7 +100,9 @@ The main session mounts your webhook route.
    - `/lab date YYYY-MM-DD`: set `DEMO_TIME_OVERRIDE` through a port so you can time-travel to Dhanteras.
    - `/lab reset`
    - A reply of `/why` on an offer shows its explanation.
-5. Shadow channel: `deliver(decision, "shadow_channel")` posts cards for synthetic-customer decisions to `SHADOW_CHANNEL_ID`, marked "would send to …".
+5. **`/lab here`** (admin only, in a group): saves that chat as the Lab group with `runtime.set_lab_group(chat_id, title)`, then replies "✅ This group is now the Customer Lab". No manual chat ID is needed; `LAB_GROUP_CHAT_ID` is only an optional override. `/lab run` in an unregistered group says "Type /lab here first".
+   - **The shadow channel is removed** (24 Oct). The dashboard's live stream covers it.
+6. **Quiet hours (24 Oct decision):** set `trigger_meta["initiated_by"] = "customer"` on `/start` welcome, `/simulate` and button-driven decisions, so the harness answers immediately at night. Lab rounds use `trigger="lab"` (also exempt).
 
 **Done when:** `/lab run 5` in the real group produces 5 readable exchanges, with different personas getting visibly different treatment, including at least 1 "no offer, margin protected".
 

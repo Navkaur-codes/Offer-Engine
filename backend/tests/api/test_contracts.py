@@ -5,7 +5,7 @@ from app.contracts import CONTRACT_VERSION, AgentOutput, AgentReasoning, Event
 
 
 def test_contract_version():
-    assert CONTRACT_VERSION == "v1"
+    assert CONTRACT_VERSION == "v1.1"
 
 
 def test_agent_output_rejects_long_message():

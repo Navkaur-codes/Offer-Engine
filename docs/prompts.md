@@ -164,10 +164,13 @@ Owned paths only. END OF SESSION routine.
 ```
 SESSION B, Phase 3 of docs/context/context-2.md. Build agent/groq_client.py (tool calling, JSON, 20 s timeout,
 token bucket, 429 → fallback), tools.py (read-only whitelist, never expose response_type), prompts.py (system prompt
-from PLAN §3; customer text wrapped as data), the ≤6-step loop, and message + festival_restriction rule types
-(numbers in text match params, expiry, banned phrases, greeting only if opted in and exact, restricted promos).
-Run 20 real Groq decisions across policies; log compliance + latency. Include a prompt-injection test.
-Owned paths only. END OF SESSION routine.
+from PLAN §3; customer text wrapped as data), the SINGLE-CALL agent design (harness pre-computes profile/policy/
+candidates/impact into the first prompt; max one check_offer; ≤3 tool steps), agent/budget.py LLM budget guard
+(daily token budgets per model in runtime settings; 70B → 8B at 80% → rules fallback at 100%; budget.status()),
+the batch rule (agent for top 5 only), and message + festival_restriction rule types (numbers in text match params,
+expiry, banned phrases, greeting only if opted in and exact, restricted promos).
+Run 20 real Groq decisions across policies; log compliance, latency and tokens per decision (target ≤ 3k).
+Include a prompt-injection test. Owned paths only. 📌 checkpoints. END OF SESSION routine.
 ```
 
 ### B4 (v1.0): Digest, impact preview, batch mode
@@ -205,7 +208,8 @@ Verify the "Done when" scenarios. Owned paths only. END OF SESSION routine.
 SESSION C, Phase 3 of docs/context/context-3.md. Build lab/registry.py (CUSTOMER_BOT_TOKENS → 10 lab customers
 with distinct personas), lab/scripts.py (festival-aware persona activity), lab/runner.py (customer bot posts →
 event → decide(trigger="lab") → Offer bot replies with @mention → customer bot reacts in character via persona
-response model → outcome stored; 2–4 s spacing), /lab run|persona|date|reset, reply-/why, shadow channel delivery.
+response model → outcome stored; 2–4 s spacing), /lab here (auto-detect + save the Lab group via runtime.set_lab_group; no chat-ID setup), /lab run|persona|date|reset,
+reply-/why. No shadow channel (removed).
 Remember: bots cannot DM bots; backend orchestrates all. Test with /lab run 5 in the real group. END OF SESSION routine.
 ```
 

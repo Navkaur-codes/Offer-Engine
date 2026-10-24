@@ -83,8 +83,7 @@ Format: `date · from → to · note`
   - create the **Offer bot**;
   - create **10 customer bots** (names/avatars by persona);
   - for the Offer bot, run `/setprivacy` → Disable, so it can see `/lab` commands in the group.
-- [ ] Create the Telegram group **"Customer Lab"**, add all 11 bots, and get `LAB_GROUP_CHAT_ID`.
-- [ ] Create a private **shadow channel**, add the Offer bot as admin, and get `SHADOW_CHANNEL_ID`.
+- [ ] Create the Telegram group **"Customer Lab"**, add the 10 customer bots + the Offer bot (+ dev bot), then type `/lab here` in it once C3 is live. No chat ID is needed.
 - [ ] Find your own Telegram user ID (for `ADMIN_TELEGRAM_IDS`).
 - [ ] Create the Groq API key.
 - [ ] Accounts: GitHub repo, Neon (DB URL), Render (web service), Vercel (frontend), cron-job.org (ping `/health` every 10 min).
@@ -95,3 +94,15 @@ Format: `date · from → to · note`
   - Also there: `get(id)`, `set_outcome(id, outcome, at, revenue)` (C uses it for button clicks), `query(...)`, and `spent_on(day)` (₹ sent today, for budget pacing).
   - `app.runtime.killswitch_on()` is the kill switch. The harness pre-gate must return BLOCKED when it is on.
   - Don't write `DecisionRow` or `SettingRow` directly.
+- 24 Oct · Main → D · **The REST API from `contracts.md §4` is on main** (`backend/app/api/`). Run it locally with `uvicorn app.main:app --app-dir backend` and set `VITE_USE_MOCKS=0` with `VITE_API_URL=http://localhost:8000`.
+  - Writes need the `X-Admin-Passcode` header (401 = wrong passcode, 503 = not configured).
+  - The SSE feed is `GET /api/decisions/stream`, sending `event: decision` with a DecisionLight; keepalive comments arrive every 20 s.
+  - Lists page with `next`: an ISO timestamp for decisions, a customer id for customers. Pass it back as `cursor`.
+  - Extras beyond the contract: `/api/meta` also returns `bot_link` and `ports`; `/api/budget` also returns `today_used_pct`; campaign `totals` also include `over_budget`.
+- 24 Oct · Main → all · **Contracts v1.1:** CR-D1 and CR-D2 are accepted and implemented on main (see contracts.md §6). `CONTRACT_VERSION="v1.1"`.
+- 24 Oct · Main → B · **LLM budget guard approved** by the user. context-2 Phase 3 and prompt B3 now cover the single-call agent, `agent/budget.py` (70B → 8B at 80% → rules at 100%), and the top-5 batch rule. Config: `settings.llm_daily_tokens_agent` / `llm_daily_tokens_fast`.
+- 24 Oct · Main → B, C · **Two user decisions, now on main:**
+  1. **Quiet hours apply to proactive sends only** (CLAUDE.md §2.10).
+     - The harness pre-gate calls `runtime.quiet_hours_apply(trigger, trigger_meta)` and queues only when it returns True.
+     - C sets `trigger_meta["initiated_by"]="customer"` on `/start` welcome, `/simulate` and buttons. The API's simulate sets `"admin"`. Lab rounds (`trigger="lab"`) are exempt.
+  2. **The shadow channel is removed, and the Lab group is auto-detected.** C implements `/lab here` (admin-only) with `runtime.set_lab_group(chat_id, title)`; everything reads the group from `runtime.lab_group_chat_id()`. `SHADOW_CHANNEL_ID` is gone from config.

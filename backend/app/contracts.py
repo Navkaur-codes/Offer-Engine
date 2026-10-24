@@ -10,7 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-CONTRACT_VERSION = "v1"
+CONTRACT_VERSION = "v1.1"
 
 # ---------------------------------------------------------------- enums
 Persona = Literal[
@@ -281,6 +281,7 @@ class DecisionLight(Contract):
     expected_incremental_profit: int = 0
     outcome: Outcome = "pending"
     explanation_title: str
+    festival: str | None = None  # v1.1 (CR-D2): the festival active when the decision was made
 
     @classmethod
     def from_decision(cls, d: Decision) -> DecisionLight:
@@ -289,7 +290,7 @@ class DecisionLight(Contract):
             policy=d.profile_snapshot.policy, trigger=d.trigger, decided_by=d.decided_by, status=d.status,
             final_offer_id=d.final_offer_id, headline=d.headline, cost=d.cost,
             expected_incremental_profit=d.expected_incremental_profit, outcome=d.outcome,
-            explanation_title=d.explanation.title,
+            explanation_title=d.explanation.title, festival=d.context.festival,
         )
 
 
