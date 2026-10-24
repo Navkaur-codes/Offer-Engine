@@ -90,3 +90,21 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Signature elements: Decision Pipeline Lens, bento Overview, terminal-style stream.
 - **Files:** `CLAUDE.md §7`, `docs/PLAN.md §7`, `docs/context/context-4.md`, `docs/context/context-3.md` (card image), `docs/prompts.md` (D1), `docs/detective.md` (T06), `docs/claude-progressive.md`
 - **Next:** the user fast-forwards all 4 feature branches to main, then starts sessions A1–D1.
+
+### 2026-10-24 · Session A · Phase 1: personas, catalogue, festival calendar, generator, seed (A1)
+- **Version/Phase:** v0.2 / Phase 1. Done; all "Done when" items met.
+- **Did:**
+  - `personas.py`: the 9 personas with visit/funnel rates, AOV multiplier, discount use, return propensity, churn hazard, festival sensitivity and hidden response-type mix (deal_hunter 50/30/15/5).
+  - `catalog.py`: 10 categories with margin, lognormal AOV, price band, return rate and shipping cost, plus 120 products with Indian names and ₹ prices.
+  - `festivals.py`: 26 festivals Sep 2025 – Jan 2027 with phases, hero categories, greeting, opt-in, restricted promos, budget, delivery days and per-phase lift multipliers. The 2026 dates were checked against SmartPuja's 2026 calendar and the gazetted list (sources in the file comment).
+  - `generator.py`: a seeded day-by-day simulation of 1 Oct 2025 → yesterday. It covers a Punjab-heavy city mix (~45%), a signup curve, the hour-of-day curve, the session → view → cart → checkout → purchase funnel, lognormal order values matched to real products, returns (COD returns more), points with 180-day expiry, tiers, festival and payday lifts, a churn hazard, and messy data (3% missing age, 4% missing gender, duplicate session beacons, heavy returners).
+  - 6 past campaigns, including **Diwali 2025**, with a random 10% control. Outcomes follow the hidden response type: persuadable uplift ≈ +0.14, sure-thing ≈ 0, sleeping dog negative.
+  - `seed.py` CLI: `python -m app.data.seed --customers 5000 --seed 42 [--end YYYY-MM-DD]`. It writes about 766k events, 15k orders, 21k points rows, 7.4k campaign rows, 120 products and 26 festivals in about 35 s on SQLite, and it can be re-run.
+  - `stats.py`: realism metrics plus `BENCHMARKS` with sources, ready for `scoring.realism` in Phase 3.
+- **Benchmarks (seed 42):** Pareto top-20% 0.76 · cart abandonment 0.70 · view→purchase 3.1% · fashion returns 0.26 · Diwali week 2.3× · evening sessions 42%.
+- **Files:** `backend/app/data/{personas,catalog,festivals,generator,stats,seed}.py`, `backend/tests/data/{test_generator_stats,test_seed_and_calendar}.py`, `docs/sessions.md` (row A + notes), `docs/progress.md`
+- **Commits:** _pending the user's commit_
+- **Tests:** `python -m pytest tests -q` (backend) → 54 passed (35 in `tests/data`, 2 seeds) · `ruff check .` clean
+- **Open issues / risks:** Lohri 2027 has conflicting sources (13 vs 14 Jan); re-check in January. Seeding Neon over the network will be slower than SQLite; seed locally or with fewer customers if it is slow.
+- **Contract change requests:** none
+- **Next:** Phase 2: `scoring/rfm.py`, `scoring/churn.py`, `scoring/profile.py` (`build_profile` under 50 ms, `assign_policy`), `data/onboarding.py`.
