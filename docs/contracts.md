@@ -205,6 +205,8 @@ lab.runner.run_rounds(n: int) -> list[Decision]
 
 # Main provides
 db.get_session(); config.now(); config.settings; api routers; scheduler jobs
+decision_store.save(decision) / get(id) / set_outcome(id, outcome, at, revenue=None) / query(...) / spent_on(day)
+runtime.killswitch_on() / set_killswitch(on) / get_setting(key) / set_setting(key, value)
 ```
 
 ## 4. REST API (main session builds it; Session D consumes it, mocked under `frontend/src/mocks/`)

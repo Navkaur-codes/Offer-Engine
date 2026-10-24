@@ -82,3 +82,8 @@ Format: `date · from → to · note`
 - [ ] Accounts: GitHub repo, Neon (DB URL), Render (web service), Vercel (frontend), cron-job.org (ping `/health` every 10 min).
 - [ ] Put all values in `.env` locally and in the Render/Vercel env settings. **Never commit them.**
 - [ ] Share the Offer bot link with classmates on day 1.
+- 24 Oct · Main → B, C · **Shared storage helpers on main.** Merge main into your branch to get them.
+  - `app.decision_store.save(decision)` is the only way to write a Decision. The harness calls it; dry runs are skipped automatically.
+  - Also there: `get(id)`, `set_outcome(id, outcome, at, revenue)` (C uses it for button clicks), `query(...)`, and `spent_on(day)` (₹ sent today, for budget pacing).
+  - `app.runtime.killswitch_on()` is the kill switch. The harness pre-gate must return BLOCKED when it is on.
+  - Don't write `DecisionRow` or `SettingRow` directly.

@@ -44,7 +44,7 @@ Build an **analytics + agentic decisioning platform**. It decides which offer ea
 ## 4. Ownership map (parallel sessions; each works on its own branch/worktree)
 | Session | Branch | Owns (may edit) |
 |---|---|---|
-| Main / Integrator | `main` | `CLAUDE.md`, `docs/**`, `backend/app/{main.py,config.py,db.py,models.py,contracts.py,ports.py,stubs.py}`, `backend/app/api/`, `backend/app/scheduler/`, deploy files, `README.md`, `.github/` |
+| Main / Integrator | `main` | `CLAUDE.md`, `docs/**`, `backend/app/{main.py,config.py,db.py,models.py,contracts.py,ports.py,stubs.py,decision_store.py,runtime.py}`, `backend/app/api/`, `backend/app/scheduler/`, deploy files, `README.md`, `.github/` |
 | A: Data & Scoring | `feat/data-scoring` | `backend/app/data/`, `backend/app/scoring/`, `backend/tests/data/` |
 | B: Decision Core | `feat/decision-core` | `backend/app/rules/`, `backend/app/agent/`, `backend/tests/core/` |
 | C: Telegram + Lab | `feat/telegram-lab` | `backend/app/bot/`, `backend/app/lab/`, `backend/tests/bot/` |
