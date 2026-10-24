@@ -208,7 +208,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Real Telegram users get `is_holdout=False` (contract: "assigned once, 10%"), so classmates never see a silent bot. Main can change this in one line.
   - Extra activity keys go inside `profile.rfm` instead of a contract change.
 - **Files:** `backend/app/scoring/{rfm,churn,churn_model,profile}.py`, `backend/app/data/onboarding.py`, `backend/tests/data/test_profile_policy.py`, `docs/sessions.md`, `docs/progress.md`
-- **Commits:** _pending the user's commit_
+- **Commits:** `1646fe0` feat(scoring): RFM segments, churn model, live profiles with config-driven policies, onboarding history
 - **Tests:** `python -m pytest tests/data -q` → 69 passed · full backend 151 passed, 1 failed (`tests/api/test_ports.py::test_evaluate_flags_over_limit_discount`, a Main-owned test that relied on the stub fixture `C000002`; one-line fix requested in sessions.md §7) · `ruff check .` clean
 - **Open issues / risks:** `uplift` is still a prior (≥ 0) until Phase 3, so `sleeping_dog` can't trigger yet. On Neon each `build_profile` makes about 5 network round-trips; measure p95 on Render after GATE-2.
 - **Contract change requests:** none
