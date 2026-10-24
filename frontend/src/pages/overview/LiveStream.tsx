@@ -39,7 +39,14 @@ export function LiveStream({ className }: { className?: string }) {
       <ol className="num min-h-0 flex-1 overflow-y-auto py-1 text-[12px] leading-5">
         {loading
           ? Array.from({ length: 8 }, (_, i) => <li key={i} className="mx-4 my-2 h-3 animate-pulse rounded bg-surface-2" />)
-          : items.map((d) => (
+          : items.length === 0
+            ? (
+                <li className="dot-grid m-3 rounded-[6px] border border-dashed border-line px-4 py-10 text-center font-sans text-[13px] text-muted">
+                  Waiting for the first decision. Send <span className="num text-ink">/simulate cart</span> to the bot, or run one in{' '}
+                  <Link to="/playground" className="text-ink underline-offset-2 hover:underline">Playground</Link>.
+                </li>
+              )
+            : items.map((d) => (
               <li key={d.id} className="row-in">
                 <button
                   onClick={() => open(d.id)}

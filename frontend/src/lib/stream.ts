@@ -25,14 +25,15 @@ export function useDecisionStream(limit = 30) {
   useEffect(() => {
     if (!url || !useSse) return
     const es = new EventSource(url)
-    es.onmessage = (e) => {
+    // The API sends named frames (`event: decision`), which `onmessage` never sees.
+    es.addEventListener('decision', (e) => {
       try {
-        const d = JSON.parse(e.data) as DecisionLight
+        const d = JSON.parse((e as MessageEvent<string>).data) as DecisionLight
         setPushed((xs) => [d, ...xs].slice(0, limit))
       } catch {
         /* ignore malformed frames; the next poll or frame catches up */
       }
-    }
+    })
     es.onerror = () => {
       es.close()
       setSseFailed(true)
