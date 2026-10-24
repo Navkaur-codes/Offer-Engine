@@ -11,11 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from telegram import Update
 
 from app import ports
+from app.api import analytics, catalog, customers, decisions, meta, rules
 from app.config import now, settings
 from app.contracts import CONTRACT_VERSION
 from app.db import init_db
 
-VERSION = "0.1.0"
+VERSION = "0.3.0"
 WEBHOOK_PATH = "/telegram/webhook/{secret}"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -46,6 +47,7 @@ async def _start_bot(app: FastAPI) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    log.info("seeded %d rules, %d offers", ports.ensure_rules_seeded(), catalog.ensure_catalogue())
     await _start_bot(app)
     yield
     if app.state.tg is not None:
@@ -60,6 +62,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+for module in (meta, rules, catalog, decisions, customers, analytics):
+    app.include_router(module.router)
 
 
 @app.get("/health")

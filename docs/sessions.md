@@ -87,3 +87,8 @@ Format: `date · from → to · note`
   - Also there: `get(id)`, `set_outcome(id, outcome, at, revenue)` (C uses it for button clicks), `query(...)`, and `spent_on(day)` (₹ sent today, for budget pacing).
   - `app.runtime.killswitch_on()` is the kill switch. The harness pre-gate must return BLOCKED when it is on.
   - Don't write `DecisionRow` or `SettingRow` directly.
+- 24 Oct · Main → D · **The REST API from `contracts.md §4` is on main** (`backend/app/api/`). Run it locally with `uvicorn app.main:app --app-dir backend` and set `VITE_USE_MOCKS=0` with `VITE_API_URL=http://localhost:8000`.
+  - Writes need the `X-Admin-Passcode` header (401 = wrong passcode, 503 = not configured).
+  - The SSE feed is `GET /api/decisions/stream`, sending `event: decision` with a DecisionLight; keepalive comments arrive every 20 s.
+  - Lists page with `next`: an ISO timestamp for decisions, a customer id for customers. Pass it back as `cursor`.
+  - Extras beyond the contract: `/api/meta` also returns `bot_link` and `ports`; `/api/budget` also returns `today_used_pct`; campaign `totals` also include `over_budget`.

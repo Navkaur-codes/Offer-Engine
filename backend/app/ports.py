@@ -58,6 +58,7 @@ _PORTS: dict[str, tuple[str, str, Any]] = {
     "allowed_offers": ("app.rules.engine", "allowed_offers", stubs.allowed_offers),
     "evaluate": ("app.rules.engine", "evaluate", stubs.evaluate),
     "describe_rule": ("app.rules.describe", "describe", stubs.describe_rule),
+    "ensure_rules_seeded": ("app.rules.seed_rules", "ensure_seeded", stubs.ensure_rules_seeded),
     "rule_impact": ("app.rules.preview", "impact", stubs.rule_impact),
     "get_context": ("app.agent.context", "get_context", stubs.get_context),
     "decide": ("app.agent.harness", "decide", stubs.decide),
@@ -156,6 +157,11 @@ def evaluate(
 
 def describe_rule(rule: Rule) -> str:
     return _call("describe_rule")(rule)
+
+
+def ensure_rules_seeded() -> int:
+    """Insert missing seed rules into the `rules` table (never overwrites a marketer's edit)."""
+    return _call("ensure_rules_seeded")()
 
 
 def rule_impact(rule: Rule) -> dict:

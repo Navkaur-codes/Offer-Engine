@@ -194,3 +194,15 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - live check;
   - fast-forward the 4 worktrees;
   - send A2–D2.
+
+### 2026-10-24 · Main · MAIN-API (Phase 2) + shared helpers
+- **Did:**
+  - `app/decision_store.py` (save / get / set_outcome / query / spent_on) and `app/runtime.py` (kill switch, settings). Merged into B and C at `66b3d3a`.
+  - `app/api/` covers every endpoint in `contracts.md §4`: meta, killswitch, budget; rules (list, PATCH with versioning, preview, versions, revert); offers; festivals; decisions (list with cursor, detail, SSE stream); customers (list, detail, simulate); playground; campaign dry-run; kpis; experiments; realism; digest.
+  - Writes are guarded by `ADMIN_PASSCODE`.
+  - Startup seeds rules (new port `ensure_rules_seeded`) and the offer catalogue into the DB without overwriting edits.
+- **Tests:** `tests/api` → 29 passed (new: `test_store.py`, `test_routes.py`). A live check on uvicorn: SSE delivered a new decision within 2 s; rules come from the DB; KPIs come from decision rows.
+- **Open:**
+  - KPIs for incremental revenue and margin saved come from the experiments stub until A3.
+  - `simulate` persists only once B's harness merges.
+  - Set `CORS_ORIGINS` on Render to the Vercel URL when D deploys.
