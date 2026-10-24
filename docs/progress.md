@@ -202,7 +202,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Buttons are recorded: Claim → `offer_claimed` event + outcome `claimed`; Remind → outcome `remind_later` + one 19:00 IST job; Not for me → `offer_declined` event + outcome `declined` + `customers.suppressed[category]` for 14 days. Claimed/declined are final ("Already handled").
   - `/history`: last 5 decisions incl. blocked/no-offer with one-line reasons (holdout shown as plain "no offer"). Rate limit: 1 simulate per 10 s per user, with friendly copy.
 - **Files:** `backend/app/bot/{simulate,commands,store,render,app}.py`, `backend/tests/bot/{test_simulate,test_handlers}.py`
-- **Commits:** pending (see checkpoint)
+- **Commits:** `9cfaf33` feat(bot): /simulate console, recorded offer buttons, /history, rate limit
 - **Tests:** `python -m pytest -q` (backend) → 141 passed · `ruff check .` clean
 - **Open issues / risks:**
   - Decision outcomes are written only if the harness logged the decision row; until then only the event rows record taps.
