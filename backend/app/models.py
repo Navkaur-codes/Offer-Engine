@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Column, DateTime
+from sqlalchemy import JSON, BigInteger, Column, DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -18,6 +18,11 @@ def _ts(index: bool = False, nullable: bool = False):
 
 def _json(default=dict):
     return Field(default_factory=default, sa_column=Column(JSON))
+
+
+def _bigint(index: bool = False):
+    # Telegram user/chat ids exceed 32-bit INTEGER on Postgres (SQLite never complains)
+    return Field(default=None, sa_column=Column(BigInteger, index=index, nullable=True))
 
 
 class CustomerRow(SQLModel, table=True):
@@ -34,7 +39,7 @@ class CustomerRow(SQLModel, table=True):
     preferred_payment: str
     persona: str = Field(index=True)
     response_type: str  # hidden ground truth
-    telegram_chat_id: int | None = Field(default=None, index=True)
+    telegram_chat_id: int | None = _bigint(index=True)
     is_lab_bot: bool = False
     opt_in_festivals: list = _json(list)
     opted_out: bool = False
@@ -161,7 +166,7 @@ class DecisionRow(SQLModel, table=True):
     outcome: str = Field(default="pending", index=True)
     outcome_at: datetime | None = _ts(nullable=True)
     revenue: int | None = None
-    telegram_message_id: int | None = None
+    telegram_message_id: int | None = _bigint()
     payload: dict = _json()  # full contracts.Decision
 
 

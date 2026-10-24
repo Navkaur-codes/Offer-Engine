@@ -322,3 +322,11 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - When the Vercel URL exists, `CORS_ORIGINS` on Render must include it.
 - **Contract change requests:** CR-D1 (`Kpis.deltas` keys and units), CR-D2 (`festival` on `DecisionLight` plus a filter). Both were accepted by Main in contracts v1.1 (24 Oct).
 - **Next:** Phase 3: the Rules editor (sentence cards, impact preview, versions/revert) and Customers (scatter, drawer, simulate).
+
+### 2026-10-25 · Main · GATE-2 hotfix: Telegram IDs overflow on Postgres
+- **Bug:** onboarding on production ended with "😅 Something went wrong". The Render log showed `DataError`. `customers.telegram_chat_id` was a 32-bit INTEGER on Neon, and real Telegram user IDs are larger than 2^31. SQLite doesn't enforce the limit, so no local test caught it.
+- **Fix:**
+  - `models.py`: `telegram_chat_id` and `telegram_message_id` are now BIGINT.
+  - `db.upgrade_bigint_columns()` runs from `init_db()` and ALTERs any existing Postgres INTEGER column to BIGINT, once and idempotently.
+  - New test `test_telegram_ids_are_bigint`; the Postgres DDL was checked to emit `BIGINT`.
+- **Lesson (for detective.md):** test anything ID- or number-heavy against Postgres semantics, not only SQLite.

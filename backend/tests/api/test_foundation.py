@@ -40,12 +40,50 @@ def test_tables_create_and_roundtrip():
     engine = make_engine("sqlite://")
     SQLModel.metadata.create_all(engine)
     with Session(engine) as s:
-        s.add(m.CustomerRow(
-            id="C1", first_name="Priya", city="Ludhiana", city_tier=2, signup_date=date(2026, 1, 5),
-            channel="organic", device="android", preferred_payment="upi", persona="deal_hunter",
-            response_type="persuadable", opt_in_festivals=["diwali"],
-        ))
+        s.add(
+            m.CustomerRow(
+                id="C1",
+                first_name="Priya",
+                city="Ludhiana",
+                city_tier=2,
+                signup_date=date(2026, 1, 5),
+                channel="organic",
+                device="android",
+                preferred_payment="upi",
+                persona="deal_hunter",
+                response_type="persuadable",
+                opt_in_festivals=["diwali"],
+            )
+        )
         s.add(m.SettingRow(key="killswitch", value={"on": False}, updated_at=datetime(2026, 10, 22)))
         s.commit()
         row = s.exec(select(m.CustomerRow)).one()
         assert row.opt_in_festivals == ["diwali"]
+
+
+def test_telegram_ids_are_bigint():
+    """Telegram ids pass 2^31; Postgres INTEGER would raise DataError at the end of onboarding."""
+    from sqlalchemy import BigInteger
+
+    assert isinstance(m.CustomerRow.__table__.c.telegram_chat_id.type, BigInteger)
+    assert isinstance(m.DecisionRow.__table__.c.telegram_message_id.type, BigInteger)
+    engine = make_engine("sqlite://")
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as s:
+        s.add(
+            m.CustomerRow(
+                id="TG7123456789",
+                first_name="Navpreet",
+                city="Ludhiana",
+                city_tier=2,
+                signup_date=date(2026, 10, 24),
+                channel="telegram",
+                device="mobile",
+                preferred_payment="upi",
+                persona="new_user",
+                response_type="persuadable",
+                telegram_chat_id=7_123_456_789,
+            )
+        )
+        s.commit()
+        assert s.get(m.CustomerRow, "TG7123456789").telegram_chat_id == 7_123_456_789
