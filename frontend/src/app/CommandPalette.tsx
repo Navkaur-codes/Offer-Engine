@@ -58,7 +58,7 @@ export function CommandPalette({
 
         {decisionId ? (
           <Command.Group heading="Decision">
-            <Item value={`open decision ${decisionId}`} onSelect={() => run(() => navigate(`/decisions?id=${encodeURIComponent(decisionId)}`))}>
+            <Item value={`open decision ${decisionId}`} onSelect={() => run(() => navigate(`/decisions?decision=${encodeURIComponent(decisionId)}`))}>
               Open decision <Mono>{decisionId}</Mono>
             </Item>
           </Command.Group>

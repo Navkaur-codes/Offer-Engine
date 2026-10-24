@@ -3,7 +3,7 @@ import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionLight, Digest,
   Festival, Health, KillSwitch, Kpis, Meta, Page, Rule, RuleImpact, TriggerType,
 } from '@/lib/types'
-import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, RULES } from './seed'
+import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, makeDecision, RULES } from './seed'
 
 const state = {
   killswitch: { on: false, changed_at: null } as KillSwitch,
@@ -38,7 +38,16 @@ on('POST', '/api/settings/killswitch', (_m, _q, body) => {
   return state.killswitch
 })
 
+// Simulates new traffic so the live stream moves: roughly one new decision every 7 s.
+let lastTick = Date.now()
+function tick() {
+  const due = Math.min(3, Math.floor((Date.now() - lastTick) / 7000))
+  for (let i = 0; i < due; i++) DECISIONS.push(makeDecision(new Date()))
+  if (due) lastTick = Date.now()
+}
+
 on('GET', '/api/decisions', (_m, q): Page<DecisionLight> => {
+  tick()
   const text = q.get('q')?.toLowerCase()
   const items = DECISIONS.filter((d) =>
     (!q.get('status') || d.status === q.get('status')) &&

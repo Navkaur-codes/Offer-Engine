@@ -37,7 +37,9 @@
   color-scheme: light;
 }
 
-:root.dark {
+/* `.dark` on any element (e.g. the terminal stream) re-scopes the tokens to dark. */
+:root.dark,
+.dark {
   --bg: #0b0b0d;
   --surface: #141417;
   --surface-2: #1b1b1f;

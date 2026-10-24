@@ -1,6 +1,7 @@
 import { Moon, Search, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { DecisionDrawer } from '@/components/DecisionDrawer'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/lib/hooks'
 import { CommandPalette } from './CommandPalette'
@@ -65,6 +66,7 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+      <DecisionDrawer />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onKillSwitch={() => setKillOpen(true)} />
     </div>
   )
