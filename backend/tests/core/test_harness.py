@@ -144,6 +144,35 @@ def test_quiet_hours_queue_until_morning():
     assert d.explanation.title.startswith("Queued for 09:00")
 
 
+@pytest.mark.parametrize(
+    "trigger, meta",
+    [
+        ("browse_interest", {"initiated_by": "customer"}),
+        ("browse_interest", {"initiated_by": "admin"}),
+        ("lab", {}),
+    ],
+)
+def test_customer_initiated_sends_now_even_at_night(trigger, meta):
+    night = NOW.replace(hour=22)
+    d = decide("C000002", trigger, meta, now=night, llm=MockLLM("good"))
+    assert d.status == "SENT" and d.context.is_quiet_hours
+    assert "G_QUIET" not in {c.rule_id for c in d.validation.checks}
+
+
+def test_campaign_at_night_is_queued():
+    d = decide("C000002", "campaign", {}, now=NOW.replace(hour=22), llm=MockLLM("good"))
+    assert d.status == "QUEUED"
+
+
+def test_customer_initiated_still_respects_other_rules(monkeypatch):
+    real = ports.build_profile
+    monkeypatch.setattr(
+        ports, "build_profile", lambda cid, now: real(cid, now).model_copy(update={"offers_7d": 3})
+    )
+    d = decide("C000002", "browse_interest", {"initiated_by": "customer"}, now=NOW.replace(hour=22))
+    assert d.status == "BLOCKED"
+
+
 def test_holdout_is_logged_not_sent(memory_db):
     add_customer(memory_db, "C000002", is_holdout=True)
     llm = MockLLM("good")

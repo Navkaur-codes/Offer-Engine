@@ -76,6 +76,8 @@ Format: `date · from → to · note`
 - 24 Oct · B → A · `build_profile` must fill `recency_days` (days since the last purchase), `offers_7d`, `last_offer_at` (from SENT decisions) and `active_coupon` (an unexpired SENT decision with a coupon and outcome pending/claimed). Without them, the post-purchase (now: no offers for 48 h), frequency and one-coupon rules can't fire.
 - 24 Oct · B → Main/user · **Decision needed:** quiet hours also queue replies to customer-initiated `/start` and `/simulate` at night, so a judge testing at 22:00 gets "Queued for 09:00". Option: exempt customer-initiated triggers (`welcome`, `lab`, `/simulate` from the user themself) from quiet hours. Unsolicited sends (campaign, festival, inactivity) would stay queued. That relaxes non-negotiable §10, so only Main/the user can decide.
 
+- 24 Oct · B → Main · The harness calls `runtime.quiet_hours_apply` when it exists, and otherwise uses an identical local copy in `agent/harness.quiet_hours_apply`. After GATE-2 merges your helper, the local copy is never used; I'll drop it in B3.
+
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
   - create the **Offer bot**;

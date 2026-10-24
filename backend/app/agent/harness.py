@@ -147,6 +147,14 @@ def with_trigger(
     return profile.model_copy(update={"open_cart": cart})
 
 
+def quiet_hours_apply(trigger: TriggerType, meta: dict) -> bool:
+    """Main's runtime.quiet_hours_apply decides; the local copy only covers the gap until GATE-2 merges it."""
+    shared = getattr(runtime, "quiet_hours_apply", None)
+    if shared is not None:
+        return shared(trigger, meta)
+    return not (meta.get("initiated_by") in {"customer", "admin"} or trigger == "lab")
+
+
 def _rule_types(rules: list[Rule]) -> dict[str, str]:
     return {r.id: r.type for r in rules}
 
@@ -298,10 +306,14 @@ def decide(
     started = timer.perf_counter()
     now = now or clock()
     meta = dict(trigger_meta or {})
-    rules = load_rules()
+    all_rules = load_rules()
     catalogue = load_offers()
     profile = with_trigger(ports.build_profile(customer_id, now), trigger, meta, now)
-    ctx = get_context(now, rules=rules)
+    ctx = get_context(now, rules=all_rules)
+    # quiet hours guard proactive sends only; a reply to something the customer just did goes out now
+    rules = (
+        all_rules if quiet_hours_apply(trigger, meta) else [r for r in all_rules if r.type != "quiet_hours"]
+    )
     flags = customer_flags(customer_id)
     policy = effective_policy(profile, ctx, rules=rules)
     base = dict(

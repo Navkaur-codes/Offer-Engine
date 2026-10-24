@@ -242,3 +242,8 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - **Demo risk:** quiet hours (non-negotiable §10) also queue replies to customer-initiated `/simulate` and `/start` between 21:00 and 09:00. Judges testing at night will see "Queued for 09:00". Needs a decision; see `sessions.md`.
   - `build_profile` is still the stub. A's real profile must fill `recency_days`, `offers_7d`, `last_offer_at` and `active_coupon` from orders and decisions, or the post-purchase, frequency and stacking rules can't fire.
 - **Next (Phase 3):** `groq_client.py` (Groq behind `LLMClient`), read-only tools, the 6-step loop, and message number/expiry/greeting checks. This waits for the LLM budget-guard decision.
+
+### 2026-10-24 · B · Phase 2 follow-up: quiet hours only for proactive sends
+- **Did:** the harness pre-gate now queues for 09:00 only when `runtime.quiet_hours_apply(trigger, trigger_meta)` is True. This is the user's decision, recorded in CLAUDE.md §2.10 on main. Customer-initiated sends (`initiated_by` customer/admin) and `lab` sends go out now. They are evaluated without the quiet-hours rule; the kill switch, consent, frequency, budget and every other rule still apply. Until GATE-2 brings `runtime.quiet_hours_apply` to this branch, the harness uses an identical local copy.
+- **Tests:** `pytest tests/core -q` → 58 passed (new: a customer/admin/lab decision at 22:00 is SENT; a campaign at 22:00 is QUEUED; customer-initiated still respects the frequency cap). `ruff` is clean.
+- **Commits:** _pending_
