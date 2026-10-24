@@ -3,7 +3,7 @@ import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionLight, Digest,
   Festival, Health, KillSwitch, Kpis, Meta, Page, Rule, RuleImpact, TriggerType,
 } from '@/lib/types'
-import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, RULES } from './seed'
+import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, makeDecision, RULES } from './seed'
 
 const state = {
   killswitch: { on: false, changed_at: null } as KillSwitch,
@@ -30,7 +30,8 @@ on('GET', '/api/meta', (): Meta => ({
 }))
 on('GET', '/api/kpis', (): Kpis => KPIS)
 on('GET', '/api/budget', (): Budget => ({
-  today_used: 13200, today_cap: 25000, festival: { name: 'Karwa Chauth', used: 8800, cap: 40000 },
+  today_used: 13200, today_cap: 25000,
+  festival: { name: 'karwa_chauth_2026', phase: 'build_up', days_to: 5, budget_left: 31200 },
 }))
 on('GET', '/api/settings/killswitch', () => state.killswitch)
 on('POST', '/api/settings/killswitch', (_m, _q, body) => {
@@ -38,16 +39,29 @@ on('POST', '/api/settings/killswitch', (_m, _q, body) => {
   return state.killswitch
 })
 
+// Simulates new traffic so the live stream moves: roughly one new decision every 7 s.
+let lastTick = Date.now()
+function tick() {
+  const due = Math.min(3, Math.floor((Date.now() - lastTick) / 7000))
+  for (let i = 0; i < due; i++) DECISIONS.push(makeDecision(new Date()))
+  if (due) lastTick = Date.now()
+}
+
 on('GET', '/api/decisions', (_m, q): Page<DecisionLight> => {
+  tick()
   const text = q.get('q')?.toLowerCase()
   const items = DECISIONS.filter((d) =>
     (!q.get('status') || d.status === q.get('status')) &&
     (!q.get('decided_by') || d.decided_by === q.get('decided_by')) &&
     (!q.get('policy') || d.policy === q.get('policy')) &&
     (!q.get('trigger') || d.trigger === q.get('trigger')) &&
-    (!text || `${d.id} ${d.customer_id} ${d.first_name} ${d.explanation_title}`.toLowerCase().includes(text)),
+    (!text || `${d.id} ${d.customer_id} ${d.first_name} ${d.explanation_title}`.toLowerCase().includes(text)) &&
+    (!q.get('cursor') || d.ts < q.get('cursor')!),
   ).sort(byTsDesc)
-  return { items: items.slice(0, Number(q.get('limit') ?? 100)), next: null }
+  // Same paging as the API: `next` is the ts of the last item when more remain.
+  const limit = Math.min(200, Number(q.get('limit') ?? 50))
+  const page = items.slice(0, limit)
+  return { items: page, next: items.length > limit ? page[page.length - 1].ts : null }
 })
 on('GET', '/api/decisions/:id', (m): Decision => {
   const d = DECISIONS.find((x) => x.id === decodeURIComponent(m[1]))

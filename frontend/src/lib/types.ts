@@ -333,7 +333,8 @@ export interface KillSwitch {
 export interface Budget {
   today_used: number
   today_cap: number
-  festival: { name?: string; used?: number; cap?: number; [k: string]: unknown } | null
+  /** Contract says `{...}`; the API sends the active festival and its remaining pool. */
+  festival: { name: string; phase: FestivalPhase | null; days_to: number | null; budget_left: number | null } | null
 }
 export interface Meta {
   bot_username: string

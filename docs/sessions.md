@@ -9,7 +9,7 @@
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 2 done (A2) → Phase 3 next | ☑ P2 `1646fe0` (P1 `8b2e903`) | v1.1 | none (the `test_ports` fix was applied by Main at GATE-2) | 25 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer, quiet hours) → Phase 3 next | ☑ P2 `0302b17`, `3d1f941` | v1.1 | none (budget guard approved) | 25 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 2 done (/simulate, recorded buttons, /why, /history, rate limit, `initiated_by`) → Phase 3 next | ☑ P2 `9cfaf33`, `21e43d9` (P1 `1e5e102`) | v1.1 | P3 needs the 10 Lab bots + group (user) | 25 Oct |
-| D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 1 done (shell, Signal theme, mocks) → Phase 2 next; Lighthouse not yet measured | ☑ P1 (`e5d9116`) | v1 | none | 24 Oct |
+| D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer) → Phase 3 next; Lighthouse not yet measured | ☑ P2 `a9aa536`, `181eb92`, `fc08f23` (P1 `e5d9116`) | v1.1 | none (CR-D1, CR-D2 accepted in v1.1) | 25 Oct |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
 ```
@@ -51,6 +51,8 @@ A (data/scoring) ──profile, uplift, impact, festivals──► B (rules/agen
 ## 6. Contract change requests
 Format: `ID · date · from session · what change · why · status (open/accepted/rejected) · contract version`
 - _none yet_
+- CR-D1 · 24 Oct · D · `Kpis.deltas`: use the same keys as the `Kpis` fields (`sent_today`, `claim_rate`, `incremental_revenue`, `budget_used_pct`, `blocked_by_rules`, `margin_saved`), with values as a fractional change vs yesterday (`0.12` = +12%). The API currently sends `{"sent","claim_rate","blocked"}` and it's unclear whether those are absolute or relative. · The KPI strip shows ▲▼ per tile and can't map the current keys without guessing. · open · v1
+- CR-D2 · 24 Oct · D · Add `festival: str | None` to `DecisionLight` and a `festival=` filter to `GET /api/decisions`. · context-4 Phase 2 asks for a festival filter on the Decisions log; today only `trigger=festival` exists, which misses festival-phase decisions from other triggers. · open · v1
 
 ## 7. Notes for other sessions
 Format: `date · from → to · note`

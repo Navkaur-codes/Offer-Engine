@@ -1,7 +1,14 @@
 import { Money } from '@/components/Money'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PHASE_LABEL } from '@/lib/labels'
 import { useBudget } from '@/lib/queries'
 import { cn } from '@/lib/utils'
+
+/** "karwa_chauth_2026" → "Karwa chauth". */
+const festivalName = (id: string) => {
+  const s = id.replace(/_\d{4}$/, '').replaceAll('_', ' ')
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 
 function Bar({ used, cap, label }: { used: number; cap: number; label: string }) {
   const pct = cap ? Math.min(1, used / cap) : 0
@@ -46,15 +53,15 @@ export function BudgetMeter() {
           </div>
           <Bar used={data.today_used} cap={data.today_cap} label="Today's budget" />
         </div>
-        {f?.cap ? (
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-[13px]">
-              <span>{f.name ?? 'Festival'} pool</span>
-              <span>
-                <Money value={f.used ?? 0} /> <span className="text-muted">/ <Money value={f.cap} /></span>
-              </span>
-            </div>
-            <Bar used={f.used ?? 0} cap={f.cap} label="Festival budget pool" />
+        {f ? (
+          <div className="flex justify-between gap-2 border-t border-line pt-2 text-[13px]">
+            <span>
+              {festivalName(f.name)} pool
+              {f.phase ? <span className="text-muted"> · {PHASE_LABEL[f.phase]}</span> : null}
+            </span>
+            <span>
+              {f.budget_left !== null ? <Money value={f.budget_left} /> : '—'} <span className="text-muted">left</span>
+            </span>
           </div>
         ) : null}
         <p className="text-[12px] text-muted">Above 80% the engine shrinks discount caps automatically (pacing).</p>

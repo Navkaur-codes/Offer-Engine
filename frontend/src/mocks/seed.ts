@@ -3,7 +3,7 @@ import { POLICY_LABEL } from '@/lib/labels'
 import example from './fixtures/decision-example.json'
 import type {
   Category, CustomerProfile, Decision, DecidedBy, DecisionLight, DecisionStatus, Event,
-  Festival, Kpis, Outcome, Persona, PolicyName, Rule, RuleCheck, ToolCall, TriggerType,
+  Festival, Kpis, OfferCandidate, OfferType, Outcome, Persona, PolicyName, Rule, RuleCheck, ToolCall, TriggerType,
 } from '@/lib/types'
 
 function rng(seed: number) {
@@ -130,15 +130,15 @@ export const CUSTOMERS: CustomerProfile[] = NAMES.map((first_name, i) => {
 
 // ---------- decisions ----------
 const TRIGGERS: TriggerType[] = ['cart_abandoned', 'cart_abandoned', 'browse_interest', 'inactivity', 'points_expiry', 'festival', 'payday', 'welcome', 'lab', 'manual']
-const OFFERS: Record<string, { label: string; cost: [number, number] }> = {
-  OF_FREE_SHIP: { label: 'Free shipping', cost: [40, 80] },
-  OF_PCT_10: { label: '10% off', cost: [90, 260] },
-  OF_PCT_5: { label: '5% off', cost: [40, 140] },
-  OF_FLAT_150: { label: '₹150 off', cost: [150, 150] },
-  OF_POINTS_2X: { label: '2× points', cost: [20, 60] },
-  OF_EARLY: { label: 'Early access', cost: [0, 0] },
-  OF_NUDGE: { label: 'Cart reminder', cost: [0, 0] },
-  OF_EXPRESS: { label: 'Free express delivery', cost: [70, 120] },
+const OFFERS: Record<string, { label: string; type: OfferType; cost: [number, number] }> = {
+  OF_FREE_SHIP: { label: 'Free shipping', type: 'free_shipping', cost: [40, 80] },
+  OF_PCT_10: { label: '10% off', type: 'pct_off', cost: [90, 260] },
+  OF_PCT_5: { label: '5% off', type: 'pct_off', cost: [40, 140] },
+  OF_FLAT_150: { label: '₹150 off', type: 'flat_off', cost: [150, 150] },
+  OF_POINTS_2X: { label: '2× points', type: 'bonus_points', cost: [20, 60] },
+  OF_EARLY: { label: 'Early access', type: 'early_access', cost: [0, 0] },
+  OF_NUDGE: { label: 'Cart reminder', type: 'cart_nudge', cost: [0, 0] },
+  OF_EXPRESS: { label: 'Free express delivery', type: 'free_express', cost: [70, 120] },
 }
 const POLICY_OFFERS: Record<PolicyName, string[]> = {
   vip: ['OF_EARLY', 'OF_POINTS_2X', 'OF_FREE_SHIP'], deal_hunter: ['OF_PCT_10', 'OF_FLAT_150'],
@@ -163,7 +163,9 @@ function statusFor(policy: PolicyName, trigger: TriggerType): [DecisionStatus, D
 
 const OUTCOMES: Outcome[] = ['pending', 'pending', 'claimed', 'redeemed', 'ignored', 'declined', 'remind_later']
 
-export const DECISIONS: DecisionLight[] = Array.from({ length: 50 }, (_, i) => {
+let seq = 9000
+/** One synthetic light decision at time `ts`; also used to feed the mock live stream. */
+export function makeDecision(ts: Date): DecisionLight {
   const c = CUSTOMERS[Math.floor(r() * CUSTOMERS.length)]
   const trigger = pick(TRIGGERS)
   const [status, decided_by] = statusFor(c.policy, trigger)
@@ -172,7 +174,6 @@ export const DECISIONS: DecisionLight[] = Array.from({ length: 50 }, (_, i) => {
   const offerId = sends && offers.length ? pick(offers) : null
   const o = offerId ? OFFERS[offerId] : null
   const cost = o ? Math.round(o.cost[0] + r() * (o.cost[1] - o.cost[0])) : 0
-  const ts = new Date(NOW.getTime() - i * (14 + r() * 40) * 60_000)
   const cat = c.open_cart?.category ?? pick(CATS)
   const title =
     status === 'SENT' || status === 'QUEUED' ? `${status === 'SENT' ? 'Sent' : 'Queued'}: ${o?.label ?? 'Offer'} on ${cat.replace('_', ' ')}`
@@ -181,7 +182,7 @@ export const DECISIONS: DecisionLight[] = Array.from({ length: 50 }, (_, i) => {
     : c.policy === 'sleeping_dog' ? 'No offer: negative uplift, would buy anyway or be put off'
     : 'No offer: expected profit below cost'
   return {
-    id: `D${iso(ts).slice(0, 10).replaceAll('-', '')}-${String(9000 - i).padStart(4, '0')}`,
+    id: `D${iso(ts).slice(0, 10).replaceAll('-', '')}-${String(seq++).padStart(4, '0')}`,
     ts: iso(ts),
     customer_id: c.customer_id,
     first_name: c.first_name,
@@ -196,7 +197,12 @@ export const DECISIONS: DecisionLight[] = Array.from({ length: 50 }, (_, i) => {
     outcome: status === 'SENT' ? pick(OUTCOMES) : 'pending',
     explanation_title: title,
   }
-})
+}
+
+// 50 decisions spread over the last ~30 hours, oldest first so IDs grow with time.
+export const DECISIONS: DecisionLight[] = Array.from({ length: 50 }, (_, i) => 50 - i)
+  .map((k) => makeDecision(new Date(NOW.getTime() - k * 36 * 60_000 - r() * 20 * 60_000)))
+  .reverse()
 
 // The contracts §5 example, completed into a full Decision.
 const TRACE: ToolCall[] = [
@@ -208,6 +214,33 @@ const CHECKS: RuleCheck[] = RULES.slice(0, 11).map((rule) => ({
   rule_id: rule.id, description: rule.description, passed: true, severity: rule.severity, detail: 'within limit',
 }))
 
+function traceFor(d: DecisionLight): ToolCall[] {
+  if (d.decided_by === 'BLOCKED_PREGATE' || d.decided_by === 'HOLDOUT') return []
+  const head: ToolCall[] = [
+    { name: 'get_profile', args: { customer_id: d.customer_id }, result_summary: `${POLICY_LABEL[d.policy]} · profile loaded`, ms: 90 + (d.cost % 60) },
+    { name: 'get_context', args: {}, result_summary: 'Karwa Chauth build-up · budget ₹11,800 left today', ms: 60 },
+    { name: 'allowed_offers', args: {}, result_summary: `${POLICY_OFFERS[d.policy].length} candidates after all layers`, ms: 280 },
+  ]
+  if (d.decided_by === 'RULES_FALLBACK')
+    return [...head, { name: 'llm.generate', args: { model: 'llama-3.3-70b-versatile' }, result_summary: 'timeout after 20 s → rules fallback', ms: 20_000 }]
+  const check = (ok: boolean): ToolCall => ({
+    name: 'check_offer', args: { offer_id: d.final_offer_id ?? 'none' },
+    result_summary: ok ? 'ok · all rules passed' : 'violation: discount cap exceeded', ms: 350,
+  })
+  return d.decided_by === 'AGENT_RETRY' ? [...head, check(false), check(true)] : [...head, check(true)]
+}
+
+function candidatesFor(d: DecisionLight): OfferCandidate[] {
+  return POLICY_OFFERS[d.policy].map((id) => {
+    const o = OFFERS[id]
+    return {
+      offer_id: id, type: o.type, category: null, allowed_params: {},
+      est_cost: o.cost[0], est_incremental_profit: o.cost[0] * 3 + 40,
+      rule_notes: [id === d.final_offer_id ? 'chosen: best profit per ₹ of cost' : `allowed by ${POLICY_LABEL[d.policy]} policy`],
+    }
+  })
+}
+
 export function fullDecision(light: DecisionLight): Decision {
   const isExample = light.id === example.id
   const base = example as unknown as Decision
@@ -217,15 +250,28 @@ export function fullDecision(light: DecisionLight): Decision {
     ? [...CHECKS.slice(0, 9), { rule_id: 'G-FREQ', description: RULES[1].description, passed: false, severity: 'hard' as const, detail: light.explanation_title.replace(/^Blocked: /, '') }]
     : CHECKS
   const viaAgent = light.decided_by === 'AGENT' || light.decided_by === 'AGENT_RETRY'
+  const trace = isExample ? TRACE : traceFor(light)
+  const coupon = light.final_offer_id
+    ? `${light.final_offer_id.slice(3, 7).replace('_', '')}${light.first_name.slice(0, 3).toUpperCase()}${light.id.slice(-2)}`
+    : null
+  const expiry = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
+    .format(new Date(new Date(light.ts).getTime() + 2 * 86_400_000))
   return {
     ...(isExample ? base : {
       ...base,
       ...light,
-      trigger_meta: {},
+      trigger_meta: profile.open_cart && light.trigger === 'cart_abandoned'
+        ? { category: profile.open_cart.category, item: profile.open_cart.item, value: profile.open_cart.value }
+        : {},
       fallback_reason: light.decided_by === 'RULES_FALLBACK' ? 'Groq timeout after 20 s' : null,
       final_params: {},
-      coupon_code: light.final_offer_id ? `${light.final_offer_id.slice(3, 7)}${light.first_name.slice(0, 3).toUpperCase()}${light.id.slice(-2)}` : null,
-      message: light.headline,
+      coupon_code: coupon,
+      expires_at: light.final_offer_id ? iso(new Date(new Date(light.ts).getTime() + 2 * 86_400_000)) : null,
+      message: light.final_offer_id
+        ? `Hi ${light.first_name}! ${OFFERS[light.final_offer_id]?.label ?? 'A little something'} on your next order, just for you. Valid till ${expiry}, code ${coupon}.`
+        : null,
+      llm_tokens: viaAgent ? 1500 + Math.round(Number(light.id.slice(-2)) * 9) : 0,
+      latency_ms: viaAgent ? trace.reduce((s, t) => s + t.ms, 0) + 600 : light.decided_by === 'RULES_FALLBACK' ? 20_400 : 40,
       is_holdout: light.status === 'HELD_OUT',
       revenue: light.outcome === 'redeemed' ? 1890 : null,
       explanation: {
@@ -237,7 +283,7 @@ export function fullDecision(light: DecisionLight): Decision {
           : 'No candidate offer was expected to earn more than it costs.',
         rejected: light.final_offer_id ? ['10% off: above this policy’s cap'] : [],
         rules_line: `${checks.filter((c) => c.passed).length} passed · ${checks.filter((c) => !c.passed).length} violations · policy ${POLICY_LABEL[light.policy]}`,
-        decided_by_line: viaAgent ? `Agent (${TRACE.length} tool calls, 1.6 s)` : light.decided_by === 'RULES_FALLBACK' ? 'Rules fallback: Groq timeout' : 'Pre-gate (no LLM call)',
+        decided_by_line: viaAgent ? `Agent (${trace.length} tool calls, ${(trace.reduce((s, t) => s + t.ms, 600) / 1000).toFixed(1)} s)` : light.decided_by === 'RULES_FALLBACK' ? 'Rules fallback: Groq timeout' : 'Pre-gate (no LLM call)',
       },
     }),
     profile_snapshot: profile,
@@ -250,8 +296,8 @@ export function fullDecision(light: DecisionLight): Decision {
       customer_id: light.customer_id, policy: light.policy, festival: 'karwa_chauth', rules: RULES.slice(0, 11), limits: { max_pct: 10, min_gap_h: 48 },
       summary: RULES.slice(0, 4).map((x) => x.description), version_hash: 'a91f3c',
     },
-    candidates: [],
-    agent_trace: viaAgent ? TRACE : [],
+    candidates: candidatesFor(light),
+    agent_trace: trace,
     agent_output: null,
     validation: blocked ? null : { ok: true, checks, violations: [], adjusted_params: null },
   }

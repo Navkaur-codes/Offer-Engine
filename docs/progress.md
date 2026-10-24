@@ -294,3 +294,31 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Open issues / risks:** `uplift` is still a prior (≥ 0) until Phase 3, so `sleeping_dog` can't trigger yet. On Neon each `build_profile` makes about 5 network round-trips; measure p95 on Render after GATE-2.
 - **Contract change requests:** none
 - **Next:** Phase 3: `scoring/uplift.py` (T-learner on campaign_history + Qini), `scoring/impact.py`, `scoring/realism.py`, `scoring/experiments.py`.
+
+### 2026-10-24 · D · Phase 2: Overview + Decisions log
+- **Version/Phase:** v0.3 / Phase 2. Done on mocks, and checked against the real API locally.
+- **Did:**
+  - **Overview bento:**
+    - hero KPI "Incremental revenue vs holdout" (the only orange number), plus Sent today, Claim rate, Budget used and Blocked by rules, each with ▲▼;
+    - a terminal-style live decision stream (SSE `event: decision`, falling back to 5 s polling, with pause);
+    - an offer funnel, a "Who decided" 100% bar (no donut), the "margin protected by not discounting sure-things" callout, the AI digest and an Upcoming moments strip.
+  - **Shared decision drawer**, opened by `?decision=<id>` from any page, ⌘K or a copied link:
+    - Pipeline Lens, ExplanationCard and money stats;
+    - a Telegram-style card preview (coupon in mono, amber expiry, 4 buttons, character count);
+    - the agent trace timeline (ms bars, ✗ on failures, tokens and latency);
+    - the candidate offers, RuleCheckList (or the pre-gate reason) and a plain-words profile snapshot.
+  - **Decisions log:** filters for status, decided-by, policy, trigger and debounced search, all kept in the URL so views can be shared; "clear filters"; `next`/`cursor` paging ("Load 50 older"); empty states. A decision is 1 click from a row.
+  - **Mocks:** a new decision about every 7 s so the stream moves; cursor paging that matches the API; per-path agent traces, messages and candidates.
+- **Real-API check** (local uvicorn, scratch SQLite, 300 seeded customers, `VITE_USE_MOCKS=0`):
+  - every Overview request returns 200, and SSE connects ("live");
+  - the full `Decision` from simulate matches `types.ts` key for key;
+  - the `/api/budget` festival object is `{name, phase, days_to, budget_left}`, and the type and meter now follow it.
+  - The decision list stays empty until B's harness stores decisions (`decide` is still a stub).
+- **Commits:** `a9aa536` (Overview + drawer) · `181eb92` (Decisions filters + paging, SSE fix, budget shape, docs)
+- **Tests:** `npm run lint` clean · `npm run build` ✓
+- **Open issues / risks:**
+  - The Lighthouse score has not been measured yet.
+  - The bundle (~620 kB) needs code-splitting in Phase 4.
+  - When the Vercel URL exists, `CORS_ORIGINS` on Render must include it.
+- **Contract change requests:** CR-D1 (`Kpis.deltas` keys and units), CR-D2 (`festival` on `DecisionLight` plus a filter). Both were accepted by Main in contracts v1.1 (24 Oct).
+- **Next:** Phase 3: the Rules editor (sentence cards, impact preview, versions/revert) and Customers (scatter, drawer, simulate).

@@ -26,7 +26,7 @@ export function Kpi({
       <div className={cn('num title leading-none', hero ? 'text-[40px] text-signal' : 'text-[28px] text-ink')}>{value}</div>
       <div className="flex min-h-6 items-end justify-between gap-3">
         {hint ? <span className="text-[12px] text-muted">{hint}</span> : <span />}
-        {spark && spark.length > 1 ? <Sparkline data={spark} hero={hero} /> : null}
+        {spark && spark.length > 1 && spark.some((v) => v !== spark[0]) ? <Sparkline data={spark} hero={hero} /> : null}
       </div>
     </div>
   )
