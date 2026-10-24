@@ -19,7 +19,7 @@
 | T03 | **LLM decides alone**: sending whatever the model returns | Breaks the core judging criterion ("every AI choice must be checked") | Use the harness, then `evaluate()`, then retry, then the fallback. Always |
 | T04 | **Rules hard-coded** as `if persona == "vip"` in code | Marketers can't adjust them, which fails usability | Store rules as DB rows with `describe()`, editable in the Rules page |
 | T05 | **Discount everyone / blanket 20% off** | This is exactly the lost margin the brief warns about. It fails relevance | Use uplift, sure-thing protection, the escalation ladder, and zero-cost offers first |
-| T06 | **Blue/green gradient "AI" UI**: glassmorphism, sparkles, neon | Looks like every other entry, and the design score drops | Use the Ledger tokens in `CLAUDE.md §7` |
+| T06 | **Generic or recycled look:** blue/green gradient "AI" UI, glassmorphism, sparkles, neon; **beige/paper/skin-tone palettes (already used in Hackathon 1)**; regional or cultural decoration in the UI | Looks like every other entry, or like your own previous project, and the design score drops | Use the **Signal** tokens in `CLAUDE.md §7`: cool monochrome, one orange accent, dark sidebar, Pipeline Lens |
 | T07 | **Vanity dashboard**: lots of charts, no actions | Marketers can't *do* anything with it, which hurts usability | Every page needs one primary action, and the top bar has the 80% actions |
 | T08 | **Pie/donut charts, 3D charts, gauges** | Hard to read; fails "results easy to read" | Use bars, lines, tables with sparklines, and KPI strips with ▲▼ |
 | T09 | **Login/auth system**: signup, OAuth, roles | Not judged, takes a day | One `ADMIN_PASSCODE` header for writes; public read-only |

@@ -116,19 +116,38 @@ Only continue after the user answers. Log every override in `docs/progress.md` u
 - for any edit outside your owned paths;
 - for any change that weakens a non-negotiable.
 
-## 7. Design rules ("Ledger" system; applies to the dashboard and offer cards)
-- **Palette tokens:**
-  - `--paper #F5F2EA`, `--ink #17150F`, `--line #E2DCCD`, `--muted #6B6558`.
-  - `--accent #D9480F` (vermilion), `--plum #5B2A86`, `--amber #B7791F`.
-  - Dark mode: `--paper #131210`, `--ink #EDE8DC`, `--line #2A2722`.
-- **Type:** *Instrument Serif* for titles and hero KPIs, *Geist* for the UI, *Geist Mono* with tabular numbers for every number and code.
-- **Banned:** blue/green "AI" gradients, glassmorphism, neon glows, sparkle ✨ AI icons, pie/donut charts, colour-only status cues (always pair colour with ▲▼, ✓/✗ or text).
-- **Shape and motion:** 6px radius, hairline borders, dense editorial tables, subtle motion only.
+## 7. Design rules ("Signal" system; applies to the dashboard and offer cards)
+**Idea:** a modern, general-purpose analytics product in the style of Linear, Vercel or Stripe. It is mostly monochrome cool greys with **one bright signal colour** that marks only what matters: an AI decision, the key number, the primary action. No regional or cultural theming, and nothing beige or skin-toned.
+- **Palette tokens (light / dark):**
+  - `--bg #FAFAFA / #0B0B0D`, `--surface #FFFFFF / #141417`, `--ink #0A0A0B / #F4F4F5`.
+  - `--line #E7E7EA / #26262B`, `--muted #71717A / #A1A1AA`.
+  - `--rail #0B0B0D`, the left sidebar, dark in both modes.
+  - `--signal #FF4F00 / #FF6A1F`, the only accent: primary button, hero KPI, "sent by AI".
+  - `--violet #7A5AF8 / #9B85FF`, the second series and "rules fallback".
+  - `--amber #F5A524 / #FFC35A`, warnings and upcoming-event chips.
+  - `--danger #DC2626 / #F87171`, blocked or violation, always with ✗ and a label.
+  - Chart order: signal, violet, slate `#64748B`, amber. Solid colours only.
+- **Type:** *Geist* everywhere. Titles and big KPIs use Geist SemiBold with tight tracking. *Geist Mono* with tabular figures for every number, ₹ amount, coupon code and ID.
+- **Signature elements:**
+  - a bento-grid Overview, where only the hero KPI is in signal orange;
+  - the **Decision Pipeline Lens**: step chips *Pre-gate → Policy → Agent → Validator → Sent*, each showing ✓, ✗ or ↺;
+  - a terminal-style live decision stream in mono;
+  - a dark sidebar with the kill-switch dot always visible;
+  - a subtle dot-grid only in empty states and on the Playground canvas;
+  - a neutral "Upcoming moments" strip with an amber countdown chip.
+- **Banned:**
+  - beige, paper or skin-tone palettes (the Hackathon 1 look);
+  - blue/green "AI" gradients, any gradient, glassmorphism, neon glows, sparkle ✨ AI icons;
+  - regional or cultural decoration in the UI;
+  - pie/donut charts;
+  - colour-only status cues (always pair colour with ▲▼, ✓/✗ or text).
+- **Shape and motion:** 8px radius on cards, 6px on controls, hairline borders, no heavy shadows, dense tables, subtle motion only (rows slide in, numbers tick).
 - **80% actions are always one click or ⌘K away:**
   - kill switch, find customer, run decision/simulate, edit rule, dry-run campaign, open bot link;
   - every page has a one-line "Why this page exists" note for marketers.
 - **Telegram messages:**
   - ≤ 280 characters: headline, two personal lines, exact value and expiry, coupon in `monospace`.
+  - Optional card image uses the same tokens: graphite header, signal-orange value, amber expiry chip.
   - Buttons: ✅ Claim · ⏰ Remind me tonight · 🙅 Not for me · ❓ Why this?
 
 ## 8. Stack and commands

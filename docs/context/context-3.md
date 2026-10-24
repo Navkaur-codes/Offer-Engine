@@ -112,7 +112,7 @@ The main session mounts your webhook route.
    - catch Telegram 403 (user blocked the bot) and mark the customer as unreachable;
    - retry with backoff on 429/5xx;
    - make webhook handlers idempotent using `update_id` dedupe.
-4. Optional: an offer card image (Pillow, Ledger palette), sent as a photo with the caption. Use text only if time is short.
+4. Optional: an offer card image (Pillow, Signal palette: graphite header, orange value, amber expiry chip), sent as a photo with the caption. Use text only if time is short.
 
 ## Stub strategy
 Use `app.ports.decide`. Until Session B merges, it returns fixture Decisions from `app.stubs`. They are deterministic by input:

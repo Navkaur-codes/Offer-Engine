@@ -350,11 +350,23 @@ The `Festival` schema goes in `contracts.py` in Step 0.
 
 ## 7. Analytics dashboard (React): design and pages
 
-### Visual system "Ledger" (deliberately not the blue-green AI look)
-- **Colours:** paper background `#F5F2EA`, ink `#17150F`, hairlines `#E2DCCD`, one accent vermilion `#D9480F`, plum `#5B2A86` for comparison series, amber for warnings. Changes are shown with ▲▼ arrows, not colour alone.
-- **Dark mode:** charcoal `#131210`.
-- **Type:** *Instrument Serif* for titles and big KPIs, *Geist* for the UI, *Geist Mono* with tabular figures for numbers and codes.
-- **Shape and motion:** no gradients, glass effects or sparkle icons. Sharp 6px radii and dense, editorial tables. Motion stays subtle.
+### Visual system "Signal" (modern and general; not beige, not the blue-green AI look)
+> Changed on 24 Oct from "Ledger". Ledger's warm paper palette was too close to the Hackathon 1 skin-tone UI. Full tokens are in `CLAUDE.md §7`.
+- **Feel:** modern product analytics in the style of Linear, Vercel or Stripe, with no regional theming.
+- **Colours:**
+  - mostly cool monochrome: `#FAFAFA` background, white surfaces, `#0A0A0B` ink, `#E7E7EA` hairlines;
+  - a dark sidebar `#0B0B0D`;
+  - **one signal accent `#FF4F00`**, with violet `#7A5AF8` as the second series and amber `#F5A524` for warnings and upcoming events;
+  - changes shown with ▲▼, never colour alone.
+- **Dark mode:** `#0B0B0D` background, `#141417` surfaces.
+- **Type:** Geist throughout (SemiBold for titles and big KPIs), Geist Mono with tabular figures for numbers and codes.
+- **Signature elements:**
+  - a bento-grid Overview;
+  - the **Decision Pipeline Lens**, step chips showing each decision passing the guardrails;
+  - a terminal-style live stream;
+  - dot-grid only in empty states and the Playground;
+  - a neutral "Upcoming moments" strip.
+- **Shape and motion:** no gradients, glass effects or sparkle icons. 8px cards, 6px controls, hairline borders, subtle motion.
 
 ### The 80% actions are always one click away
 - A top bar with the **kill switch**, **budget meter**, **bot QR/link** and a **⌘K palette** (find customer, edit rule, run dry-run, pause sends).
@@ -454,7 +466,7 @@ backend/tests/  frontend/src/ (pages, components, theme.css)  CLAUDE.md  README.
   - Run `pytest`/lint before committing.
   - Update `docs/progress.md` at the end of every session.
   - Check `docs/detective.md` before adding any feature.
-- **Design:** the "Ledger" design tokens, and a ban on blue/green gradient "AI" styling.
+- **Design:** the "Signal" design tokens, and a ban on beige/skin-tone palettes and blue/green gradient "AI" styling.
 - **Stack:** stack details, commands, and env var names (names only, never values).
 
 **detective.md starting traps:**
@@ -489,7 +501,7 @@ Then 4 sessions run in parallel, each in its own git worktree/branch. Each one c
 | **A: Data & Scoring** | `backend/app/data/`, `backend/app/scoring/`, `backend/tests/data/` | Generator, personas, seed script, RFM/churn/uplift, realism stats JSON |
 | **B: Decision Core** | `backend/app/rules/`, `backend/app/agent/`, `backend/tests/core/` | 3-layer rules + `evaluate()`, harness, Groq tools/prompt, validator, fallback, explainer, property tests |
 | **C: Telegram + Lab** | `backend/app/bot/`, `backend/app/lab/`, `backend/tests/bot/` | Offer bot, `/simulate` commands, `/why`, Customer Lab with 10 bots (uses a stub `decide()` until B merges) |
-| **D: Dashboard** | `frontend/` | Ledger theme and all pages, built against mock JSON from `docs/contracts.md` |
+| **D: Dashboard** | `frontend/` | Signal theme and all pages, built against mock JSON from `docs/contracts.md` |
 
 **Main session (this one) owns:**
 - `backend/app/api/`, `main.py`, the scheduler, and the merges of A to D.
@@ -531,7 +543,7 @@ docs/context/context-4.md       ← Session D: Dashboard
 | A Data | Personas + 12-mo generator + seed | RFM, churn, policy-membership features | Uplift T-learner + past campaigns + realism stats | Tuning to benchmarks, tests |
 | B Core | 3-layer rules + `evaluate()` + property tests | Harness + fallback (mock LLM) | Groq agent + tools + message validator | Explainer + daily digest |
 | C Bot | Onboarding, /profile, /help, offer card (stub decide) | /simulate commands, buttons, /why | Customer Lab (10 bots, group loop) | Admin cmds, polish, failure handling |
-| D UI | Ledger theme, shell, ⌘K, kill switch | Overview + Decisions log | Rules editor + Customers | Experiments + Realism + Playground |
+| D UI | Signal theme, shell, ⌘K, kill switch | Overview + Decisions log | Rules editor + Customers | Experiments + Realism + Playground |
 
 **Versions:**
 | Version | When | Milestone |

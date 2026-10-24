@@ -213,22 +213,25 @@ Remember: bots cannot DM bots; backend orchestrates all. Test with /lab run 5 in
 ```
 SESSION C, Phase 4 of docs/context/context-3.md. Admin commands (/summary, /killswitch, /campaign run, /impersonate)
 gated by ADMIN_TELEGRAM_IDS; polish all copy; handle 403/429/5xx with backoff, idempotent updates; optional Pillow
-offer-card image in Ledger palette. Save screenshots to docs/screenshots/. END OF SESSION routine.
+offer-card image in the Signal palette (graphite header, orange value, amber expiry chip). Save screenshots to docs/screenshots/. END OF SESSION routine.
 ```
 
 ---
 
 ## SESSION D: Dashboard (`docs/context/context-4.md`)
 
-### D1 (v0.2): Ledger theme, shell, ⌘K
+### D1 (v0.2): Signal theme, shell, ⌘K
 ```
-You are SESSION D (Dashboard) on branch feat/dashboard. Read CLAUDE.md (esp. §7 Design), docs/claude-progressive.md,
-docs/context/context-4.md, docs/contracts.md and docs/detective.md first.
-Do Phase 1: scaffold Vite+React+TS+Tailwind v4+shadcn+TanStack Query+cmdk+Recharts in frontend/, theme.css with Ledger
-tokens (light+dark), fonts (Instrument Serif, Geist, Geist Mono tabular), restyled shadcn, app shell with left rail +
-top bar (kill switch, budget meter, festival countdown, bot link/QR, ⌘K, admin passcode), typed api.ts with
-VITE_USE_MOCKS, mock JSON from contracts §5, shared components (Kpi, DataTable, ExplanationCard, RuleCheckList,
-badges, Money, EmptyState, WhyThisPage). No banned patterns (T06, T08). Owned paths only. END OF SESSION routine.
+You are SESSION D (Dashboard) on branch feat/dashboard. Read CLAUDE.md (esp. §7 Design — the "Signal" system),
+docs/claude-progressive.md, docs/context/context-4.md, docs/contracts.md and docs/detective.md first.
+Do Phase 1: scaffold Vite+React+TS+Tailwind v4+shadcn+TanStack Query+cmdk+Recharts in frontend/, theme.css with the
+Signal tokens (light+dark: cool monochrome, dark sidebar, ONE orange signal accent, violet second series, amber warnings),
+Geist + Geist Mono (tabular) fonts, restyled shadcn (8px cards, 6px controls, hairlines, no gradients), app shell with
+dark left sidebar + top bar (kill switch, budget meter, "Upcoming moments" chip, bot link/QR, ⌘K, admin passcode),
+typed api.ts with VITE_USE_MOCKS, mock JSON from contracts §5, shared components (Kpi with hero variant, PipelineLens,
+DataTable, ExplanationCard, RuleCheckList, badges, Money, EmptyState, WhyThisPage). No beige/skin tones, no regional
+decoration, no banned patterns (T06, T08). Owned paths only. 📌 COMMIT CHECKPOINT after each finished task.
+END OF SESSION routine.
 ```
 
 ### D2 (v0.3): Overview + Decisions

@@ -6,7 +6,7 @@
 
 ## Mission
 A dashboard a **marketing team understands and adjusts without help**:
-- distinctive "Ledger" design (not the blue-green AI look);
+- distinctive, modern **"Signal"** design: cool monochrome with one orange signal accent; not beige or skin-toned, not the blue-green AI look;
 - 80% of actions are one click or ⌘K away;
 - results that are easy to read.
 This session covers the **usability** and **design** criteria, and makes everything the other sessions build *visible* to judges.
@@ -25,27 +25,27 @@ The deployable Vite app for Vercel. `VITE_API_URL` points at the Render backend.
 
 ---
 
-## Phase 1 (v0.2): Ledger theme, app shell, ⌘K, kill switch
+## Phase 1 (v0.2): Signal theme, app shell, ⌘K, kill switch
 **Tasks:**
 1. Scaffold with Vite + React + TypeScript, Tailwind v4, shadcn/ui, TanStack Query, react-router, cmdk and Recharts.
-2. `src/theme.css` defines the tokens from `CLAUDE.md §7`, with light and dark modes. Fonts:
-   - Instrument Serif for titles and KPIs;
-   - Geist for the UI;
-   - Geist Mono with tabular numbers for all figures and codes.
-   - Restyle shadcn: 6px radius, hairline borders, no shadows except menus, no gradients.
+2. `src/theme.css` defines the **Signal** tokens from `CLAUDE.md §7`, with light and dark modes.
+   - **Fonts:** Geist for everything (SemiBold, tight tracking for titles and KPIs); Geist Mono with tabular numbers for all figures, ₹ and codes.
+   - **Restyle shadcn:** 8px cards, 6px controls, hairline borders, no shadows except menus, **no gradients**.
+   - `--signal` (orange) is used sparingly: primary button, hero KPI, "sent by AI" marks. Everything else stays monochrome.
 3. App shell:
-   - Left rail nav: Overview, Decisions, Rules, Customers, Experiments, Festivals, Realism, Playground.
+   - **Dark left sidebar** (`--rail`) with nav: Overview, Decisions, Rules, Customers, Experiments, Festivals, Realism, Playground. The active item is marked with a signal-orange bar.
    - **Top bar:**
      - **Kill switch** with a live status dot and a confirm dialog;
      - **budget meter** (today's use and festival pool);
-     - **festival countdown chip** (e.g. "Dhanteras in 15 days · build-up");
+     - **"Upcoming moments" chip**: neutral, with an amber countdown (e.g. "Dhanteras in 13 days · build-up"), and no regional decoration;
      - **bot link/QR** popover;
      - **⌘K**;
      - an admin passcode field that unlocks edits and is stored in sessionStorage.
 4. ⌘K palette: find customer, open decision by ID, edit rule…, run Playground for…, campaign dry-run, toggle kill switch, open bot, switch theme.
 5. `src/lib/api.ts`: a typed client whose types mirror `contracts.md`, a mocks switch, and error toasts.
 6. Shared components:
-   - `Kpi` (serif number, ▲▼ delta, sparkline);
+   - `Kpi` (big Geist SemiBold number, ▲▼ delta, sparkline; a `hero` variant in signal orange, used once per page at most);
+   - `PipelineLens` (step chips *Pre-gate → Policy → Agent → Validator → Sent*, each ✓/✗/↺ with a tooltip). The signature element; reused in Decisions and Playground;
    - `DataTable` (TanStack, dense, sticky header);
    - `ExplanationCard`;
    - `RuleCheckList` (✓/✗ with text);
@@ -55,7 +55,7 @@ The deployable Vite app for Vercel. `VITE_API_URL` points at the Render backend.
 **Done when:**
 - The shell runs on mocks in both light and dark modes.
 - Lighthouse accessibility score is at least 90.
-- The design shows no banned patterns (T06, T08).
+- The design shows no banned patterns (T06, T08): no beige or skin tones, no gradients, no regional decoration.
 
 ## Phase 2 (v0.3): Overview + Decisions log
 **Tasks:**

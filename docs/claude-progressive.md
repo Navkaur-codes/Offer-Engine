@@ -17,7 +17,7 @@
 - **A:** personas, catalogue, verified 2026 festival calendar, 12-month generator, past campaigns, seed CLI, generator-stats tests.
 - **B:** rule types + seed rules (4 layers), `engine.effective_policy / allowed_offers / evaluate`, property test.
 - **C:** onboarding `/start`, render cards, `/profile /help /offers /pause /stop`, using stub `decide`.
-- **D:** Vite scaffold, Ledger theme, app shell, ⌘K, kill switch, typed API client + mocks, shared components.
+- **D:** Vite scaffold, **Signal** theme (changed from Ledger on 24 Oct; see CLAUDE.md §7), app shell, ⌘K, kill switch, typed API client + mocks, shared components.
 - **Main:** watch `sessions.md`, answer contract requests, start the `app/api/` skeleton (MAIN-API) once A or B has something real.
 
 ## Temporary rules for this phase

@@ -81,3 +81,12 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Lab bots still to create (by Sun).
   - Session C needs a dev bot.
 - **Next:** the user creates the branches and worktrees, then starts sessions A1–D1.
+
+### 2026-10-24 · Main · Design system changed: Ledger → Signal
+- **Version/Phase:** v0.2 / Phase 1 (before any session started)
+- **Why:** Ledger's warm paper/beige palette was too close to the user's Hackathon 1 skin-tone UI. The user also wants a general, modern look with no regional theming.
+- **Did:**
+  - The new "Signal" system: cool monochrome, dark sidebar, one orange accent `#FF4F00`, violet second series, amber warnings, Geist + Geist Mono.
+  - Signature elements: Decision Pipeline Lens, bento Overview, terminal-style stream.
+- **Files:** `CLAUDE.md §7`, `docs/PLAN.md §7`, `docs/context/context-4.md`, `docs/context/context-3.md` (card image), `docs/prompts.md` (D1), `docs/detective.md` (T06), `docs/claude-progressive.md`
+- **Next:** the user fast-forwards all 4 feature branches to main, then starts sessions A1–D1.
