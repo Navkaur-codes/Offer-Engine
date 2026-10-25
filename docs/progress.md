@@ -415,6 +415,31 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Files:**
   - `backend/app/scoring/{uplift,uplift_model,impact}.py`, `backend/tests/data/test_uplift_impact.py`
   - edited: `backend/app/scoring/profile.py`, `backend/app/data/{generator,personas}.py`, `backend/tests/data/test_profile_policy.py` (cart test now picks a customer clear of sleeping_dog)
-- **Commits:** _pending the user's commit_
+- **Commits:** `dad6a5a` feat(scoring): uplift T-learner and impact estimate; observable response-type traces in generator
 - **Tests:** `python -m pytest tests -q` (backend) → 227 passed · `ruff check .` clean
 - **Next:** `scoring/realism.py`, `scoring/experiments.py` (cached).
+
+### 2026-10-25 · Session A · Phase 3: realism + experiment stats (A3b), end of phase
+- **Version/Phase:** v0.4 / Phase 3. Done; all "Done when" items met (Qini beats random, impact ranks persuadables above sure-things, stats < 1 s cached).
+- **Did:**
+  - `scoring/realism.py`: `compute()` → `RealismStats` from the live DB.
+    - Contents: funnel counts, Pareto, cart abandonment, AOV and returns by category, daily seasonality, retention cohorts.
+    - `benchmarks` gives each target range with its value, ok flag and source.
+    - Cached 1 h; ~1 s on the first call for 5,000 customers, then ~0 ms.
+  - `scoring/experiments.py`: `compute(start, end)` → `ExperimentStats`.
+    - Pools past campaigns (treated vs the random 10% control) with live decisions (SENT vs HELD_OUT, purchase within 7 days).
+    - Reports incremental revenue and profit, and margin saved on sure-things (coupon cost × control/treated conversion, i.e. the non-incremental share of redemptions).
+    - Also uplift by policy, ROI by offer type, festival vs baseline, and the Qini curve. Cached 10 min.
+- **Numbers (5,000-customer seed, all campaigns):**
+  - Treated 10.1% conversion vs control 5.3%; incremental revenue ₹14.2 lakh, incremental profit ₹93k.
+  - Of ₹2.76 lakh in coupons, ₹1.46 lakh went to people who'd have bought anyway.
+  - ROI by offer type: flat ₹ off 3.1×, bonus points positive (no ₹ cost), blanket 15% off −0.07, free shipping (one small Lohri test) negative.
+  - Festival lift: Dhanteras 3.8×, Diwali 3.2×, Black Friday 2.5×, Karwa Chauth 2.3× normal daily revenue.
+- **Files:** `backend/app/scoring/{realism,experiments}.py`, `backend/tests/data/test_realism_experiments.py`, `docs/sessions.md`, `docs/progress.md`
+- **Commits:** _pending the user's commit_ (A3a: `dad6a5a`)
+- **Tests:** `python -m pytest tests -q` (backend) → 233 passed; `tests/data` 80 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - Neon must be reseeded after the merge (generator change in A3a).
+  - The NO_OFFER share now depends on B's zero-cost threshold: 47% now vs a projected 20%.
+  - Per-customer uplift targeting is noisy, because the hidden type is only ~80% identifiable from behaviour.
+- **Next (Phase 4):** `docs/data-dictionary.md`, tuning benchmarks to the middle of their ranges, edge cases (0 orders, missing age, brand-new Telegram user), and measuring `build_profile` p95 on Neon.

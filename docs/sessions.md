@@ -6,7 +6,7 @@
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-2 passed → Phase 3 (deploys, contract requests) | ☑ GATE-1 ☑ MAIN-API ☑ GATE-2 | v1.1 frozen | none | 25 Oct |
-| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 2 done (A2) → Phase 3 next | ☑ P2 `1646fe0` (P1 `8b2e903`) | v1.1 | none (the `test_ports` fix was applied by Main at GATE-2) | 25 Oct |
+| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 3 done (A3) → Phase 4 next | ☑ P3 `dad6a5a` + realism/experiments (P2 `1646fe0`, P1 `8b2e903`) | v1.1 | Main: reseed Neon after merging A3 | 25 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer, quiet hours) → Phase 3 next | ☑ P2 `0302b17`, `3d1f941` | v1.1 | none (budget guard approved) | 25 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 2 done (/simulate, recorded buttons, /why, /history, rate limit, `initiated_by`) → Phase 3 next | ☑ P2 `9cfaf33`, `21e43d9` (P1 `1e5e102`) | v1.1 | P3 needs the 10 Lab bots + group (user) | 25 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer) → Phase 3 next; Lighthouse not yet measured | ☑ P2 `a9aa536`, `181eb92`, `fc08f23` (P1 `e5d9116`) | v1.1 | none (CR-D1, CR-D2 accepted in v1.1) | 25 Oct |
@@ -94,6 +94,16 @@ Format: `date · from → to · note`
   - On a 500-customer seed (customer-initiated `browse_interest`, fallback path), NO_OFFER is 47% with the current "profit > 0" and a projected 20% with "zero-cost at ≥ 0". The 30–40% target falls in between, so please tune it with your rule. Per-policy numbers are in progress.md (A3a).
 - 25 Oct · A → B · Predicted uplifts are probabilities over a 7-day window: typical persuadables get +0.02 to +0.05, sure-things about 0. `P_ATRISK_WINBACK`'s `min_uplift: 0.05` therefore blocks about 82% of at-risk customers. Consider 0.02.
 - 25 Oct · A → B, D · `profile.rfm` also has `offers_received` and `offers_declined` now (campaign offers plus "Not for me" taps on logged decisions), which help explain sleeping dogs. `scoring.uplift.qini()` returns the Qini points for the Experiments page.
+- 25 Oct · A → Main, D · `realism_compute()` and `experiments_compute(start, end)` are real.
+  - Both read the live DB and are cached (realism 1 h, experiments 10 min per range).
+  - First call: ~1 s on 5,000 customers for realism, less for experiments; afterwards ~0 ms. Optional: call both once at startup to warm the cache.
+  - `RealismStats.benchmarks[key] = {"min","max","value","ok","source"}`, covering pareto, cart abandonment, view→purchase, fashion returns, evening sessions and the Diwali week.
+  - `ExperimentStats` pools past campaigns (treated vs 10% control) with live decisions (SENT vs HELD_OUT, conversion = a purchase within 7 days).
+    - `treatment`/`control` also carry `revenue_per_customer`.
+    - `uplift_by_policy` rows: `{policy, n_treated, n_control, treated_conv, control_conv, uplift}`.
+    - `roi_by_offer_type` rows: `{type, n, incremental_revenue, cost, incremental_profit, roi}`; `roi` is null for zero-cost.
+    - `festival_vs_baseline` rows: `{festival, id, date, revenue_per_day, baseline_per_day, lift}`.
+  - Story for the demo, on the 5,000-customer seed: blanket 15% off lost money (ROI −0.07) while flat ₹ off returned 3.1×. ₹1.46 lakh of the ₹2.76 lakh coupon spend went to people who'd have bought anyway (`margin_saved_sure_things`).
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
