@@ -580,5 +580,28 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - **Prompt:** prefer a zero-cost candidate with profit ≥ 0 over NO_OFFER; answer NO_OFFER only when no candidate has profit ≥ 0.
   - `fallback.zero_cost_perk(candidates)` picks the perk.
 - **Tests:** MockLLM("no_offer") for a cart abandoner, a new user and a deal hunter → SENT with a ₹0 perk via RULES_FALLBACK, compliant. With only paid offers allowed and nothing paying, NO_OFFER stands (decided by AGENT). `pytest tests/core -q` → 88 passed (property tests green). Full `pytest tests -q` → 283 passed. `ruff` is clean.
-- **Commits:** _pending_
+- **Commits:** `aa0db26`
 - **Suggestion (not changed):** A notes `P_ATRISK_WINBACK.min_uplift = 0.05` blocks about 82% of at-risk customers with the real uplift model, and suggests 0.02. That's a marketer-tunable rule value, so it's for the user to change on the Rules page if wanted.
+
+### 2026-10-25 · B · Phase 4: daily digest, rule-impact preview, profiling (end of session)
+- **Version/Phase:** v1.0 / Phase 4. Done, waiting for the commit.
+- **Did:**
+  - `agent/digest.py` `daily(day)` (the `daily_digest` port is now real).
+    - Every number is computed in code from `decision_store.day_rows`: decisions by status and decided_by, spend vs expected incremental profit, free perks sent, top blocks, claim rate per policy, the festival of the day.
+    - Blocks without a rule are named after the switch: `KILL_SWITCH`, `CONSENT`, `NO_CANDIDATES`.
+    - The fast model (gpt-oss-20b, charged to the fast budget) only rewrites the 5 lines. Its answer is used only if it is exactly 5 lines and every number in it appears in the computed stats; otherwise the template is used.
+    - Line 5 is a suggestion that "needs your approval": either review the rule behind most holds, or check the LLM budget when the fallback decided most decisions.
+  - `rules/preview.py` `impact(rule)` (the `rule_impact` port is now real).
+    - It re-screens a fixed random sample of 500 synthetic customers (seeded, cached for 10 min) with the current rules and with the edited rule.
+    - `customers_affected` = customers whose allowed offers or ranges change. `budget_delta` = change in the most the rules would let us spend on them (each one's most expensive allowed offer), so tightening a cap shows a saving even when the cheapest pick stays the same.
+    - `examples` = up to 3 `{customer_id, first_name, before, after}`, e.g. "3 offers allowed, up to 10% off ethnic wear" → "1 offer allowed, up to 5% off ethnic wear". `sample_size` is included.
+  - **Profiling** (scratch seed 500/7, real profile/uplift/impact):
+    - `decide()` on the fallback takes **25 ms p50, 39 ms p95**, against the < 100 ms target; `build_profile` is about 13 ms of that.
+    - The agent on gpt-oss-120b took **1.98 s p50** over 4 live runs (cart abandoner, new user, deal hunter, VIP), against the < 4 s target, at 1 LLM call and 2.1–2.6k tokens each.
+    - All 4 got a SEND from the agent itself after the task-0 prompt change, with no override needed.
+  - Batch mode (task 3) was done in B3 as `decide_batch` and is wired by Main.
+- **Tests:** `pytest tests/core -q` → 98 passed (new `test_phase4.py`: an empty day gives 5 honest lines; counts come from the log; a faithful LLM rewrite is used; invented numbers, a wrong shape or an LLM error give the template; a tightened cap shows who changes and a negative budget delta; an unchanged rule affects nobody; switching off the sleeping-dog rule is visible; the sample skips Lab customers and is cached). Property tests green. Full `pytest tests -q` → 293 passed. `ruff` is clean.
+- **Commits:** _pending_
+- **Open / for others:**
+  - The dashboard's impact line shows `budget_delta` as "budget ₹…": it now means worst-case spend headroom over the 500-customer sample, not a forecast.
+  - The digest's "needs your approval" suggestions are text only; nothing is changed automatically.
