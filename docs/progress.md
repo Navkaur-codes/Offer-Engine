@@ -610,3 +610,14 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Did:** `decide(..., trigger_meta={"force_llm_fail": True}, dry_run=True)` skips the LLM for that run only: `decided_by=RULES_FALLBACK` with "the LLM is forced off for this run (Playground)". **Safety:** the flag is honoured only when `dry_run=True`; on a live decide it is ignored. It is always removed from `trigger_meta`, so it is never logged and no API or Telegram caller can switch the agent off for real sends.
 - **Tests:** a dry run with the flag goes to the fallback, makes no LLM call and persists nothing; a live run with the flag still goes to the agent, and the flag is absent from the saved payload. `pytest tests/core -q` → 100 passed; full `pytest tests -q` → 295 passed; `ruff` is clean.
 - **Commits:** `b3dc666`
+
+### 2026-10-26 · B · GATE-4 polish: plain-English digest suggestion, real budget delta in the rule preview
+- **Digest (Main's live finding):** a live digest said "approve review of NO_CANDIDATES block, which stopped 6 of 6 decisions".
+  - Blocks now have plain labels ("no allowed offer", "the kill switch", "the frequency cap", …), and the suggestion counts against all of the day's decisions, e.g. "Suggestion: 6 of 8 decisions found no allowed offer; review the persona caps on the Rules page."
+  - The facts sent to gpt-oss-20b use the same words. A rewrite that shows an internal `CODE_LIKE_THIS` is rejected, like one with an invented number, and the template is used instead.
+- **Rule preview (`budget_delta` was always 0):** the old definition was the change in each customer's single most expensive allowed offer, which a % cap often doesn't touch (flat ₹ off stays the most expensive).
+  - It is now the change in total worst-case spend headroom: the summed most-generous cost of every allowed offer, after minus before.
+  - Each example names the offer that changed: `{customer_id, first_name, offer, before, after}`, e.g. "% off a category: up to 10% off gifting → up to 8% off gifting".
+  - Main's case (`P_DEAL_CAP` 10 → 8, 500-customer scratch sample) now gives 6 customers affected, **₹−328**.
+- **Tests:** `pytest tests/core -q` → 103 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected). Property tests green. Full `pytest tests -q` → 298 passed. `ruff` is clean.
+- **Commits:** _pending_

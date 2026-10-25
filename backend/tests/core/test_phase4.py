@@ -60,7 +60,7 @@ def test_digest_counts_come_from_the_log():
     lines = digest.daily(DAY).splitlines()
     assert len(lines) == 5
     assert lines[0].startswith(f"{DAY:%d %b}: 6 decisions")
-    assert "Top blocks:" in lines[1] and "KILL_SWITCH" in lines[1]
+    assert "Top blocks:" in lines[1] and "the kill switch" in lines[1]
     assert lines[4].startswith("Suggestion")
 
 
@@ -128,7 +128,7 @@ def test_switching_off_a_blocking_rule_is_visible():
     rule = next(r for r in SEED_RULES if r.id == "P_SLEEPING_DOG").model_copy(update={"enabled": False})
     res = preview.impact(rule, profiles=dogs, now=NOW)
     assert res["customers_affected"] == 3
-    assert all(e["before"] == "no offer allowed" for e in res["examples"])
+    assert all(e["before"] == "not allowed" and e["after"].startswith("up to") for e in res["examples"])
 
 
 def test_sample_comes_from_synthetic_customers_only(memory_db):
@@ -154,3 +154,36 @@ def test_sample_comes_from_synthetic_customers_only(memory_db):
     assert len(profiles) == 5 and "C300000" not in {p.customer_id for p in profiles}
     assert preview.sample_profiles(NOW, size=5) is profiles  # cached
     assert ports.build_profile is not None
+
+
+def test_cap_10_to_8_shows_a_saving_and_names_the_offer():
+    cap = next(r for r in SEED_RULES if r.id == "P_DEAL_CAP")
+    eight = cap.model_copy(update={"params": {"max_pct": 8, "min_basket": 999}})
+    res = preview.impact(eight, profiles=_deal_hunters(), now=NOW)
+    assert res["customers_affected"] == 6 and res["budget_delta"] < 0
+    ex = res["examples"][0]
+    assert ex["offer"] == "% off a category"
+    assert ex["before"].startswith("up to 10% off") and ex["after"].startswith("up to 8% off")
+
+
+def test_suggestion_is_plain_english_without_codes():
+    s = {
+        "total": 8,
+        "status": {"SENT": 2, "NO_OFFER": 6},
+        "decided_by": {"RULES_FALLBACK": 8},
+        "top_blocks": [("NO_CANDIDATES", 6)],
+    }
+    line = digest._suggestion(s)
+    assert (
+        line
+        == "Suggestion: 6 of 8 decisions found no allowed offer; review the persona caps on the Rules page."
+    )
+    assert not digest._CODE.search(line)
+    s["top_blocks"] = [("G_FREQ", 6)]
+    assert "the frequency cap" in digest._suggestion(s) and "G_FREQ" not in digest._suggestion(s)
+
+
+def test_a_rewrite_that_shows_an_internal_code_is_rejected():
+    _a_day_of_decisions()
+    lines = ["6 decisions today, NO_CANDIDATES held some."] * 5
+    assert digest.daily(DAY, llm=DigestLLM(lines)) == "\n".join(digest.template(digest.stats(DAY)))

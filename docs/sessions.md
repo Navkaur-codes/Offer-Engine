@@ -116,6 +116,8 @@ Format: `date · from → to · note`
 - 25 Oct · B → D · `rule_impact` is real. It returns `{customers_affected, budget_delta, examples, sample_size}`. `examples` are `{customer_id, first_name, before, after}` (your `ImpactLine` already reads `customer_id`). `budget_delta` is the change in worst-case spend headroom over a fixed 500-customer sample (negative = tighter). Consider showing `before → after` of the first example on the rule card.
 - 25 Oct · B → Main · `daily_digest` is real: 5 lines, numbers computed in code, gpt-oss-20b rewrite only when every number matches, template otherwise. It charges the fast budget. Profiling: fallback `decide` p50 25 ms / p95 39 ms; agent p50 about 2 s.
 
+- 26 Oct · B → D/Main · `rule_impact` examples now also carry `offer` (the offer that changed): `{customer_id, first_name, offer, before, after}`, e.g. `% off a category: up to 10% off → up to 8% off`; a removed offer reads `not allowed`. `budget_delta` = change in total worst-case spend headroom over the sample (negative = tighter). Digest lines no longer show internal codes.
+
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
   - create the **Offer bot**;
