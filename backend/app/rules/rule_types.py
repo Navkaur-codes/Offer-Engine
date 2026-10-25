@@ -843,7 +843,7 @@ _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
 _DATE = re.compile(rf"\b(\d{{1,2}})\s?({'|'.join(_MONTHS)})[a-z]*\b", re.I)
 _CODE = re.compile(r"\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{6,}\b")
 _PCT = re.compile(r"(\d+(?:\.\d+)?)\s?%")
-_MULT = re.compile(r"(\d+(?:\.\d+)?)\s?[×x]\b")
+_MULT = re.compile(r"(\d+(?:\.\d+)?)\s?(?:×|x\b)")  # "×" is not a word char, so no \b after it
 _RUPEES = re.compile(r"(?:₹|rs\.?\s?|inr\s?)\s?(\d[\d,]*)", re.I)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 
@@ -912,7 +912,8 @@ def facts_problem(
         if _num(found) not in money:
             return f"mentions ₹{found}, which is not part of this offer"
     text = _RUPEES.sub(" ", text)
-    other = money | {profile.points_balance, profile.points_expiring}
+    offer_numbers = {v for v in (pct, mult, num(params, "amount")) if v is not None}
+    other = money | offer_numbers | {profile.points_balance, profile.points_expiring}
     for found in _NUMBER.findall(text):
         if _num(found) not in other:
             return f"mentions the number {found}, which doesn't come from the offer"

@@ -341,3 +341,48 @@ def test_welcome_guarantee_still_respects_consent(memory_db):
     add_customer(memory_db, "TG1003", opted_out=True)
     d = decide("TG1003", "welcome", {"initiated_by": "customer"}, now=NOW)
     assert d.status == "BLOCKED"
+
+
+# ---------------------------------------------------------------- GATE-3: fallback text must validate
+@pytest.mark.parametrize(
+    "trigger", ["browse_interest", "cart_abandoned", "inactivity", "welcome", "points_expiry"]
+)
+def test_every_fallback_template_passes_the_message_validator(trigger):
+    from app.agent import fallback
+    from app.rules.engine import load_rules, screen_offers
+
+    rules = load_rules()
+    contexts = [
+        get_context(NOW),
+        get_context(NOW).model_copy(
+            update={
+                "festival": "karwa_chauth_2026",
+                "festival_phase": "build_up",
+                "greeting": "Happy Karwa Chauth",
+            }
+        ),
+    ]
+    checked = set()
+    for cid in ["C000001", "C000002", "C000003", "C000004", "C000005"]:
+        for policy in ["default", None]:
+            profile = ports.build_profile(cid, NOW)
+            if policy:
+                profile = profile.model_copy(update={"policy": policy})
+            for ctx in contexts:
+                cands, _ = screen_offers(profile, ctx, DEFAULT_OFFERS, rules=rules)
+                for cand in cands:
+                    params = fallback.cheapest_params(cand)
+                    expires = rule_types.offer_expiry(ctx.now, ctx)
+                    _, text = fallback.template(profile, trigger, cand.type, params, expires, ctx.greeting)
+                    message = harness.fill_code(text, cand.type, "SAVEABC7Q2X")
+                    res = evaluate(
+                        profile, ctx, cand.offer_id, params, message, rules=rules, catalogue=DEFAULT_OFFERS
+                    )
+                    assert res.ok, (
+                        cid,
+                        cand.offer_id,
+                        message,
+                        [(v.rule_id, v.detail) for v in res.violations],
+                    )
+                    checked.add(cand.type)
+    assert "bonus_points" in checked  # the GATE-3 case: "Earn 2× reward points"
