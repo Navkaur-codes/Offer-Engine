@@ -37,6 +37,7 @@ log = logging.getLogger(__name__)
 CATEGORIES: tuple[str, ...] = get_args(Category)
 DISCOUNT_TYPES = frozenset({"pct_off", "flat_off"})
 VALUE_KEYS = ("pct", "amount", "multiplier")  # params that make an offer more generous as they grow
+ZERO_COST_TYPES = frozenset({"cart_nudge", "early_access", "points_reminder"})  # free perks
 
 POLICY_LABELS = {
     "vip": "VIP customers",
@@ -142,8 +143,19 @@ def worst_case_params(allowed: dict) -> dict:
     return {k: v for k, v in out.items() if v is not None}
 
 
+def estimate_offer(
+    profile: CustomerProfile, offer_type: str, params: dict, category: str | None
+) -> tuple[int, int]:
+    """(cost, incremental profit). A reminder or early access gives no money away, so it costs ₹0 by
+    definition and its profit is what the nudge earns, never below zero."""
+    cost, profit = ports.impact_estimate(profile, offer_type, params, category)
+    if offer_type in ZERO_COST_TYPES:
+        return 0, max(0, profit + cost)
+    return cost, profit
+
+
 def estimate_candidate(profile: CustomerProfile, cand: OfferCandidate) -> tuple[int, int]:
-    return ports.impact_estimate(profile, cand.type, worst_case_params(cand.allowed_params), cand.category)
+    return estimate_offer(profile, cand.type, worst_case_params(cand.allowed_params), cand.category)
 
 
 def narrow(
@@ -519,7 +531,7 @@ class Budget(RuleSpec):
         left, what = self._left(context)
         if offer is None:
             return (left > 0, f"{inr(left)} left in {what}")
-        cost, _ = ports.impact_estimate(profile, offer.type, params, offer_category(offer, params, profile))
+        cost, _ = estimate_offer(profile, offer.type, params, offer_category(offer, params, profile))
         if cost > left:
             return False, f"expected cost {inr(cost)} is more than the {inr(left)} left in {what}"
         return True, f"expected cost {inr(cost)}; {inr(left)} left in {what}"

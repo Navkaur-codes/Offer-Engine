@@ -42,6 +42,7 @@ from app.contracts import (
 )
 from app.rules.engine import effective_policy, evaluate, load_rules, screen_offers
 from app.rules.offers import load_offers
+from app.rules.rule_types import estimate_offer
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ EXPIRY_DAYS = 2
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
+WELCOME_GUARANTEE = "welcome guarantee: a first-time customer always gets a free perk"
 
 
 # ---------------------------------------------------------------- reads (the harness's only DB inputs)
@@ -86,6 +88,13 @@ def customer_flags(customer_id: str) -> CustomerFlags:
         telegram_chat_id=row.telegram_chat_id,
         opt_in_festivals=list(row.opt_in_festivals or []),
     )
+
+
+def is_first_decision(customer_id: str) -> bool:
+    try:
+        return not decision_store.query(customer_id=customer_id, limit=1)
+    except SQLAlchemyError:
+        return True
 
 
 def default_llm() -> LLMClient | None:
@@ -383,24 +392,21 @@ def decide(
         )
 
     expires_at = expiry(send_at, ctx_eval)
+    welcome_guaranteed = trigger == "welcome" and is_first_decision(customer_id)
     opted = ctx.festival and festival_key(ctx.festival) in flags.opt_in_festivals
     greeting = ctx.greeting if opted else None
 
     def sent_fields(
         cand: OfferCandidate, params: dict, headline: str, message: str, code: str | None
     ) -> dict:
-        cost, profit = ports.impact_estimate(
-            profile, cand.type, params, params.get("category", cand.category)
-        )
+        cost, profit = estimate_offer(profile, cand.type, params, params.get("category", cand.category))
         if flags.is_holdout:
             status, channel, code = "HELD_OUT", "none", None
         elif dry_run:
             status, channel, code = "DRY_RUN", "none", None
         else:
             status = "QUEUED" if queued else "SENT"
-            channel = (
-                "lab_group" if flags.is_lab_bot else ("dm" if flags.telegram_chat_id else "shadow_channel")
-            )
+            channel = "lab_group" if flags.is_lab_bot else ("dm" if flags.telegram_chat_id else "none")
         return dict(
             status=status,
             channel=channel,
@@ -416,6 +422,10 @@ def decide(
 
     def use_fallback(reason: str, extra: dict) -> Decision:
         choice = fallback.choose(candidates)
+        if choice is None and welcome_guaranteed:
+            choice = fallback.welcome_perk(candidates)
+            if choice is not None:
+                reason = f"{reason}; {WELCOME_GUARANTEE}"
         decided_by = "HOLDOUT" if flags.is_holdout else "RULES_FALLBACK"
         if choice is None:
             status = "HELD_OUT" if flags.is_holdout else "NO_OFFER"
@@ -466,6 +476,8 @@ def decide(
     facts = _facts(profile, ctx_eval, trigger, meta, policy.summary, candidates, expires_at, greeting)
     agent = run_agent(llm, profile, ctx_eval, facts, candidates, rules, catalogue, dry_run=dry_run)
     extra = {"agent_trace": agent.trace, "agent_output": agent.output, "llm_tokens": agent.tokens}
+    if agent.decided_by and agent.offer is None and welcome_guaranteed:
+        return use_fallback(f"the agent chose no offer; {WELCOME_GUARANTEE}", extra)
     if agent.decided_by and agent.offer is None:
         return finish(
             decided_by=agent.decided_by,

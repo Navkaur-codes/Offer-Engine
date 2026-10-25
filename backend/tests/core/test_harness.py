@@ -73,7 +73,7 @@ def assert_compliant(d) -> None:
 
 
 def test_good_agent_sends_and_logs(memory_db):
-    d = decide("C000002", "browse_interest", now=NOW, llm=MockLLM("good"))
+    d = decide("C000001", "cart_abandoned", {}, now=NOW, llm=MockLLM("good"))
     assert (d.status, d.decided_by) == ("SENT", "AGENT")
     assert d.coupon_code and COUPON.match(d.coupon_code) and d.coupon_code in d.message
     assert d.validation and d.validation.ok and d.expires_at > NOW
@@ -138,7 +138,7 @@ def test_kill_switch_blocks(memory_db):
 
 def test_quiet_hours_queue_until_morning():
     night = NOW.replace(hour=22, minute=15)
-    d = decide("C000002", "browse_interest", now=night, llm=MockLLM("good"))
+    d = decide("C000001", "cart_abandoned", {}, now=night, llm=MockLLM("good"))
     assert d.status == "QUEUED" and d.coupon_code
     assert d.expires_at.date() == (night + timedelta(days=1 + harness.EXPIRY_DAYS)).date()
     assert d.explanation.title.startswith("Queued for 09:00")
@@ -278,3 +278,65 @@ def test_spend_today_drives_pacing(memory_db):
     spent = sum(r.cost for r in rows(memory_db))
     ctx = get_context(NOW + timedelta(hours=1))
     assert ctx.budget_left_today == 50000 - spent
+
+
+# ---------------------------------------------------------------- priority 1: no more "no offer for everyone"
+def test_zero_cost_perk_is_sent_when_it_does_not_lose_money():
+    d = decide("C000003", "browse_interest", now=NOW)  # sure-thing VIP: uplift ≈ 0
+    assert d.status == "SENT"
+    assert d.candidates and next(c for c in d.candidates if c.offer_id == d.final_offer_id).type in {
+        "cart_nudge",
+        "early_access",
+        "points_reminder",
+    }
+    assert d.cost == 0
+
+
+def test_sure_thing_vip_never_gets_a_paid_offer():
+    d = decide("C000003", "browse_interest", now=NOW, llm=MockLLM("good"))
+    paid = {"pct_off", "flat_off", "free_shipping", "free_express", "bonus_points"}
+    assert all(c.type not in paid or c.est_incremental_profit <= 0 for c in d.candidates)
+    assert d.final_offer_id is None or d.cost == 0
+
+
+def test_welcome_guarantee_for_a_first_time_customer(monkeypatch):
+    real = ports.build_profile
+    # nothing is worth its cost for this customer: every uplift is zero
+    monkeypatch.setattr(
+        ports,
+        "build_profile",
+        lambda cid, now: real(cid, now).model_copy(
+            update={"customer_id": cid, "uplift": {k: 0.0 for k in real(cid, now).uplift}}
+        ),
+    )
+    d = decide("TG1001", "welcome", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
+    assert d.status == "SENT" and d.final_offer_id and d.cost == 0
+    assert "welcome guarantee" in d.fallback_reason  # the agent said NO_OFFER; the guarantee overrides it
+    assert_compliant(d)
+
+
+def test_welcome_guarantee_only_once(memory_db, monkeypatch):
+    real = ports.build_profile
+    monkeypatch.setattr(
+        ports,
+        "build_profile",
+        lambda cid, now: real(cid, now).model_copy(
+            update={"customer_id": cid, "uplift": {k: 0.0 for k in real(cid, now).uplift}}
+        ),
+    )
+    first = decide("TG1002", "welcome", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
+    assert first.status == "SENT"
+    again = decide(
+        "TG1002",
+        "welcome",
+        {"initiated_by": "customer"},
+        now=NOW + timedelta(days=3),
+        llm=MockLLM("no_offer"),
+    )
+    assert again.fallback_reason is None or "welcome guarantee" not in again.fallback_reason
+
+
+def test_welcome_guarantee_still_respects_consent(memory_db):
+    add_customer(memory_db, "TG1003", opted_out=True)
+    d = decide("TG1003", "welcome", {"initiated_by": "customer"}, now=NOW)
+    assert d.status == "BLOCKED"

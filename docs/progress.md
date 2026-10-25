@@ -366,3 +366,20 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - API: `GET /api/scheduler` (running, next runs) and `POST /api/scheduler/run/{job}` (admin passcode) to demo a job without waiting.
   - `decision_store.aware()` normalises naive (SQLite) and UTC (Postgres) timestamps to IST.
 - **Tests:** `tests/api/test_scheduler.py` (8 cases); full suite **222 passed**; ruff clean. A real start registers the 4 jobs with the correct next IST run times.
+
+### 2026-10-25 · B · Phase 3, priority 1: no more "no offer for everyone"
+- **Version/Phase:** v0.4 / Phase 3 (priority 1). Done, waiting for the commit.
+- **Did:**
+  - Zero-cost perks (`cart_nudge`, `early_access`, `points_reminder`) cost ₹0 by definition. Their expected profit is what the nudge earns, never below 0. One shared estimator (`rule_types.estimate_offer`) is used by `screen_offers`, the budget rule and the harness.
+  - The fallback sends a free perk at profit ≥ 0; paid offers still need profit > 0. A sure-thing VIP still never gets a paid offer.
+  - **Welcome guarantee:** a `welcome` for a customer with no earlier decision always gets the best allowed free perk (free shipping if no zero-cost perk is allowed), even if the agent says NO_OFFER. It still goes through `evaluate()`, so the kill switch, consent and frequency cap still win.
+  - Synthetic customers without a Telegram chat now get channel `none` (the shadow channel was removed).
+  - This changes committed behaviour from 0202dd8/0302b17 (cost of free perks, the fallback threshold), as requested in context-2 Phase 3.
+- **Before/after:** 500-customer scratch seed (`--seed 42`, 453 non-holdout customers), one customer-initiated dry run each (welcome / cart_abandoned / browse_interest in turn). A's real `build_profile`; uplift and impact are still stubs.
+  - Before: **82% NO_OFFER** (welcome 80%, cart 81%, browse 86%).
+  - After: **11% NO_OFFER** (welcome 5%, cart 14%, browse 13%).
+  - Offers sent after the fix: cart reminder 243, early access 98, free shipping 41, points reminder 14, flat ₹ off 6, % off 2.
+  - The remaining NO_OFFERs are deliberate: 14 bought within 48 h, 14 have no offer their rules allow, and 20 have only paid offers and none pays.
+- **Tests:** `pytest tests/core -q` → 63 passed (new: a free perk is sent at ₹0; a sure-thing VIP never gets a paid offer; the welcome guarantee overrides an agent NO_OFFER, only once, and never beats `/stop`). Full backend `pytest tests -q` → 227 passed. `ruff` is clean.
+- **Commits:** _pending_
+- **Next:** B3 proper: `budget.py`, `groq_client.py`, tools, the single-call prompt, the message validators, then 20 live runs.
