@@ -305,9 +305,16 @@ export interface Page<T> {
   items: T[]
   next: string | null
 }
+export interface LlmMeter {
+  used: number
+  limit: number
+  model: string
+}
 export interface Health {
   ok: boolean
   version: string
+  /** Main's extra (not in contracts §4): per-day LLM token budget from agent/budget.py. */
+  llm_budget?: { agent: LlmMeter; fast: LlmMeter; mode: '70b' | '8b' | 'rules' }
 }
 export interface CustomerDetail {
   profile: CustomerProfile
