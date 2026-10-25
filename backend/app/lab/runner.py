@@ -13,7 +13,8 @@ from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 
 from telegram import Bot, Message, ReplyParameters
-from telegram.constants import ParseMode
+from telegram.constants import ChatType, ParseMode
+from telegram.error import TelegramError
 
 from app import ports, runtime
 from app.bot import commands, resilience, sender, store
@@ -132,9 +133,20 @@ async def _post(bot: Bot, chat_id: int, text: str, **kwargs) -> Message:
     return await resilience.send(bot, chat_id, text, customer_chat=False, parse_mode=ParseMode.HTML, **kwargs)
 
 
-async def _reply(bot: Bot, chat_id: int, text: str, to: Message) -> Message:
+async def _reply(bot: Bot, chat_id: int, text: str, to: Message | None) -> Message:
+    if to is None:
+        return await _post(bot, chat_id, text)
     replying = ReplyParameters(message_id=to.message_id, allow_sending_without_reply=True)
     return await _post(bot, chat_id, text, reply_parameters=replying)
+
+
+async def shared_message_ids(bot: Bot, chat_id: int) -> bool:
+    """Only supergroups share message ids between bots. In a basic group each bot numbers messages itself, so
+    a Lab Shopper's message_id points at some other message for the Offer bot: there we don't reply-link."""
+    try:
+        return (await bot.get_chat(chat_id)).type == ChatType.SUPERGROUP
+    except TelegramError:
+        return False
 
 
 async def play_round(
@@ -145,8 +157,14 @@ async def play_round(
     turn: int,
     pause: Callable[[], Awaitable[None]] = _pause,
     prepared: tuple[scripts.Activity, Decision] | None = None,
+    threaded: bool = False,
 ) -> Decision:
-    """One round. `prepared` = (activity already written, decision already made) for batched runs."""
+    """One round. `prepared` = (activity already written, decision already made) for batched runs.
+    `threaded` = reply-link across bots (supergroups only); otherwise the name headers carry the thread."""
+
+    def link(message: Message) -> Message | None:
+        return message if threaded else None
+
     act = prepared[0] if prepared else await asyncio.to_thread(scripts.activity, customer, now(), turn)
     header = f"👤 <b>{escape(customer.name)}</b> · {escape(customer.label)}"
     post = await _post(voice, chat_id, f"{header}\n{act.line}")
@@ -158,21 +176,24 @@ async def play_round(
         decision = prepared[1]
     else:
         decision = await asyncio.to_thread(ports.decide, customer.id, "lab", act.meta)
-    answer = await _reply(offer_bot, chat_id, offer_reply(decision, customer), post)
+    answer = await _reply(offer_bot, chat_id, offer_reply(decision, customer), link(post))
     sender.remember(decision)
     await asyncio.to_thread(store.set_message_id, decision.id, answer.message_id)
-    remember_message(answer.message_id, decision.id)
-    remember_message(post.message_id, decision.id)
+    remember_message(answer.message_id, decision.id)  # the Offer bot's own id: right for reply-/why anywhere
+    if threaded:
+        remember_message(post.message_id, decision.id)
     if decision.status not in OFFER_STATUSES or not decision.final_offer_id:
         return decision
 
     reaction = react(decision, customer)
     await pause()
-    said = await _reply(voice, chat_id, reaction_line(reaction, customer, decision), answer)
-    remember_message(said.message_id, decision.id)
+    said = await _reply(voice, chat_id, reaction_line(reaction, customer, decision), link(answer))
+    if threaded:
+        remember_message(said.message_id, decision.id)
     if reaction == "why":
         await pause()
-        await _reply(offer_bot, chat_id, render_why(decision), said)
+        why = await _reply(offer_bot, chat_id, render_why(decision), link(said))
+        remember_message(why.message_id, decision.id)
         return decision
     outcome, event = OUTCOMES[reaction]
     await commands._record(decision, outcome, event)
@@ -200,11 +221,14 @@ async def run_rounds_async(
         async with AsyncExitStack() as stack:
             voices = [await stack.enter_async_context(bot_factory(t)) for t in voices_tokens]
             await asyncio.to_thread(remember_voices, [v.username for v in voices])
+            threaded = await shared_message_ids(offer_bot, chat_id)
             cast = await asyncio.to_thread(next_customers, n)
             prepared = await asyncio.to_thread(_prepare_batch, cast) if n > BATCH_FROM else [None] * len(cast)
             for (customer, turn), ready in zip(cast, prepared, strict=True):
                 voice = voices[voice_index(customer, len(voices))]
-                decisions.append(await play_round(offer_bot, voice, chat_id, customer, turn, pause, ready))
+                decisions.append(
+                    await play_round(offer_bot, voice, chat_id, customer, turn, pause, ready, threaded)
+                )
                 await pause()
         return decisions
     finally:
