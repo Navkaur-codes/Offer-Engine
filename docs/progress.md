@@ -436,7 +436,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - ROI by offer type: flat ₹ off 3.1×, bonus points positive (no ₹ cost), blanket 15% off −0.07, free shipping (one small Lohri test) negative.
   - Festival lift: Dhanteras 3.8×, Diwali 3.2×, Black Friday 2.5×, Karwa Chauth 2.3× normal daily revenue.
 - **Files:** `backend/app/scoring/{realism,experiments}.py`, `backend/tests/data/test_realism_experiments.py`, `docs/sessions.md`, `docs/progress.md`
-- **Commits:** _pending the user's commit_ (A3a: `dad6a5a`)
+- **Commits:** `7cffbcd` feat(scoring): realism benchmarks and experiment stats with caching (A3a: `dad6a5a`)
 - **Tests:** `python -m pytest tests -q` (backend) → 233 passed; `tests/data` 80 passed · `ruff check .` clean
 - **Open issues / risks:**
   - Neon must be reseeded after the merge (generator change in A3a).
