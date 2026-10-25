@@ -31,9 +31,12 @@ def _day_numbers(day: date) -> dict:
     }
 
 
+HERO_WINDOW_DAYS = 365  # 30 days often holds no campaign with enough holdout customers, so the hero read ₹0
+
+
 def _kpi_values(day: date, cap: int) -> dict:
     n = _day_numbers(day)
-    exp = ports.experiments_compute(day - timedelta(days=30), day)
+    exp = ports.experiments_compute(day - timedelta(days=HERO_WINDOW_DAYS), day)
     return {
         "sent_today": n["sent"],
         "claim_rate": round(n["claim_rate"], 4),

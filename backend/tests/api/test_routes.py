@@ -142,3 +142,17 @@ def test_analytics(client):
     assert client.get("/api/experiments").json()["treatment"]
     assert client.get("/api/realism").json()["benchmarks"]
     assert client.get("/api/digest").json()["text"]
+
+
+def test_kpi_hero_uses_twelve_months(client, monkeypatch):
+    """A 30-day window often holds no measurable campaign, which showed ₹0 on the Overview hero."""
+    windows = []
+    real = ports.experiments_compute
+
+    def spy(start, end):
+        windows.append((end - start).days)
+        return real(start, end)
+
+    monkeypatch.setattr(ports, "experiments_compute", spy)
+    assert client.get("/api/kpis").status_code == 200
+    assert windows and set(windows) == {365}
