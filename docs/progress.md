@@ -412,3 +412,10 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Open issues:**
   - Production config still defaults to llama model ids that this key can't use. Main/user: set `GROQ_MODEL_AGENT=openai/gpt-oss-120b` and `GROQ_MODEL_FAST=openai/gpt-oss-20b` in Render (and `.env`), or change the defaults in `config.py`.
   - Free-tier TPM for gpt-oss-120b means only about 3 agent decisions a minute; bursts beyond that go to the rules fallback by design.
+
+### 2026-10-26 · B · GATE-3 fix: fallback bonus-points text failed the message validator
+- **Bug (found by Main at GATE-3):** about 20% of decisions became NO_OFFER. The fallback's "Earn 2× reward points" failed G_MESSAGE with "mentions the number 2". The multiplier regex ended in `\b`, which never matches after "×" (a non-word character), so "2×" fell through to the bare-number check.
+- **Fix:** the multiplier pattern now matches "2×", "2x" and "3 × points" (not "2 xmas"). The offer's own pct, multiplier and amount values are now also accepted as bare numbers.
+- **Regression test:** `test_every_fallback_template_passes_the_message_validator` runs every fallback template, for every offer the rules allow, across 5 fixture customers × 2 policies × 2 contexts (plain, and Karwa Chauth with an opted-in greeting) × 5 triggers. Each one must pass the full `evaluate()`, and it asserts bonus points were covered.
+- **Tests:** `pytest tests/core -q` → 84 passed (property tests green). Full `pytest tests -q` → 248 passed. `ruff` is clean. Main's smoke test (seed 500/7, 26 Oct 14:00, C000001–40 browse_interest) on this branch gives 0 fallback validation failures. This branch doesn't pick bonus points there, because A's newer impact model is only on main, so the regression test is what covers that case.
+- **Commits:** _pending_
