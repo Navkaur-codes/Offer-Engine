@@ -571,3 +571,27 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
   - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
 - **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
+
+### 2026-10-26 · Session A · Phase 4: Lab-safe seed, hardening, data dictionary (A4), end of session
+- **Version/Phase:** v1.0 / Phase 4. Done.
+- **Did:**
+  - **Task 0 (CR-C1), committed `142bdad`:** a re-seed skips Lab customers (`is_lab_bot` or listed in `customer_bots`) and all their events, orders, points and campaign rows. The test re-seeds around `C900001` and a bot-claimed `C000005`.
+  - **Edge cases:** a brand-new Telegram user with no rows, 0 orders with browsing, missing age, and time travel before signup.
+    - Fixed a real crash: time travel before signup gave a negative recency, and the uplift `log1p` blew up. Recency and inactivity are now clamped ≥ 0, and uplift features are guarded.
+    - New tests: `tests/data/test_edge_cases.py`.
+  - **Speed:** the 5,000-customer seed runs in 28 s on SQLite (766k events, 15k orders). `build_profile` takes 6.5 ms p50 / 17 ms p95 at 5,000 customers, with the uplift model inside.
+  - **`docs/data-dictionary.md`:** every table and column we write, the generation formula, the persona table, category economics, benchmarks with sources and worst-case results over ten worlds, the profile fields, campaigns, and the uplift, churn and impact models.
+- **Benchmark tuning, tried and reverted (honest note):**
+  - Narrowing the activity spread (σ 0.85 → 0.7 / 0.6) centres Pareto (about 0.75).
+  - But it moves the data away from the world the uplift model was trained on: persuadables' expected profit dropped to about ₹0, and 3 tests went red.
+  - Retraining on the tuned world, single or pooled over two worlds, was noisier (points-family Qini about 0, sure-things positive).
+  - We kept σ = 0.85 and the committed models (`dad6a5a`). All benchmarks are inside their ranges across ten worlds; Pareto runs high (0.76–0.79). This is documented in the data dictionary.
+  - The σ is now the named constant `VISIT_SPREAD_SIGMA`; behaviour is unchanged.
+- **Files:** `backend/app/data/generator.py`, `backend/app/scoring/{profile,uplift}.py`, `backend/tests/data/test_edge_cases.py`, `docs/data-dictionary.md`, `docs/sessions.md`, `docs/progress.md` (Task 0: `backend/app/data/seed.py`, `backend/tests/data/test_seed_and_calendar.py`)
+- **Commits:** `142bdad` (Task 0) · final A4 commit _pending the user's commit_
+- **Tests:** `python -m pytest tests -q` (backend) → 285 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - Per-customer uplift targeting is noisy (the hidden type is ~80% identifiable).
+  - `build_profile` p95 hasn't been measured on Neon over the network (~5 round-trips per call).
+  - Lohri 2027 has conflicting sources (13 vs 14 Jan).
+- **Next:** post-freeze fixes only.
