@@ -6,7 +6,19 @@
 
 Most discount engines send 20% off to everyone and call the sales it "drove" a win. But many of those customers would have bought anyway. That is margin thrown away. **Holdout** is an analytics and agentic decisioning platform for e-commerce marketers. For each customer and moment it decides **whether** to make an offer, **which** offer and **when**, and delivers it through a Telegram bot. Marketers set the limits as plain-English rules. An AI agent (Groq) chooses and personalises the offer inside those limits. **Every AI choice is re-checked by the same deterministic rule code before it is sent**, and a rules fallback takes over whenever the AI is slow, wrong or over budget. Uplift scores, a 10% holdout group and "margin saved" reporting show that the money went where it changed behaviour.
 
+*Why "Holdout"?* A holdout is the group that deliberately gets nothing, so you can measure what an offer really changed. Building the whole engine around that idea is what makes it different.
+
 > Built for the Punjab Jobs AI Bootcamp (J-PAL South Asia) hackathon. All customer data is **synthetic**; no real or scraped personal data is used.
+
+### Results so far (live, last 12 months of synthetic history plus live decisions)
+| | |
+|---|---|
+| **+₹91,760** | incremental revenue vs the holdout, each campaign compared with its own control group |
+| **₹14,916** | margin saved by *not* discounting customers who'd have bought anyway |
+| **ROI by offer type** | flat ₹ off pays back 1.9×, 2× points are almost free, while blanket free shipping **lost ₹24,320**, because it mostly went to people who'd buy anyway. That is the case for targeting |
+| **~2 s** | per AI decision (gpt-oss-120b, one call); about 25 ms when the rules fallback decides |
+
+Numbers change as classmates use the bot; the dashboard's Experiments page always shows the current ones.
 
 ---
 
@@ -63,6 +75,8 @@ flowchart LR
 - **The AI is read-only.** Its tools can look up profiles, policies, offers and impact estimates, but cannot write or send anything. Customer text is wrapped as data and can never change rules or the agent's role.
 - **It can never go silent.** If Groq times out, returns invalid JSON, hits a rate limit, fails validation twice or exceeds its daily token budget, the deterministic fallback picks the offer with the best expected incremental profit. A budget guard steps down from `gpt-oss-120b` to `gpt-oss-20b` at 80% of the daily budget and to rules-only at 100%.
 - **Every decision is logged**, including blocked, held-out and "no offer" decisions, with why this customer, why this offer, the alternatives rejected, the rules applied and who decided.
+- **Explanations never come from the AI's own words.** They are built from the candidates, numbers and rule results, so an invented reason can't reach a customer, a judge or the log. If the agent declines while an allowed offer pays for itself, the rules send the best one.
+- **Tested:** 340 backend tests, including a hypothesis property test on `evaluate()`, LLM failure and retry cases, escaping of customer-typed text, and a test that runs every fallback message through the validator.
 
 ### Rules marketers can read
 Rules are database rows, not `if persona == …` code. Each one renders as a sentence with editable numbers, for example *"Deal hunters can get at most **10%** off, only on baskets above **₹999**."*
