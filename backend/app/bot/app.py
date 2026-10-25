@@ -15,7 +15,7 @@ from telegram.ext import (
     filters,
 )
 
-from app.bot import commands, onboarding, simulate
+from app.bot import admin, commands, onboarding, simulate
 from app.config import settings
 from app.lab import commands as lab_commands
 
@@ -72,6 +72,14 @@ def register_handlers(application: Application) -> None:
         "stop": commands.stop_cmd,
     }.items():
         application.add_handler(CommandHandler(name, handler, filters=private))
+    for name, handler in {
+        "summary": admin.summary_cmd,
+        "killswitch": admin.killswitch_cmd,
+        "campaign": admin.campaign_cmd,
+        "impersonate": admin.impersonate_cmd,
+    }.items():  # admin-only (checked inside), in DMs and the Lab group; kept out of the public "/" menu
+        application.add_handler(CommandHandler(name, handler))
+    # catch-all last: the first matching handler in a group wins
     application.add_handler(MessageHandler(private & (filters.TEXT | filters.COMMAND), commands.unknown))
     groups = filters.ChatType.GROUPS
     application.add_handler(CommandHandler("lab", lab_commands.lab_cmd, filters=groups))

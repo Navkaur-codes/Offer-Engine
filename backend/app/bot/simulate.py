@@ -17,7 +17,7 @@ from telegram.ext import ContextTypes
 
 from app import ports
 from app.bot import sender, store
-from app.bot.commands import NOT_REGISTERED, PERSONA_LABELS
+from app.bot.commands import NOT_REGISTERED, PERSONA_LABELS, acting_id
 from app.bot.render import CATEGORY_LABELS, escape, inr
 from app.config import now
 from app.contracts import Festival, FestivalPhase, Persona
@@ -125,7 +125,7 @@ async def _say(update: Update, text: str) -> None:
 
 
 async def run(update: Update, context: ContextTypes.DEFAULT_TYPE, action: str, args: list[str]) -> None:
-    cid = store.customer_id_for(update.effective_user.id)
+    cid = acting_id(update)
     row = await asyncio.to_thread(store.get_customer, cid)
     if row is None:
         await _say(update, NOT_REGISTERED)
