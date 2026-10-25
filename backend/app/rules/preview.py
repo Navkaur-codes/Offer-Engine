@@ -16,7 +16,7 @@ from sqlmodel import Session, select
 
 from app import ports
 from app.config import now as clock
-from app.contracts import CustomerProfile, Rule
+from app.contracts import CustomerProfile, OfferCandidate, Rule
 from app.rules.engine import load_rules, screen_offers
 from app.rules.offers import load_offers
 
@@ -62,27 +62,29 @@ def _with_edit(rules: list[Rule], edited: Rule) -> list[Rule]:
     return [r for r in rules if r.id != edited.id] + [edited]
 
 
-def _view(profile: CustomerProfile, ctx, rules: list[Rule], catalogue) -> tuple[tuple, int, str]:
-    """(what the rules allow this customer, the most we could spend on them, a one-line description)."""
+def _allowed(profile: CustomerProfile, ctx, rules: list[Rule], catalogue) -> dict[str, OfferCandidate]:
+    cands, _ = screen_offers(profile, ctx, catalogue, rules=rules)
+    return {c.offer_id: c for c in cands}
+
+
+def _label(cand: OfferCandidate | None) -> str:
+    """'up to 10% off ethnic wear' for an allowed offer, 'not allowed' when the rules remove it."""
+    if cand is None:
+        return "not allowed"
     from app.agent import fallback
     from app.rules.rule_types import worst_case_params
 
-    cands, _ = screen_offers(profile, ctx, catalogue, rules=rules)
-    allowed = tuple(sorted((c.offer_id, repr(c.allowed_params)) for c in cands))
-    if not cands:
-        return allowed, 0, "no offer allowed"
-    top = max(cands, key=lambda c: (c.est_cost, c.offer_id))
-    most = fallback.offer_value(top.type, {**worst_case_params(top.allowed_params), "category": top.category})
-    n = len(cands)
-    return allowed, top.est_cost, f"{n} offer{'s' * (n != 1)} allowed, up to {most}"
+    params = {**worst_case_params(cand.allowed_params), "category": cand.category}
+    return f"up to {fallback.offer_value(cand.type, params)}"
 
 
 def impact(rule: Rule, *, profiles: list[CustomerProfile] | None = None, now: datetime | None = None) -> dict:
     """{"customers_affected", "budget_delta", "examples", "sample_size"} over the sample.
 
-    A customer is affected when the offers or ranges the rules allow them change. `budget_delta` is the change
-    in the most the rules would let us spend on these customers (each one's most expensive allowed offer), so
-    tightening a cap shows a saving even when today's cheapest pick stays the same.
+    A customer is affected when any offer or range the rules allow them changes. `budget_delta` is the change
+    in worst-case spend headroom: the summed most-generous cost of every allowed offer, after minus before.
+    A removed offer subtracts its cost and a narrowed range subtracts the difference, so tightening a cap
+    shows up as a saving (negative ₹) even when another offer is still the most expensive one.
     """
     from app.agent.context import get_context
 
@@ -95,15 +97,29 @@ def impact(rule: Rule, *, profiles: list[CustomerProfile] | None = None, now: da
 
     affected, delta, examples = 0, 0, []
     for p in profiles:
-        allowed_before, cost_before, before = _view(p, ctx, current, catalogue)
-        allowed_after, cost_after, after = _view(p, ctx, edited, catalogue)
-        if allowed_before == allowed_after:
+        before = _allowed(p, ctx, current, catalogue)
+        after = _allowed(p, ctx, edited, catalogue)
+        changed = sorted(
+            oid
+            for oid in before.keys() | after.keys()
+            if (before.get(oid) and before[oid].allowed_params)
+            != (after.get(oid) and after[oid].allowed_params)
+        )
+        if not changed:
             continue
         affected += 1
-        delta += cost_after - cost_before
+        delta += sum(c.est_cost for c in after.values()) - sum(c.est_cost for c in before.values())
         if len(examples) < MAX_EXAMPLES:
+            oid = changed[0]
+            name = next((o.name for o in catalogue if o.id == oid), oid)
             examples.append(
-                {"customer_id": p.customer_id, "first_name": p.first_name, "before": before, "after": after}
+                {
+                    "customer_id": p.customer_id,
+                    "first_name": p.first_name,
+                    "offer": name,
+                    "before": _label(before.get(oid)),
+                    "after": _label(after.get(oid)),
+                }
             )
     return {
         "customers_affected": affected,

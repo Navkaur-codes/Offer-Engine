@@ -237,3 +237,17 @@ def test_greeting_only_with_opt_in():
     assert check("G_MESSAGE", p, opted, "OF_EARLY", {}, message=msg).passed
     altered = msg.replace("Happy Diwali", "happy diwali")
     assert "exactly" in check("G_MESSAGE", p, opted, "OF_EARLY", {}, message=altered).detail
+
+
+def test_durations_read_naturally():
+    from app.rules.rule_types import fmt_hours
+
+    assert fmt_hours(3.56761) == "3 h 34 min"  # the live /why text that read "3.56761 h"
+    assert fmt_hours(0.5) == "30 min" and fmt_hours(0.004) == "0 min"
+    assert fmt_hours(2) == "2 h" and fmt_hours(21.4) == "21 h" and fmt_hours(24) == "24 h"
+    assert fmt_hours(48) == "2 days" and fmt_hours(720) == "30 days" and fmt_hours(51.2) == "2 days 3 h"
+
+
+def test_frequency_detail_has_no_raw_decimals():
+    res = check("G_FREQ", make_profile(last_offer_at=NOW - timedelta(hours=3.56761)), make_context(), None)
+    assert not res.passed and res.detail == "last offer was 3 h 34 min ago (needs 2 days)"

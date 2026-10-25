@@ -28,7 +28,8 @@ DIGEST_TIMEOUT_S = 15.0
 SYSTEM = (
     "You write a 5-line daily digest for an e-commerce marketing team. Use ONLY the facts given; "
     "every number you write must appear in the facts. Keep each line under 160 characters, plain and "
-    "specific. Line 5 is a suggestion for a human to approve. "
+    "specific. Never show internal codes or rule ids. Line 5 is a suggestion for a human; keep it a plain "
+    "recommendation. "
     'Answer JSON only: {"lines": [5 strings]}.'
 )
 
@@ -104,19 +105,53 @@ def _segment_line(s: dict) -> str:
     )
 
 
+BLOCK_LABELS = {
+    "KILL_SWITCH": "the kill switch",
+    "CONSENT": "customers' /stop or /pause",
+    "NO_CANDIDATES": "no allowed offer",
+}
+RULE_TYPE_LABELS = {
+    "frequency_cap": "the frequency cap",
+    "quiet_hours": "quiet hours",
+    "budget": "the daily budget",
+    "stacking": "the one-coupon rule",
+    "exclusion": "an exclusion rule",
+    "eligibility": "an eligibility rule",
+    "discount_cap": "a discount cap",
+    "margin_guard": "the margin guard",
+    "escalation_ladder": "the cart ladder",
+    "message": "the message check",
+    "festival_restriction": "a festival restriction",
+}
+_CODE = re.compile(r"\b[A-Z]+_[A-Z0-9_]+\b")
+
+
+def block_label(key: str) -> str:
+    """Plain words for a block reason; marketers never see internal codes like G_FREQ or NO_CANDIDATES."""
+    if key in BLOCK_LABELS:
+        return BLOCK_LABELS[key]
+    from app.rules.engine import load_rules
+
+    rtype = next((r.type for r in load_rules() if r.id == key), None)
+    return RULE_TYPE_LABELS.get(rtype, "a rule")
+
+
 def _suggestion(s: dict) -> str:
     blocked = s["status"].get("BLOCKED", 0) + s["status"].get("NO_OFFER", 0)
     if s["top_blocks"] and blocked and s["top_blocks"][0][1] * 2 >= blocked:
-        rule_id, n = s["top_blocks"][0]
-        return (
-            f"Suggestion (needs your approval): review {rule_id}; "
-            f"it stopped {n} of {blocked} held-back decisions."
-        )
+        key, n = s["top_blocks"][0]
+        of = f"{n} of {s['total']} decisions"
+        if key == "NO_CANDIDATES":
+            return f"Suggestion: {of} found no allowed offer; review the persona caps on the Rules page."
+        if key == "KILL_SWITCH":
+            return f"Suggestion: {of} were held by the kill switch; switch it off when you're ready to send."
+        if key == "CONSENT":
+            return f"Suggestion: {of} were for customers who paused or stopped offers; nothing to change."
+        return f"Suggestion: {of} were stopped by {block_label(key)}; review it on the Rules page."
     fallback = s["decided_by"].get("RULES_FALLBACK", 0)
     if s["total"] and fallback * 2 > s["total"]:
         return (
-            f"Suggestion (needs your approval): {fallback} of {s['total']} decisions used the rules "
-            "fallback; "
+            f"Suggestion: {fallback} of {s['total']} decisions used the rules fallback; "
             "check the LLM budget and errors on /health."
         )
     return "Suggestion: no rule changes needed today."
@@ -128,7 +163,7 @@ def template(s: dict) -> list[str]:
         f"{s['day']}: {s['total']} decisions. {st.get('SENT', 0)} sent, {st.get('QUEUED', 0)} queued, "
         f"{st.get('NO_OFFER', 0)} no offer, {st.get('BLOCKED', 0)} blocked, {st.get('HELD_OUT', 0)} held out."
     )
-    blocks = ", ".join(f"{rid} ×{n}" for rid, n in s["top_blocks"]) or "none"
+    blocks = ", ".join(f"{block_label(key)} ×{n}" for key, n in s["top_blocks"]) or "none"
     line2 = (
         f"Spend {inr(s['cost'])} for {inr(s['expected_profit'])} expected incremental profit; "
         f"{s['zero_cost_sent']} offers were free perks. Top blocks: {blocks}."
@@ -147,14 +182,29 @@ def _numbers(text: str) -> set[str]:
     return {n.replace(",", "") for n in re.findall(r"\d[\d,]*(?:\.\d+)?", text)}
 
 
+def _plain(s: dict) -> dict:
+    """The same facts with internal codes turned into words, so the model has nothing to echo."""
+
+    def words(d: dict) -> dict:
+        return {k.lower().replace("_", " "): v for k, v in d.items()}
+
+    named = {
+        "zero_cost_sent": "free perks sent",
+        "cost": "spend",
+        "expected_profit": "expected incremental profit",
+    }
+    return {
+        **{named.get(k, k): v for k, v in s.items()},
+        "status": words(s["status"]),
+        "decided_by": words(s["decided_by"]),
+        "top_blocks": [[block_label(k), n] for k, n in s["top_blocks"]],
+        "segments": {POLICY_LABELS.get(k, k): v for k, v in s["segments"].items()},
+    }
+
+
 def _rewrite(llm: LLMClient, s: dict, draft: list[str]) -> tuple[list[str], int]:
-    messages = [
-        {"role": "system", "content": SYSTEM},
-        {
-            "role": "user",
-            "content": json.dumps({"facts": s, "draft": draft}, ensure_ascii=False, default=str),
-        },
-    ]
+    facts = json.dumps({"facts": _plain(s), "draft": draft}, ensure_ascii=False, default=str)
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": facts}]
     resp = llm.chat(messages, None, DIGEST_TIMEOUT_S)
     lines = json.loads(resp.content).get("lines")
     if not (
@@ -165,6 +215,8 @@ def _rewrite(llm: LLMClient, s: dict, draft: list[str]) -> tuple[list[str], int]
     invented = _numbers(" ".join(lines)) - allowed
     if invented:
         raise ValueError(f"digest invented numbers: {sorted(invented)}")
+    if _CODE.search(" ".join(lines)):
+        raise ValueError("digest shows an internal code")
     return [x.strip()[:200] for x in lines], resp.tokens
 
 

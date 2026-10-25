@@ -704,3 +704,16 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Simpson's-paradox regression (pooled < 0, per-campaign > 0), unmeasured strata, a control outlier, and headline = Σ ROI rows on a seeded world.
   - `python -m pytest tests/data -q` → 90 passed · `ruff check .` clean.
 - **Commits:** _pending the user's commit_
+
+### 2026-10-26 · B · GATE-4 polish: plain-English digest suggestion, real budget delta in the rule preview
+- **Digest (Main's live finding):** a live digest said "approve review of NO_CANDIDATES block, which stopped 6 of 6 decisions".
+  - Blocks now have plain labels ("no allowed offer", "the kill switch", "the frequency cap", …), and the suggestion counts against all of the day's decisions, e.g. "Suggestion: 6 of 8 decisions found no allowed offer; review the persona caps on the Rules page."
+  - The facts sent to gpt-oss-20b use the same words. A rewrite that shows an internal `CODE_LIKE_THIS` is rejected, like one with an invented number, and the template is used instead.
+- **Rule preview (`budget_delta` was always 0):** the old definition was the change in each customer's single most expensive allowed offer, which a % cap often doesn't touch (flat ₹ off stays the most expensive).
+  - It is now the change in total worst-case spend headroom: the summed most-generous cost of every allowed offer, after minus before.
+  - Each example names the offer that changed: `{customer_id, first_name, offer, before, after}`, e.g. "% off a category: up to 10% off gifting → up to 8% off gifting".
+  - Main's case (`P_DEAL_CAP` 10 → 8, 500-customer scratch sample) now gives 6 customers affected, **₹−328**.
+- **Customer-visible durations:** `rule_types.fmt_hours` printed raw decimals, e.g. /why showed "last offer was 3.56761 h ago (needs 2 days)". Now: "35 min", "3 h 34 min" (under 6 h), "21 h" (under 48 h), "2 days", "2 days 3 h". This applies everywhere rules state a duration (/why, dashboard, describe()).
+- **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
+- **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
+- **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: `8fee9be`

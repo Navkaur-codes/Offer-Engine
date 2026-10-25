@@ -121,6 +121,8 @@ Format: `date · from → to · note`
 
 - 25 Oct · D → A, Main · `GET /api/customers` is slow on prod: `limit=100` takes ~5.6 s when idle and **~32 s** when a few requests queue, because `build_profile` runs live per customer (~55 ms each on Neon). With `policy=`, it scans up to 600 rows (tens of seconds). D now asks for 50 per page, and Rules counts policies from one 50-customer sample. A short-TTL profile cache (e.g. 60 s) or batching the per-customer queries would make the Customers page and demo snappier. Not a contract change.
 
+- 26 Oct · B → D/Main · `rule_impact` examples now also carry `offer` (the offer that changed): `{customer_id, first_name, offer, before, after}`, e.g. `% off a category: up to 10% off → up to 8% off`; a removed offer reads `not allowed`. `budget_delta` = change in total worst-case spend headroom over the sample (negative = tighter). Digest lines no longer show internal codes.
+
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
   - create the **Offer bot**;
