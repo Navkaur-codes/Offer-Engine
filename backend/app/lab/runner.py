@@ -34,6 +34,7 @@ from app.lab.registry import (
 log = logging.getLogger(__name__)
 
 ROTATION = "lab_rotation"
+BATCH_FROM = 5  # runs longer than this go through decide_batch (agent for the top 5 only)
 OFFER_STATUSES = {"SENT", "QUEUED"}
 
 # hidden response type → (reaction, weight). Sure-things claim offers they'd have used anyway: wasted margin.
@@ -143,15 +144,20 @@ async def play_round(
     customer: LabCustomer,
     turn: int,
     pause: Callable[[], Awaitable[None]] = _pause,
+    prepared: tuple[scripts.Activity, Decision] | None = None,
 ) -> Decision:
-    act = await asyncio.to_thread(scripts.activity, customer, now(), turn)
+    """One round. `prepared` = (activity already written, decision already made) for batched runs."""
+    act = prepared[0] if prepared else await asyncio.to_thread(scripts.activity, customer, now(), turn)
     header = f"👤 <b>{escape(customer.name)}</b> · {escape(customer.label)}"
     post = await voice.send_message(chat_id, f"{header}\n{act.line}", parse_mode=ParseMode.HTML)
-    if act.events:
+    if act.events and not prepared:
         await asyncio.to_thread(store.add_events, customer.id, act.events)
     await pause()
 
-    decision = await asyncio.to_thread(ports.decide, customer.id, "lab", act.meta)
+    if prepared:
+        decision = prepared[1]
+    else:
+        decision = await asyncio.to_thread(ports.decide, customer.id, "lab", act.meta)
     answer = await _reply(offer_bot, chat_id, offer_reply(decision, customer), post)
     sender.remember(decision)
     await asyncio.to_thread(store.set_message_id, decision.id, answer.message_id)
@@ -194,13 +200,26 @@ async def run_rounds_async(
         async with AsyncExitStack() as stack:
             voices = [await stack.enter_async_context(bot_factory(t)) for t in voices_tokens]
             await asyncio.to_thread(remember_voices, [v.username for v in voices])
-            for customer, turn in await asyncio.to_thread(next_customers, n):
+            cast = await asyncio.to_thread(next_customers, n)
+            prepared = await asyncio.to_thread(_prepare_batch, cast) if n > BATCH_FROM else [None] * len(cast)
+            for (customer, turn), ready in zip(cast, prepared, strict=True):
                 voice = voices[voice_index(customer, len(voices))]
-                decisions.append(await play_round(offer_bot, voice, chat_id, customer, turn, pause))
+                decisions.append(await play_round(offer_bot, voice, chat_id, customer, turn, pause, ready))
                 await pause()
         return decisions
     finally:
         _running = False
+
+
+def _prepare_batch(cast: list[tuple[LabCustomer, int]]) -> list[tuple[scripts.Activity, Decision]]:
+    """Big runs: write every activity first, then one `decide_batch` so only the top 5 use the agent (T26)."""
+    at = now()
+    acts = [scripts.activity(customer, at, turn) for customer, turn in cast]
+    for (customer, _), act in zip(cast, acts, strict=True):
+        if act.events:
+            store.add_events(customer.id, act.events)
+    items = [(customer.id, "lab", act.meta) for (customer, _), act in zip(cast, acts, strict=True)]
+    return list(zip(acts, ports.decide_batch(items, dry_run=False), strict=True))
 
 
 def run_rounds(n: int) -> list[Decision]:
