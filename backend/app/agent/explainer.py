@@ -115,7 +115,7 @@ def _rules_line(d: Decision) -> str:
         return f"{len(d.effective_policy.rules)} rules in force · policy {policy} ({version})"
     passed = sum(c.passed for c in d.validation.checks)
     failed = len(d.validation.violations)
-    return f"{passed} passed · {failed} violations · policy {policy} ({version})"
+    return f"{passed} passed · {failed} violation{'s' * (failed != 1)} · policy {policy} ({version})"
 
 
 def _decided_by_line(d: Decision) -> str:
