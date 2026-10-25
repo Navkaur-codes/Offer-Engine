@@ -7,45 +7,63 @@
 ---
 
 ## Now
-- **Version:** v0.4 (target Sun 25 Oct, night). The freeze is **Mon 26 Oct 18:00**.
-- **Phase:** 3, **in progress since 25 Oct.** Sessions A–D work in parallel. Main has the scheduler live (`/api/scheduler`: abandoned carts, 09:05 queue flush, points expiry, 21:00 digest).
-- **GATE-2 passed (25 Oct).**
-  - `main` has all Phase-2 merges; 214 backend tests pass and the frontend builds.
-  - **Production runs the real pipeline:** onboarding → real profile → harness → `evaluate` → card → decision log.
-  - The `TG…` BIGINT fix is live.
-- **Live:** https://offer-engine-n4jx.onrender.com (API v0.3, contracts v1.1), bot `@navpreet_offers_bot`, Neon with about 1,500 seeded customers.
-- **Still stubs:** `uplift_predict`, `impact_estimate`, `realism_compute`, `experiments_compute`, `daily_digest`, `rule_impact`, `run_rounds`. Check with `/health`.
-- **Next gate:** GATE-3. Needs real offers going to classmates (not "No offer" for everyone), the Lab running in the group, and the dashboard on Vercel with real data.
+- **Version:** v1.0 (target **Mon 26 Oct 18:00 = feature freeze**). Submit by **Tue 27 Oct 10:00**.
+- **Phase:** 4, the last build phase. After the freeze: fixes, polish and docs only (detective T22).
+- **GATE-3 passed (25 Oct).**
+  - `main` has all Phase-3 merges plus B's fix `13a4cf4`; 279 backend tests pass and the frontend builds.
+  - Production uses the **real Groq agent** (gpt-oss-120b → gpt-oss-20b → rules, via `agent/budget.py`).
+  - The scratch smoke test shows 79% of decisions would send, mostly zero-cost offers.
+- **Live:**
+  - API https://offer-engine-n4jx.onrender.com (v0.4, contracts v1.1)
+  - dashboard https://offer-engine-nu.vercel.app
+  - bot `@navpreet_offers_bot`
+  - Neon re-seeded with 1,500 customers
+  - Customer Lab running in the group
+- **Still stubs:** `rule_impact` and `daily_digest` (both are B's Phase 4 tasks). Check with `/health`.
+- **Next gate:** GATE-4 = v1.0 at the freeze. Needs:
+  - classmates getting offers;
+  - every dashboard page on real data;
+  - the README "Demo in 5 minutes";
+  - a classmate test round done.
 
-## 🔴 PRIORITY 1 for Phase 3: "No offer for everyone"
-Found live at GATE-2: every decision is NO_OFFER, because uplift is a ~0.04 prior and impact is a stub.
-- **A:** real `uplift.py` and `impact.py` first, as their own checkpoint.
-- **B:** zero-cost offers allowed at profit ≥ 0, plus the welcome guarantee, first, as their own checkpoint.
+## 🔴 PRIORITY 0 for Phase 4
+- **B:** the live Lab showed the agent choosing "no offer is worth its cost" for a cart abandoner, a new user and a deal hunter, where the fallback would have sent a zero-cost perk.
+  - Make the agent prefer the best zero-cost allowed offer at profit ≥ 0.
+  - It may pick no-offer only when nothing allowed pays for itself.
+  - Ship this as its own checkpoint first.
+- **A + C (CR-C1 follow-up):**
+  - C writes one `CustomerBotRow` per Lab customer.
+  - A's seed skips `is_lab_bot` customers and their rows, so a re-seed never wipes the Lab.
 
-Both are detailed at the top of each session's Phase 3 in its context file. Nothing else in A or B ships before these.
-
-## Phase-3 goals (details in each context file)
-- **A:** uplift T-learner + Qini, impact, realism stats, experiment stats.
-- **B:** priority fix; then the real Groq agent with the **single-call design**, `agent/budget.py` (70B → 8B at 80% → rules at 100%), the top-5 batch rule, and the message + festival_restriction validators.
-- **C:** Customer Lab: 10 fixed Lab customers voiced round-robin by 1–10 bots (the user has **4**: "Lab Shopper 1–4"), each post starting with "👤 Name · persona"; `/lab here | run | who | persona <name> | date | reset`. There is no shadow channel. Also verify `/simulate` against the real harness on the dev bot.
-- **D:** switch to the real API and contracts v1.1; Rules editor (sentence cards, impact preview, versions/revert); Customers (scatter, drawer, simulate); Vercel deploy.
-- **Main:** watch the gates, answer contract requests, deploy, set `CORS_ORIGINS` for Vercel.
+## Phase-4 goals (details in each context file)
+- **A:** benchmarks comfortably in range, `docs/data-dictionary.md`, edge cases, seed < 2 min, profile < 50 ms.
+- **B:** priority 0; then `agent/digest.py`, `rules/preview.py` (`impact`), profiling (fallback < 100 ms, agent p50 < 4 s).
+- **C:** admin commands (`/summary`, `/killswitch`, `/campaign run`, `/impersonate`), copy polish, resilience (403, 429/5xx backoff, `update_id` dedupe). The card image is optional.
+- **D:** Experiments (auto takeaways), Festivals, Realism (benchmark bands), Playground (step-by-step trace, the demo hero), campaign dry-run, code-splitting (bundle ~1 MB), screenshots for the README.
+- **Main:**
+  - README with "Demo in 5 minutes" and a demo script;
+  - GATE-4;
+  - keep Render/Vercel/cron-job.org healthy;
+  - organise the classmate test round with the user.
 
 ## Temporary rules for this phase
 - Notes in `sessions.md §7` are binding:
   - festival keys don't include the year;
   - offer params are `pct`, `amount`, `min_basket`, `multiplier`, `category`;
   - write decisions only via `decision_store`;
-  - quiet hours apply to proactive sends only (`runtime.quiet_hours_apply`).
-- `tests/conftest.py` pins other sessions' ports to stubs in your unit tests. To test against real modules, mark the test `@pytest.mark.real_ports`.
-- **Never** run `--polling` with the production token. C uses the dev bot.
-- **Real Groq calls** are allowed from B3 on, but only through `agent/budget.py`. Keep the 20 test runs small.
-- 📌 Give a checkpoint after every finished task, and record progress in your own branch.
-- Use BIGINT for any external ID column (detective T29). Postgres is stricter than SQLite.
+  - quiet hours apply to proactive sends only.
+- Groq models are `openai/gpt-oss-120b` / `openai/gpt-oss-20b`. Real calls go only through `agent/budget.py`; keep test runs small (free-tier TPM is about 3 agent decisions a minute).
+- Batches (campaigns, `/lab run` > 5) use `ports.decide_batch`, so the agent only handles the top 5 (T26).
+- `tests/conftest.py` pins foreign ports to stubs in your unit tests; mark a test `@pytest.mark.real_ports` to opt out.
+- **Never** run `--polling` with the production token. C uses the dev bot. In the Lab group, address the prod bot as `/lab@navpreet_offers_bot`.
+- BIGINT for external IDs; test anything number- or time-heavy against Postgres semantics (T29).
+- 📌 Give a checkpoint after every finished task. **No new features after Mon 18:00.**
 
 ## Known issues
-- D: Lighthouse score not measured yet; the ~620 kB bundle needs code-splitting in Phase 4.
-- Real Telegram users get `is_holdout=False` (A's choice, so classmates never get a silent bot). Synthetic customers keep the 10% holdout.
+- The bundle is ~1 MB; code-split by route (D).
+- `/api/customers` policy filter scans 600 rows, so counts show "N+".
+- `/lab date` moves the engine clock for the whole process (prod too); always end with `/lab date off`.
+- Real Telegram users get `is_holdout=False`; synthetic customers keep the 10% holdout.
 
 ## Worktree folders
 | Session | Folder | Branch |

@@ -9,19 +9,19 @@
 |---|---|---|---|
 | v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
 | v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☑ GATE-2 (25 Oct): the real pipeline is live in production |
-| v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ◐ API live; dashboard verified locally; Vercel in Phase 3 |
-| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☐ |
+| v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☑ GATE-3 (25 Oct): dashboard on Vercel with live data |
+| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ◐ GATE-3: uplift, impact, Lab, Groq agent live; Experiments/Playground pages in Phase 4 |
 | v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
 | Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ |
 
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ◐ | ☐ |
-| A: Data & Scoring | ☑ `8b2e903` | ☑ | ◐ | ☐ |
-| B: Decision Core | ☑ `0202dd8` | ☑ | ◐ | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☐ |
+| A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☐ |
+| B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☐ |
 | C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☐ |
-| D: Dashboard | ☑ `e5d9116` | ☑ | ◐ | ☐ |
+| D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☐ |
 
 ## claude-progressive.md history
 | Version/Phase | Written | Summary of temporary rules |
@@ -30,6 +30,7 @@
 | v0.2 / Phase 1 | 22 Oct | Contracts v1 frozen; everything through ports/stubs; never poll with the prod token; shared venv; no real Groq calls |
 | v0.3 / Phase 2 | 24 Oct | Compressed schedule; real modules replace stubs as they merge; Neon seeded small (≈1,500 customers); still no real Groq calls |
 | v0.4 / Phase 3 | 25 Oct | PRIORITY 1: the no-offer fix (A uplift/impact, B zero-cost + welcome); conftest pins foreign ports in unit tests; Groq only via budget guard |
+| v1.0 / Phase 4 | 25 Oct | Last phase before the freeze (Mon 18:00): B tunes the agent's "no offer" threshold first; README + demo; Lab customers survive re-seeds; gpt-oss models |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -546,3 +547,27 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Regression test:** `test_every_fallback_template_passes_the_message_validator` runs every fallback template, for every offer the rules allow, across 5 fixture customers × 2 policies × 2 contexts (plain, and Karwa Chauth with an opted-in greeting) × 5 triggers. Each one must pass the full `evaluate()`, and it asserts bonus points were covered.
 - **Tests:** `pytest tests/core -q` → 84 passed (property tests green). Full `pytest tests -q` → 248 passed. `ruff` is clean. Main's smoke test (seed 500/7, 26 Oct 14:00, C000001–40 browse_interest) on this branch gives 0 fallback validation failures. This branch doesn't pick bonus points there, because A's newer impact model is only on main, so the regression test is what covers that case.
 - **Commits:** `13a4cf4`
+
+### 2026-10-25 · Main · GATE-3
+- **Merged:**
+  - A `dad6a5a`, `7cffbcd`, `b5e3c67` → `d44d8ad` (no conflict)
+  - B `36e0313`, `4d46263`, `272e397` → `80f800f`
+  - C `fe3e883`, `a721d2b` → `38d9141`
+  - D `82ada66`, `f0fa291`, `59015a5`, `449e48b` → `468c56b`
+  - B GATE-3 fix `13a4cf4` → `b6a4937`
+- **Conflicts:** only `progress.md` / `sessions.md`; resolved with every entry kept.
+- **Integration (`8dcc889`):**
+  - Groq defaults are now `openai/gpt-oss-120b` / `openai/gpt-oss-20b` (the key has no Llama models); `.env.example` and CLAUDE.md §8 updated.
+  - CCR-B1 accepted: ports `decide_batch` and `llm_budget_status` (+ stubs); `/health` shows `llm_budget`; campaign dry-run uses `decide_batch` (agent on top 5 only, T26).
+  - CR-C1 accepted: `customer_bots` keyed by `customer_id`, `username` indexed; `db.rekey_customer_bots()` drops an old username-keyed table on Postgres at startup.
+  - `tests/conftest.py` pins `decide_batch` to its stub in api/bot tests.
+- **Bug found in the smoke test:** the fallback's "2× points" text failed `G_MESSAGE` (the multiplier regex ended in ``, which never matches after "×"), so ~20% of decisions were NO_OFFER. B fixed it in `13a4cf4` with a test over every fallback template.
+- **Tests:** backend **279 passed**, ruff clean; frontend lint + build ✓ (bundle ~1 MB).
+- **Smoke (scratch SQLite, 500 customers, 26 Oct 14:00):** 200 browse decisions → 158 would send (79%), 0 validator failures; mostly zero-cost offers (nudge, early access, 2× points). Onboarding welcome is SENT.
+- **Production:**
+  - Render: API v0.3 → v0.4 on the next push; all ports real except `rule_impact`, `daily_digest`; models gpt-oss; Neon re-seeded (1,500 customers).
+  - Live Playground dry run was decided by the **AGENT** (gpt-oss-120b) and passed the validator.
+  - Live `cart_abandoned` for the user's own account: SENT by the agent (2× points).
+  - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
+  - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
+- **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
