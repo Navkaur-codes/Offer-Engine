@@ -42,6 +42,7 @@ class LabCustomer:
     city: tuple[str, int] = ("Ludhiana", 2)
     festivals: tuple[str, ...] = ()
     favourite: str = "fashion"
+    past_offers: tuple[int, ...] = ()  # days ago a past campaign offer arrived and was answered "Not for me"
 
 
 def _orders(spec: list[tuple]) -> list[Order]:
@@ -190,6 +191,7 @@ LAB_CUSTOMERS: list[LabCustomer] = [
         views_90d=8,
         city=("Kochi", 2),
         favourite="kitchen",
+        past_offers=(45, 120),  # said "Not for me" to two past campaigns: promos annoy her
     ),
     LabCustomer(
         "C900009",
@@ -296,6 +298,10 @@ def _history(c: LabCustomer, clock: datetime) -> tuple[list[dict], list[dict], l
         item, value = store.pick_product(c.favourite, f"{c.id}v{v}")
         ts = clock - timedelta(days=rng.randint(1, 85), hours=rng.randint(0, 12))
         event("view", ts, c.favourite, item, value)
+    for days in c.past_offers:
+        ts = clock - timedelta(days=days)
+        event("offer_received", ts)
+        event("offer_declined", ts + timedelta(hours=2))
     return events, orders, ledger
 
 
@@ -350,7 +356,15 @@ def ensure_lab_customers(force: bool = False) -> int:
 def _healthy(s: Session, c: LabCustomer) -> bool:
     row = s.get(CustomerRow, c.id)
     n_orders = s.exec(select(func.count()).select_from(OrderRow).where(OrderRow.customer_id == c.id)).one()
-    return row is not None and row.is_lab_bot and n_orders >= len(c.orders)
+    n_declined = s.exec(
+        select(func.count())
+        .select_from(EventRow)
+        .where(EventRow.customer_id == c.id, EventRow.type == "offer_declined")
+    ).one()
+    # comparing counts against the sheet repairs a re-seed and picks up sheet changes after a deploy
+    return (
+        row is not None and row.is_lab_bot and n_orders >= len(c.orders) and n_declined >= len(c.past_offers)
+    )
 
 
 def remember_voices(usernames: list[str]) -> None:
