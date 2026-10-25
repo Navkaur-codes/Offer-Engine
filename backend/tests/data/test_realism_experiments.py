@@ -118,3 +118,79 @@ def test_ports_are_real():
     ports.reset_cache()
     status = ports.status()
     assert status["realism_compute"] == "real" and status["experiments_compute"] == "real"
+
+
+# ------------------------------------------------------------ GATE-4: headline consistent with breakdown
+def _rows(
+    stratum: str, offer: str, n_t: int, conv_t: float, n_c: int, conv_c: float, basket: int, cost: int = 0
+):
+    rows = []
+    for i in range(n_t):
+        buys = i < round(n_t * conv_t)
+        rows.append((stratum, f"T{stratum}{i}", True, buys, basket if buys else 0, cost, offer, "default"))
+    for i in range(n_c):
+        buys = i < round(n_c * conv_c)
+        rows.append((stratum, f"C{stratum}{i}", False, buys, basket if buys else 0, 0, offer, "default"))
+    return rows
+
+
+def _frame(rows):
+    import pandas as pd
+
+    return pd.DataFrame(rows, columns=experiments._COLUMNS)
+
+
+def test_headline_is_per_campaign_not_pooled():
+    """Simpson's paradox: each campaign lifts conversion by 5 points, but the cheap-season campaign has far
+    more treated customers, so pooling all treated vs all control would make the offers look harmful."""
+    import pandas as pd
+
+    df = _frame(
+        _rows("festive", "pct_off", 100, 0.30, 100, 0.25, 4000, cost=20)
+        + _rows("monsoon", "flat_off", 900, 0.10, 20, 0.05, 1000, cost=5)
+    )
+    pooled = df[df["treated"]]["revenue"].mean() - df[~df["treated"]]["revenue"].mean()
+    assert pooled < 0  # the trap the old headline fell into
+    e = experiments._stats(
+        df, pd.DataFrame(columns=["ts", "category", "value"]), date(2025, 1, 1), date(2025, 12, 31)
+    )
+    assert e.incremental_revenue == round(0.05 * 100 * 4000 + 0.05 * 900 * 1000)
+    assert e.incremental_revenue > 0
+    assert abs(e.incremental_profit - sum(r["incremental_profit"] for r in e.roi_by_offer_type)) <= len(
+        e.roi_by_offer_type
+    )
+    assert abs(e.incremental_revenue - sum(r["incremental_revenue"] for r in e.roi_by_offer_type)) <= len(
+        e.roi_by_offer_type
+    )
+    costs = {r["type"]: r["cost"] for r in e.roi_by_offer_type}
+    assert costs == {"pct_off": 100 * 20, "flat_off": 900 * 5}  # each treated customer's coupon counted once
+
+
+def test_strata_without_enough_control_are_not_guessed():
+    import pandas as pd
+
+    df = _frame(_rows("live", "cart_nudge", 50, 0.5, 3, 0.0, 1500))
+    e = experiments._stats(
+        df, pd.DataFrame(columns=["ts", "category", "value"]), date(2025, 1, 1), date(2025, 12, 31)
+    )
+    assert e.incremental_revenue == 0 and e.roi_by_offer_type == []
+    assert e.treatment["measured_n"] == 0 and e.treatment["unmeasured_n"] == 50
+
+
+def test_one_big_order_in_a_small_control_does_not_flip_the_result():
+    import pandas as pd
+
+    rows = _rows("holi", "bonus_points", 300, 0.07, 26, 0.04, 1200)
+    rows[300] = ("holi", "Choli0", False, True, 18999, 0, "bonus_points", "default")  # a gold coin in control
+    e = experiments._stats(
+        _frame(rows), pd.DataFrame(columns=["ts", "category", "value"]), date(2025, 1, 1), date(2025, 12, 31)
+    )
+    assert e.incremental_revenue > 0
+
+
+def test_seeded_headline_matches_its_breakdown():
+    e = experiments.compute(START, END)
+    assert e.treatment["measured_n"] > 0
+    rows = e.roi_by_offer_type
+    assert abs(e.incremental_revenue - sum(r["incremental_revenue"] for r in rows)) <= len(rows)
+    assert abs(e.incremental_profit - sum(r["incremental_profit"] for r in rows)) <= len(rows)
