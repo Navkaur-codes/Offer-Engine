@@ -8,7 +8,7 @@
 
 ## Now
 - **Version:** v0.4 (target Sun 25 Oct, night). The freeze is **Mon 26 Oct 18:00**.
-- **Phase:** 3, **prepared but not started.** Sessions A–D begin only when the user sends A3–D3.
+- **Phase:** 3, **in progress since 25 Oct.** Sessions A–D work in parallel. Main has the scheduler live (`/api/scheduler`: abandoned carts, 09:05 queue flush, points expiry, 21:00 digest).
 - **GATE-2 passed (25 Oct).**
   - `main` has all Phase-2 merges; 214 backend tests pass and the frontend builds.
   - **Production runs the real pipeline:** onboarding → real profile → harness → `evaluate` → card → decision log.
