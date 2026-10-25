@@ -106,8 +106,15 @@ on('PATCH', '/api/rules/:id', (m, _q, body): Rule => {
   const old = state.rules[i]
   state.history.set(old.id, [...(state.history.get(old.id) ?? []), old])
   const patch = body as Partial<Pick<Rule, 'params' | 'enabled' | 'priority'>>
+  // Stand-in for the server's describe(): swap changed numbers inside the sentence.
+  let description = old.description
+  for (const [k, v] of Object.entries(patch.params ?? {})) {
+    const was = old.params[k]
+    if (typeof was === 'number' && typeof v === 'number')
+      description = description.replace(new RegExp(`(?<![\\d])${was.toLocaleString('en-US')}(?![\\d])`), v.toLocaleString('en-US'))
+  }
   state.rules[i] = {
-    ...old, ...patch, params: { ...old.params, ...patch.params }, version: old.version + 1,
+    ...old, ...patch, description, params: { ...old.params, ...patch.params }, version: old.version + 1,
     updated_by: 'dashboard', updated_at: new Date().toISOString(),
   }
   return state.rules[i]
