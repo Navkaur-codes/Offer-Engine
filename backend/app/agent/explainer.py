@@ -73,26 +73,30 @@ def _why_customer(d: Decision) -> str:
 
 
 def _why_offer(d: Decision) -> str:
+    """Built only from candidates and numbers. The agent's free-text reasoning stays in agent_output: it has
+    invented rules before, and an explanation must never state a rule that doesn't exist."""
+    names = {o.id: o.name for o in load_offers()}
     if d.final_offer_id is None:
-        if d.agent_output and d.decided_by in {"AGENT", "AGENT_RETRY"}:
-            return d.agent_output.reasoning.why_offer
+        if d.candidates and d.status == "NO_OFFER":
+            best = max(d.candidates, key=lambda c: c.est_incremental_profit)
+            name = names.get(best.offer_id, best.offer_id)
+            return (
+                f"No allowed offer is expected to pay for itself; the best, {name}, would cost "
+                f"{inr(best.est_cost)} for {inr(best.est_incremental_profit)} expected incremental profit."
+            )
         return _business_reason(d).capitalize() + "."
     numbers = (
         f"{inr(d.cost)} expected cost vs {inr(d.expected_incremental_profit)} expected incremental profit."
     )
-    if d.agent_output and d.decided_by in {"AGENT", "AGENT_RETRY"}:
-        return f"{d.agent_output.reasoning.why_offer.rstrip('.')}. {numbers}"
     n = len(d.candidates)
-    return f"{_value(d)} has the best expected incremental profit among {n} allowed offers: {numbers}"
+    picker = "the agent's pick" if d.decided_by in {"AGENT", "AGENT_RETRY"} else "the best expected profit"
+    return f"{_value(d)} is {picker} among {n} allowed offers: {numbers}"
 
 
 def _rejected(d: Decision) -> list[str]:
+    """Only what the rules rejected (deterministic); the agent's own reasons are not repeated here."""
     names = {o.id: o.name for o in load_offers()}
     out: list[str] = []
-    if d.agent_output and d.decided_by in {"AGENT", "AGENT_RETRY"}:
-        for alt in d.agent_output.reasoning.alternatives_rejected:
-            oid = alt.get("offer_id")
-            out.append(f"{names.get(oid, oid)}: {alt.get('reason', 'not chosen')}")
     if d.decided_by not in {"BLOCKED_PREGATE"}:
         _, rejected = screen_offers(
             d.profile_snapshot, d.context, load_offers(), rules=d.effective_policy.rules

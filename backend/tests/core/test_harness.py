@@ -398,9 +398,9 @@ def test_agent_no_offer_becomes_the_free_perk(memory_db, cid, trigger):
     decide(cid, "browse_interest", {}, now=NOW - timedelta(days=30), dry_run=True)  # not a first welcome
     d = decide(cid, trigger, {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
     assert d.status == "SENT" and d.decided_by == "RULES_FALLBACK"
-    assert d.fallback_reason == harness.FREE_PERK_OVERRIDE
-    perk = next(c for c in d.candidates if c.offer_id == d.final_offer_id)
-    assert perk.type in {"cart_nudge", "early_access", "points_reminder"} and d.cost == 0
+    assert d.fallback_reason == harness.AGENT_DECLINE_OVERRIDE
+    sent = next(c for c in d.candidates if c.offer_id == d.final_offer_id)
+    assert sent.est_incremental_profit == max(c.est_incremental_profit for c in d.candidates)
     assert d.agent_output and d.agent_output.decision == "NO_OFFER"  # the agent's answer stays in the log
     assert_compliant(d)
 
@@ -435,3 +435,60 @@ def test_the_flag_is_ignored_and_stripped_on_live_sends(memory_db):
     assert d.decided_by == "AGENT" and llm.calls == 1
     assert "force_llm_fail" not in d.trigger_meta
     assert "force_llm_fail" not in rows(memory_db)[0].payload["trigger_meta"]
+
+
+# ---------------------------------------------------------------- GATE-4: agent declined a paying offer
+def test_rohan_agent_cannot_decline_a_paying_offer(monkeypatch):
+    """Live case: the agent said NO_OFFER citing a hero-category rule that doesn't exist."""
+    from app.contracts import OfferCandidate
+
+    rohan = [
+        OfferCandidate(
+            offer_id="OF_FREE_SHIP",
+            type="free_shipping",
+            category="fashion",
+            allowed_params={"min_basket": {"min": 0, "max": 999}},
+            est_cost=20,
+            est_incremental_profit=404,
+        ),
+        OfferCandidate(
+            offer_id="OF_POINTS2X",
+            type="bonus_points",
+            category=None,
+            allowed_params={"multiplier": {"min": 2, "max": 3}},
+            est_cost=0,
+            est_incremental_profit=-257,
+        ),
+    ]
+    monkeypatch.setattr(harness, "screen_offers", lambda *a, **k: (rohan, []))
+    meta = {"category": "fashion", "item": "Cotton Kurta", "value": 1450, "minutes": 40}
+    d = decide("C000001", "cart_abandoned", meta, now=NOW, llm=MockLLM("no_offer"))
+    assert d.status == "SENT" and d.decided_by == "RULES_FALLBACK"
+    assert d.final_offer_id == "OF_FREE_SHIP" and d.fallback_reason == harness.AGENT_DECLINE_OVERRIDE
+    assert d.agent_output.decision == "NO_OFFER"  # kept in the trace
+    shown = " ".join([d.explanation.title, d.explanation.why_offer, d.explanation.telegram_text])
+    assert "No offer needed" not in shown and "hero" not in shown
+    assert_compliant(d)
+
+
+def test_no_offer_explanation_never_repeats_the_agents_words(monkeypatch):
+    paid_only = [o for o in DEFAULT_OFFERS if o.type not in {"cart_nudge", "early_access", "points_reminder"}]
+    monkeypatch.setattr(harness, "load_offers", lambda: paid_only)
+    real = ports.build_profile
+    monkeypatch.setattr(
+        ports,
+        "build_profile",
+        lambda cid, now: real(cid, now).model_copy(
+            update={"uplift": {k: 0.0 for k in real(cid, now).uplift}}
+        ),
+    )
+    d = decide("C000002", "browse_interest", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
+    assert d.status == "NO_OFFER" and d.decided_by == "AGENT"
+    texts = [
+        d.explanation.title,
+        d.explanation.why_offer,
+        d.explanation.telegram_text,
+        *d.explanation.rejected,
+    ]
+    assert all("No offer needed" not in t for t in texts)  # MockLLM's own wording
+    assert d.explanation.why_offer.startswith("No allowed offer is expected to pay for itself; the best,")

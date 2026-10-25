@@ -51,8 +51,9 @@ CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
 LLM_OFF_FOR_RUN = "the LLM is forced off for this run (Playground)"
-FREE_PERK_OVERRIDE = (
-    "the agent chose no offer, but a free perk is allowed and costs nothing, so the rules sent it"
+AGENT_DECLINE_OVERRIDE = (
+    "the agent chose no offer, but an allowed offer is expected to pay for itself, "
+    "so the rules sent the best one"
 )
 WELCOME_GUARANTEE = "welcome guarantee: a first-time customer always gets a free perk"
 
@@ -515,16 +516,17 @@ def decide(
     extra = {"agent_trace": agent.trace, "agent_output": agent.output, "llm_tokens": agent.tokens}
     if agent.decided_by and agent.offer is None and welcome_guaranteed:
         return use_fallback(f"the agent chose no offer; {WELCOME_GUARANTEE}", extra)
-    if agent.decided_by and agent.offer is None and fallback.zero_cost_perk(candidates):
-        # a free perk can't waste margin, so "no offer" would only leave the customer without a nudge
-        return use_fallback(FREE_PERK_OVERRIDE, extra, pick=fallback.zero_cost_perk)
+    if agent.decided_by and agent.offer is None and fallback.choose(candidates):
+        # the agent may decline only when nothing allowed pays for itself; its stated reasons are never
+        # trusted (it has invented rules before), so the rules decide what pays
+        return use_fallback(AGENT_DECLINE_OVERRIDE, extra)
     if agent.decided_by and agent.offer is None:
         return finish(
             decided_by=agent.decided_by,
             status="NO_OFFER",
             validation=gate,
             **extra,
-            fallback_reason="the agent judged that no offer is worth its cost",
+            fallback_reason=NOTHING_PAYS,
         )
     if agent.decided_by:
         out = agent.output
