@@ -117,7 +117,7 @@ export function MarginCallout({ kpis, decisions, className }: { kpis?: Kpis; dec
   return (
     <Card className={cn('flex flex-col justify-between p-4', className)}>
       <div className="space-y-1">
-        <p className="text-[12px] font-medium text-muted">Margin protected by not discounting sure-things</p>
+        <p className="text-[12px] font-medium text-muted">Margin protected by not discounting sure-things · last 12 months</p>
         <p className="num title text-[28px] leading-none text-ink">{kpis ? <Money value={kpis.margin_saved} /> : '…'}</p>
       </div>
       <p className="mt-3 text-[12.5px] text-muted">

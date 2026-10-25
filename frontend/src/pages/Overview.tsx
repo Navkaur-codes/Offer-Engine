@@ -45,9 +45,8 @@ export function Overview() {
         <Kpi
           hero
           className="col-span-2 lg:row-span-2"
-          label="Incremental revenue vs holdout"
+          label="Incremental revenue vs holdout · last 12 months"
           value={k ? <Money value={k.incremental_revenue} /> : '…'}
-          delta={k?.deltas.incremental_revenue}
           spark={hourly(ds, (d) => d.outcome === 'redeemed')}
           hint="Extra sales compared with the 10% holdout that got no offers. This is money offers actually caused."
         />
