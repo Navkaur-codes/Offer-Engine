@@ -22,8 +22,11 @@ ADMIN = 55512345
 class FakeBot:
     """Records every message across all bots in one shared log."""
 
-    def __init__(self, username: str, log: list):
-        self.username, self.log = username, log
+    def __init__(self, username: str, log: list, chat_type: str = "supergroup"):
+        self.username, self.log, self.chat_type = username, log, chat_type
+
+    async def get_chat(self, chat_id):
+        return SimpleNamespace(type=self.chat_type)
 
     async def __aenter__(self):
         return self
@@ -54,8 +57,8 @@ async def _no_pause():
     return None
 
 
-async def _run(log, factory, n):
-    offer = FakeBot("offer_bot", log)
+async def _run(log, factory, n, chat_type="supergroup"):
+    offer = FakeBot("offer_bot", log, chat_type)
     return await runner.run_rounds_async(offer, GROUP, n, bot_factory=factory.__getitem__, pause=_no_pause)
 
 
@@ -299,3 +302,23 @@ async def test_big_runs_use_one_decide_batch(four_bots, monkeypatch):
     assert len(calls) == 1 and len(calls[0]) == 7 and all(t == "lab" for _, t, _ in calls[0])
     assert [d.customer_id for d in decisions] == [c.id for c in registry.LAB_CUSTOMERS[:7]]
     assert sum(m.text.startswith("👤") for m in log) == 7
+
+
+async def test_basic_group_never_reply_links_across_bots(four_bots, monkeypatch):
+    """Basic groups number messages per bot, so a cross-bot reply would land on an unrelated message."""
+    log, factory = four_bots
+    monkeypatch.setattr(runner, "react", lambda d, c: "why")
+    await _run(log, factory, 2, chat_type="group")
+    assert all(m.reply_to is None for m in log)
+    offers = [m for m in log if m.bot == "offer_bot"]
+    assert offers[0].text.startswith("📨 <b>For Arjun</b>")
+    update, context, sent = _update("/why", reply_to=offers[0].id)  # reply-/why still finds the decision
+    await lab.why_in_group(update, context)
+    assert "Why you got this" in sent[-1]
+
+
+def test_meera_is_a_long_standing_full_price_regular():
+    meera = registry.find("Meera")
+    assert meera.response_type == "sleeping_dog" and len(meera.orders) == 9
+    assert all(o.discount_pct == 0 and not o.returned for o in meera.orders)
+    assert meera.orders[0].days_ago >= 14  # not a fresh buyer

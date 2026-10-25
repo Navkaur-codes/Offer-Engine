@@ -172,11 +172,24 @@ LAB_CUSTOMERS: list[LabCustomer] = [
         "Sleeping dog",
         "loyal_vip",
         "sleeping_dog",
-        600,
-        _orders([(20, "grocery"), (52, "kitchen"), (95, "grocery"), (140, "grocery")]),
-        views_90d=5,
+        720,
+        # long-standing, regular, full-price buyer: the uplift model reads any promo as a net negative
+        _orders(
+            [
+                (22, "gifting"),
+                (38, "kitchen"),
+                (55, "gifting"),
+                (71, "kitchen"),
+                (110, "kitchen"),
+                (166, "gifting"),
+                (210, "kitchen"),
+                (250, "gifting"),
+                (295, "kitchen"),
+            ]
+        ),
+        views_90d=8,
         city=("Kochi", 2),
-        favourite="grocery",
+        favourite="kitchen",
     ),
     LabCustomer(
         "C900009",
