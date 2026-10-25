@@ -622,4 +622,4 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Customer-visible durations:** `rule_types.fmt_hours` printed raw decimals, e.g. /why showed "last offer was 3.56761 h ago (needs 2 days)". Now: "35 min", "3 h 34 min" (under 6 h), "21 h" (under 48 h), "2 days", "2 days 3 h". This applies everywhere rules state a duration (/why, dashboard, describe()).
 - **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
 - **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
-- **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: _pending_
+- **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: `8fee9be`
