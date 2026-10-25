@@ -187,3 +187,10 @@ def test_a_rewrite_that_shows_an_internal_code_is_rejected():
     _a_day_of_decisions()
     lines = ["6 decisions today, NO_CANDIDATES held some."] * 5
     assert digest.daily(DAY, llm=DigestLLM(lines)) == "\n".join(digest.template(digest.stats(DAY)))
+
+
+def test_facts_for_the_model_use_plain_names():
+    _a_day_of_decisions()
+    plain = digest._plain(digest.stats(DAY))
+    assert "free perks sent" in plain and "zero_cost_sent" not in plain
+    assert not digest._CODE.search(json.dumps(plain))

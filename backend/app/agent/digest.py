@@ -188,8 +188,13 @@ def _plain(s: dict) -> dict:
     def words(d: dict) -> dict:
         return {k.lower().replace("_", " "): v for k, v in d.items()}
 
+    named = {
+        "zero_cost_sent": "free perks sent",
+        "cost": "spend",
+        "expected_profit": "expected incremental profit",
+    }
     return {
-        **s,
+        **{named.get(k, k): v for k, v in s.items()},
         "status": words(s["status"]),
         "decided_by": words(s["decided_by"]),
         "top_blocks": [[block_label(k), n] for k, n in s["top_blocks"]],

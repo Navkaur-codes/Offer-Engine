@@ -619,5 +619,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - It is now the change in total worst-case spend headroom: the summed most-generous cost of every allowed offer, after minus before.
   - Each example names the offer that changed: `{customer_id, first_name, offer, before, after}`, e.g. "% off a category: up to 10% off gifting → up to 8% off gifting".
   - Main's case (`P_DEAL_CAP` 10 → 8, 500-customer scratch sample) now gives 6 customers affected, **₹−328**.
-- **Tests:** `pytest tests/core -q` → 103 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected). Property tests green. Full `pytest tests -q` → 298 passed. `ruff` is clean.
-- **Commits:** _pending_
+- **Customer-visible durations:** `rule_types.fmt_hours` printed raw decimals, e.g. /why showed "last offer was 3.56761 h ago (needs 2 days)". Now: "35 min", "3 h 34 min" (under 6 h), "21 h" (under 48 h), "2 days", "2 days 3 h". This applies everywhere rules state a duration (/why, dashboard, describe()).
+- **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
+- **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
+- **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: _pending_
