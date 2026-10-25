@@ -221,6 +221,22 @@ RESPONSE_BASELINE: dict[ResponseType, tuple[float, float]] = {  # (visit mult, c
     "sleeping_dog": (1.0, 1.0),
 }
 
+# The traces a response type leaves in observable behaviour, so an uplift model can learn it:
+# persuadables buy when there is a deal (heavy coupon use), sure-things pay full price, and sleeping dogs
+# push back on marketing ("Not for me").
+RESPONSE_COUPON_MULT: dict[ResponseType, float] = {
+    "persuadable": 1.7,
+    "sure_thing": 0.3,
+    "lost_cause": 1.0,
+    "sleeping_dog": 0.6,
+}
+RESPONSE_DECLINE_P: dict[ResponseType, float] = {
+    "persuadable": 0.02,
+    "sure_thing": 0.04,
+    "lost_cause": 0.10,
+    "sleeping_dog": 0.45,
+}
+
 
 def response_effect(response: ResponseType, strength: float) -> tuple[float, float, float]:
     """(visit mult, conversion mult, immediate churn prob) while a customer holds a campaign offer.

@@ -366,3 +366,55 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - API: `GET /api/scheduler` (running, next runs) and `POST /api/scheduler/run/{job}` (admin passcode) to demo a job without waiting.
   - `decision_store.aware()` normalises naive (SQLite) and UTC (Postgres) timestamps to IST.
 - **Tests:** `tests/api/test_scheduler.py` (8 cases); full suite **222 passed**; ruff clean. A real start registers the 4 jobs with the correct next IST run times.
+
+### 2026-10-25 · Session A · Phase 3, Priority 1: real uplift + impact (A3a)
+- **Version/Phase:** v0.4 / Phase 3, priority-1 checkpoint ("No offer for everyone")
+- **Did:**
+  - `scoring/uplift.py`: a T-learner per offer family, with treated and control GradientBoostingClassifiers.
+    - Each family's control arm comes from the *same* campaigns. Eligible customers who weren't targeted are added to it as a second randomised "no offer" group.
+    - Features come from `build_profile()` at send time, so training and serving match exactly.
+    - Trees are exported as plain Python (`uplift_model.py`, 0.9 MB): no pickle, and no scikit-learn needed at serve time.
+    - The Qini curve is saved, and beats random for both families.
+    - Free shipping and nudges borrow the discount family at a fixed strength, because the only shipping test (Lohri) was too small.
+  - `scoring/impact.py`: cost = what's given away × P(buy | offer), paid by everyone who redeems, sure-things included.
+    - Paid offers: profit = (uplift − 0.01 error band) × basket × margin − cost.
+    - Zero-cost offers: profit = max(uplift, 0) × basket × margin, unless clearly negative.
+  - `build_profile` now fills `profile.uplift` from the model. The sleeping-dog policy needs every offer type below −0.005.
+- **Generator change (approved by the user, changes 8b2e903):**
+  - The hidden response type now leaves traces: coupon use ×1.7 for persuadables and ×0.3 for sure-things, and "Not for me" declines at 45% for sleeping dogs vs 2–4% for others.
+  - The profile carries `rfm.offers_received` / `offers_declined`.
+  - Before this change no learner (T, X, transformed-outcome) could separate the hidden types.
+  - Realism benchmarks are still green. **Neon needs a reseed after the merge.**
+- **Uplift sanity (discount family, held-out, mean predicted vs observed):**
+  - persuadable +0.043 vs +0.111
+  - sure-thing +0.014 vs −0.038
+  - sleeping dog +0.008 vs −0.068
+  - lost cause +0.025 vs +0.002
+  - Points family: persuadable +0.021, sure-thing −0.049, sleeping dog −0.007.
+  - The ranking is right, but the scale is compressed. The hidden type is only ~80% identifiable from behaviour (AUC 0.80–0.83), so per-customer targeting stays noisy.
+- **Expected profit by hidden type (600-customer world):** negative for sure-things and sleeping dogs on % off, free shipping and bonus points; positive for persuadables on bonus points and free shipping.
+- **NO_OFFER share, customer-initiated `browse_interest`, 500-customer scratch seed, fallback path (no LLM):**
+
+  | policy | before (stubs) | after (this branch) | projected with B's zero-cost ≥ 0 fix |
+  |---|---|---|---|
+  | **all** | **81%** | **47%** | **20%** |
+  | default | 85% | 40% | 1% |
+  | at_risk | 51% | 82% | 82% |
+  | window_shopper | 100% | 14% | 0% |
+  | dormant | 88% | 84% | 0% |
+  | new_user | 95% | 6% | 3% |
+  | cart_abandoner | 68% | 10% | 0% |
+  | sleeping_dog | n/a | 100% | 100% |
+  | deal_hunter | 92% | 37% | 21% |
+  | vip | 50% | 36% | 29% |
+  | high_returner | 86% | 71% | 57% |
+
+  - The 30–40% target sits between "this branch" and "with B's fix". Where it lands is decided by B's zero-cost threshold.
+  - If zero-cost offers carry their raw uplift instead of max(uplift, 0), the projection is 25%.
+  - `at_risk` stays at 82% because B's `P_ATRISK_WINBACK` asks for uplift > 0.05, which the model rarely predicts (see sessions §7).
+- **Files:**
+  - `backend/app/scoring/{uplift,uplift_model,impact}.py`, `backend/tests/data/test_uplift_impact.py`
+  - edited: `backend/app/scoring/profile.py`, `backend/app/data/{generator,personas}.py`, `backend/tests/data/test_profile_policy.py` (cart test now picks a customer clear of sleeping_dog)
+- **Commits:** _pending the user's commit_
+- **Tests:** `python -m pytest tests -q` (backend) → 227 passed · `ruff check .` clean
+- **Next:** `scoring/realism.py`, `scoring/experiments.py` (cached).

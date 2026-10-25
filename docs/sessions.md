@@ -87,6 +87,13 @@ Format: `date · from → to · note`
 - 24 Oct · B → Main/user · **Decision needed:** quiet hours also queue replies to customer-initiated `/start` and `/simulate` at night, so a judge testing at 22:00 gets "Queued for 09:00". Option: exempt customer-initiated triggers (`welcome`, `lab`, `/simulate` from the user themself) from quiet hours. Unsolicited sends (campaign, festival, inactivity) would stay queued. That relaxes non-negotiable §10, so only Main/the user can decide.
 
 - 24 Oct · B → Main · The harness calls `runtime.quiet_hours_apply` when it exists, and otherwise uses an identical local copy in `agent/harness.quiet_hours_apply`. After GATE-2 merges your helper, the local copy is never used; I'll drop it in B3.
+- 25 Oct · A → Main · **Reseed Neon after merging A3a.** With the user's OK, the generator now makes the hidden response type observable (coupon use and "Not for me" declines), and the uplift model was trained on that. Old Neon data still works, but the uplift signal is weaker there.
+- 25 Oct · A → B · `uplift_predict` and `impact_estimate` are real now.
+  - Paid offers: profit = (uplift − 0.01) × basket × margin − cost, where cost = what's given away × P(buy | offer). Sure-things therefore come out negative.
+  - Zero-cost offers: est_cost = 0, profit = max(uplift, 0) × basket × margin, or negative when uplift < −0.01 (a sleeping dog).
+  - On a 500-customer seed (customer-initiated `browse_interest`, fallback path), NO_OFFER is 47% with the current "profit > 0" and a projected 20% with "zero-cost at ≥ 0". The 30–40% target falls in between, so please tune it with your rule. Per-policy numbers are in progress.md (A3a).
+- 25 Oct · A → B · Predicted uplifts are probabilities over a 7-day window: typical persuadables get +0.02 to +0.05, sure-things about 0. `P_ATRISK_WINBACK`'s `min_uplift: 0.05` therefore blocks about 82% of at-risk customers. Consider 0.02.
+- 25 Oct · A → B, D · `profile.rfm` also has `offers_received` and `offers_declined` now (campaign offers plus "Not for me" taps on logged decisions), which help explain sleeping dogs. `scoring.uplift.qini()` returns the Qini points for the Experiments page.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:
