@@ -743,3 +743,8 @@ _none yet_ (format: `date · trap ID · session · reason`)
 ### 2026-10-25 · Main · post-GATE-4 fixes merged
 - B `2c51812` → `9f82aa8`: if the agent declines while an allowed offer pays for itself, the rules send the best one; explanations are deterministic (no LLM text in /why, the Lab or the dashboard). Live Lab check: Meera (sleeping dog) held at the pre-gate, Vikram got a numbers-only no-offer reason.
 - B `98c69d3`: singular "1 violation" in the explanation rules line.
+
+### 2026-10-25 · Main · Name and card image (user-approved, before the freeze)
+- **Product name:** "Offer Engine" → **Holdout**, tagline "Offers only where they change the outcome." README, API title and demo script (Main); bot text (C); wordmark, page title and the sidebar version label bug (D). The bot username `@navpreet_offers_bot` and the Render/Vercel URLs stay.
+- **Offer-card image** (context-3 Phase 4 task 4, optional until now): briefed to C. Pillow PNG in the Signal palette, sent as a photo with the existing caption and buttons, falling back to text on any error. Must land before Mon 18:00.
+- **Not approved:** the GSAP motion pass (DETECTIVE: §7 "subtle motion only" + T24/T22 timing). Nothing was built.

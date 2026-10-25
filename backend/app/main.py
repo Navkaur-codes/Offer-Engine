@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
         await app.state.tg.shutdown()
 
 
-app = FastAPI(title="Offer Engine", version=VERSION, lifespan=lifespan)
+app = FastAPI(title="Holdout", version=VERSION, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],

@@ -1,4 +1,4 @@
-# Demo script: Offer Engine (5 minutes, plus 2 minutes of backup)
+# Demo script: Holdout (5 minutes, plus 2 minutes of backup)
 
 > For presenting live to judges. Times are cumulative. **Bold** lines are what to say; the rest is what to do.
 > Screen setup: phone (or Telegram Desktop) on the left, the dashboard at https://offer-engine-nu.vercel.app on the right, Overview open.
