@@ -5,6 +5,7 @@ import { AppShell } from './app/AppShell'
 import { NAV } from './app/nav'
 import { TooltipProvider } from './components/ui/tooltip'
 import { useTheme } from './lib/hooks'
+import { Customers } from './pages/Customers'
 import { Decisions } from './pages/Decisions'
 import { Overview } from './pages/Overview'
 import { Placeholder } from './pages/Placeholder'
@@ -15,7 +16,7 @@ const queryClient = new QueryClient({
 })
 
 const PHASE: Record<string, string> = {
-  '/customers': 'v0.4', '/experiments': 'v1.0', '/festivals': 'v1.0', '/realism': 'v1.0', '/playground': 'v1.0',
+ '/experiments': 'v1.0', '/festivals': 'v1.0', '/realism': 'v1.0', '/playground': 'v1.0',
 }
 
 const router = createBrowserRouter([
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
       { index: true, element: <Overview /> },
       { path: 'decisions', element: <Decisions /> },
       { path: 'rules', element: <Rules /> },
+      { path: 'customers', element: <Customers /> },
       ...NAV.filter((n) => PHASE[n.to]).map((n) => ({ path: n.to.slice(1), element: <Placeholder item={n} phase={PHASE[n.to]} /> })),
       { path: '*', element: <Placeholder item={{ ...NAV[0], label: 'Page not found', why: 'This address does not exist.' }} phase="no release" /> },
     ],
