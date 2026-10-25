@@ -322,3 +322,16 @@ def test_meera_is_a_long_standing_full_price_regular():
     assert meera.response_type == "sleeping_dog" and len(meera.orders) == 9
     assert all(o.discount_pct == 0 and not o.returned for o in meera.orders)
     assert meera.orders[0].days_ago >= 14  # not a fresh buyer
+
+
+async def test_lab_offer_reply_is_the_card_image(four_bots, monkeypatch):
+    log, factory = four_bots
+    photos = []
+
+    async def send_photo(self, chat_id, photo, caption, **kw):
+        photos.append(caption)
+        return await self.send_message(chat_id, caption, **kw)
+
+    monkeypatch.setattr(FakeBot, "send_photo", send_photo, raising=False)
+    await _run(log, factory, 1)
+    assert len(photos) == 1 and photos[0].startswith("📨 <b>For Arjun</b>")

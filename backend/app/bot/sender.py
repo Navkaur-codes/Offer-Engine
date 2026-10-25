@@ -12,11 +12,11 @@ import asyncio
 import logging
 from collections import OrderedDict
 
-from telegram import Bot, Message
+from telegram import Bot, InlineKeyboardMarkup, Message
 from telegram.constants import ParseMode
-from telegram.error import TelegramError
+from telegram.error import Forbidden, TelegramError
 
-from app.bot import resilience, store
+from app.bot import card_image, resilience, store
 from app.bot.render import render_decision
 from app.config import settings
 from app.contracts import Channel, Decision
@@ -51,12 +51,51 @@ def all_for(customer_id: str) -> list[Decision]:
     return [d for d in reversed(_RECENT.values()) if d.customer_id == customer_id]
 
 
+CAPTION_MAX = 1024
+_image_failed_logged = False
+
+
+def wants_image(decision: Decision) -> bool:
+    """Only real, sent offers get the card image; NO_OFFER / BLOCKED / QUEUED / DRY_RUN stay text."""
+    return decision.status == "SENT" and bool(decision.final_offer_id)
+
+
+async def send_card(
+    bot: Bot,
+    chat_id: int,
+    decision: Decision,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+    *,
+    customer_chat: bool = True,
+    **kwargs,
+) -> Message | None:
+    """The offer as a photo with `text` as its caption, else plain text. The image is a nicety: any render or
+    send_photo failure falls back to the text message, so delivery never depends on it."""
+    global _image_failed_logged
+    if wants_image(decision) and len(text) <= CAPTION_MAX:
+        try:
+            png = await asyncio.to_thread(card_image.render_card, decision)
+            return await resilience.send_photo(
+                bot, chat_id, png, text, customer_chat=customer_chat,
+                parse_mode=ParseMode.HTML, reply_markup=keyboard, **kwargs,
+            )
+        except Forbidden:
+            raise  # a group that removed the bot: text would fail too
+        except Exception as exc:
+            if not _image_failed_logged:
+                log.warning("card image failed (%s); sending text cards instead", type(exc).__name__)
+                _image_failed_logged = True
+    return await resilience.send(
+        bot, chat_id, text, customer_chat=customer_chat,
+        parse_mode=ParseMode.HTML, reply_markup=keyboard, **kwargs,
+    )
+
+
 async def send_decision(bot: Bot, chat_id: int, decision: Decision) -> Message | None:
     """None if the customer has blocked the bot (they're then marked unreachable)."""
     card = render_decision(decision)
-    message = await resilience.send(
-        bot, chat_id, card.text, parse_mode=ParseMode.HTML, reply_markup=card.keyboard
-    )
+    message = await send_card(bot, chat_id, decision, card.text, card.keyboard)
     remember(decision)
     if message is not None:
         await asyncio.to_thread(store.set_message_id, decision.id, message.message_id)

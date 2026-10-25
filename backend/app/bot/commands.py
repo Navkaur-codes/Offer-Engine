@@ -18,7 +18,8 @@ from app.contracts import Decision
 
 NOT_REGISTERED = "You're not set up yet. Tap /start, it takes 20 seconds."
 HELP_TEXT = (
-    "<b>Offer Engine</b> · a student demo with synthetic offers\n\n"
+    "<b>Holdout</b> · offers only where they change the outcome\n"
+    "<i>A student demo with synthetic offers.</i>\n\n"
     "/start · set up or change your preferences\n"
     "/simulate · pretend to shop (cart, browse, buy, go quiet…) and see the engine decide\n"
     "/offers · your active offers\n"

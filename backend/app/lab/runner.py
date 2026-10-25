@@ -140,6 +140,17 @@ async def _reply(bot: Bot, chat_id: int, text: str, to: Message | None) -> Messa
     return await _post(bot, chat_id, text, reply_parameters=replying)
 
 
+async def _offer_reply(
+    bot: Bot, chat_id: int, decision: Decision, text: str, to: Message | None
+) -> Message:
+    """The Offer bot's answer: the card image for a sent offer (text fallback inside send_card)."""
+    kwargs = {}
+    if to is not None:
+        reply = ReplyParameters(message_id=to.message_id, allow_sending_without_reply=True)
+        kwargs["reply_parameters"] = reply
+    return await sender.send_card(bot, chat_id, decision, text, customer_chat=False, **kwargs)
+
+
 async def shared_message_ids(bot: Bot, chat_id: int) -> bool:
     """Only supergroups share message ids between bots. In a basic group each bot numbers messages itself, so
     a Lab Shopper's message_id points at some other message for the Offer bot: there we don't reply-link."""
@@ -176,7 +187,7 @@ async def play_round(
         decision = prepared[1]
     else:
         decision = await asyncio.to_thread(ports.decide, customer.id, "lab", act.meta)
-    answer = await _reply(offer_bot, chat_id, offer_reply(decision, customer), link(post))
+    answer = await _offer_reply(offer_bot, chat_id, decision, offer_reply(decision, customer), link(post))
     sender.remember(decision)
     await asyncio.to_thread(store.set_message_id, decision.id, answer.message_id)
     remember_message(answer.message_id, decision.id)  # the Offer bot's own id: right for reply-/why anywhere

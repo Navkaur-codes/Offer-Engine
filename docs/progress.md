@@ -10,18 +10,18 @@
 | v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
 | v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☑ GATE-2 (25 Oct): the real pipeline is live in production |
 | v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☑ GATE-3 (25 Oct): dashboard on Vercel with live data |
-| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ◐ GATE-3: uplift, impact, Lab, Groq agent live; Experiments/Playground pages in Phase 4 |
-| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
+| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☑ GATE-4 (25 Oct): Experiments, Playground and Lab live |
+| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ◐ GATE-4 (25 Oct): v1.0 live, README + screenshots done; classmate test round still to do |
 | Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ |
 
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☐ |
-| A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☐ |
-| B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☐ |
-| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☑ `2182b0e` |
-| D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☑ README · demo script · ☑ GATE-4 |
+| A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☑ `142bdad` `5b8af06` `2d0b9e2` |
+| B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☑ `aa0db26` `66ab57a` `b3dc666` `0feb781` `8fee9be` |
+| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☑ `bc337b9` `695444a` `44a5620` `2182b0e` `d43ac8d` |
+| D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☑ `daa709b`…`87d3b22`, `9d6b2b5`, `f355e42`, `c2d7145` |
 
 ## claude-progressive.md history
 | Version/Phase | Written | Summary of temporary rules |
@@ -31,6 +31,7 @@
 | v0.3 / Phase 2 | 24 Oct | Compressed schedule; real modules replace stubs as they merge; Neon seeded small (≈1,500 customers); still no real Groq calls |
 | v0.4 / Phase 3 | 25 Oct | PRIORITY 1: the no-offer fix (A uplift/impact, B zero-cost + welcome); conftest pins foreign ports in unit tests; Groq only via budget guard |
 | v1.0 / Phase 4 | 25 Oct | Last phase before the freeze (Mon 18:00): B tunes the agent's "no offer" threshold first; README + demo; Lab customers survive re-seeds; gpt-oss models |
+| v1.0 / Post-freeze | 25 Oct | Fixes, polish and docs only (T22); judging rule settings on prod; submit by Tue 10:00 |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -709,3 +710,46 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Did:** Lab rounds no longer reply-link across bots in basic groups (per-bot message ids pointed at old service messages); reply links stay in supergroups. Meera (C900008) gets A's long-standing full-price history, so the real scoring makes her `sleeping_dog` (max uplift −0.066) → NO_OFFER; Neon's Meera rebuilds at the first `/lab run` after deploy. Finding 2 (second "Blocked" message) dropped: the user had tapped "❓ Why?".
 - **Commits:** `d43ac8d` fix(lab): no cross-bot reply links in basic groups; sleeping-dog history for Meera
 - **Tests:** `python -m pytest -q` (backend, merged with main 2eb3161) → 331 passed · ruff clean
+
+### 2026-10-26 · B · GATE-4 polish: plain-English digest suggestion, real budget delta in the rule preview
+- **Digest (Main's live finding):** a live digest said "approve review of NO_CANDIDATES block, which stopped 6 of 6 decisions".
+  - Blocks now have plain labels ("no allowed offer", "the kill switch", "the frequency cap", …), and the suggestion counts against all of the day's decisions, e.g. "Suggestion: 6 of 8 decisions found no allowed offer; review the persona caps on the Rules page."
+  - The facts sent to gpt-oss-20b use the same words. A rewrite that shows an internal `CODE_LIKE_THIS` is rejected, like one with an invented number, and the template is used instead.
+- **Rule preview (`budget_delta` was always 0):** the old definition was the change in each customer's single most expensive allowed offer, which a % cap often doesn't touch (flat ₹ off stays the most expensive).
+  - It is now the change in total worst-case spend headroom: the summed most-generous cost of every allowed offer, after minus before.
+  - Each example names the offer that changed: `{customer_id, first_name, offer, before, after}`, e.g. "% off a category: up to 10% off gifting → up to 8% off gifting".
+  - Main's case (`P_DEAL_CAP` 10 → 8, 500-customer scratch sample) now gives 6 customers affected, **₹−328**.
+- **Customer-visible durations:** `rule_types.fmt_hours` printed raw decimals, e.g. /why showed "last offer was 3.56761 h ago (needs 2 days)". Now: "35 min", "3 h 34 min" (under 6 h), "21 h" (under 48 h), "2 days", "2 days 3 h". This applies everywhere rules state a duration (/why, dashboard, describe()).
+- **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
+- **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
+- **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: `8fee9be`
+
+### 2026-10-25 · Main · GATE-4 (v1.0)
+- **Merged (Phase 4):** A → `56fd8be`, B → `b9e1ef9`, C → `89407ea`, D → `4f5c5b9`. Conflicts were docs only, resolved with every entry kept. Full suite **324 passed**; frontend lint + build ✓; main JS chunk 289 kB (was ~1 MB).
+- **Scratch smoke (500 customers):** no stubs left; 79% would send, 0 validator failures, ~23 ms per fallback decision; kill switch → BLOCKED; force-LLM-fail dry run → RULES_FALLBACK and the flag is not logged; digest and rule impact real.
+- **Live findings and fixes (GATE-4b):**
+  - Experiments headline was negative (−₹22,909 profit) while every ROI row was positive: pooled treated vs control across campaigns (Simpson's paradox) on raw revenue. A `2d0b9e2`: every number now sums per-campaign cells, each campaign vs its own control. Live 12 months: **+₹91,760 revenue, +₹1,723 profit, ₹14,916 margin saved** (free shipping −₹24,320: an honest talking point).
+  - Overview hero used 30 days and showed ₹0; with the user's OK it now uses 12 months (`2eb3161`, test added); D labelled it `f355e42` and retook the screenshots `c2d7145`.
+  - B `0feb781`, `8fee9be`: plain-English digest suggestion, rule preview budget delta (deal cap 10→8 %: 6 customers, −₹328), durations like "3 h 34 min".
+  - C `d43ac8d`: Lab cards no longer reply to the wrong message in basic groups; Lab "Meera" now has a sleeping-dog history (no offer, rebuilt at the first `/lab run`).
+  - Merges: A `926a94a`, B `5828a8f`, C `984c6df`, D `38129cd`, screenshots `49d9f35`. Suite **337 passed**.
+- **Live checks:** `/health` v0.4 → all 25 ports real; Playground agent + force-fail ✓; every dashboard page loads with no console errors; `/simulate cart` → 2× points (agent); `/summary` ✓; Lab 5 rounds → 3 offers (VIP early access, deal hunter 10% over ₹999, at-risk free shipping) and 2 honest no-offers. The Karwa Chauth greeting reached the user only because they opted in.
+- **Judging settings (user decision, data not code):** on prod Rules → Global, `G_FREQ` min gap 2 days → **0** and `G_ONE_COUPON` 1 → **2**, so a judge's `/start` → `/simulate cart` gets an offer (both blocked it before). The 3-per-7-days cap and every other limit stay. **Revert both under History after judging.**
+- **Open:** B is fixing the agent declining a profitable offer with an invented reason (Rohan: free shipping +₹404, "fashion is not a hero category") — widen the override to any profitable candidate and make no-offer reasons deterministic. Classmate test round still to do.
+
+### 2026-10-26 · B · GATE-4 fix: the agent may not decline a paying offer, and explanations never repeat its free text
+- **Live bug (Main, Lab 22:26 IST):** Rohan (C900002, cart_abandoner) had free shipping allowed at ₹20 cost / +₹404 expected profit, but the agent answered NO_OFFER, citing a hero-category rule that doesn't exist (`evaluate` had passed 13/0). The group saw that invented reason (detective T18).
+- **Fix:**
+  - If the agent answers NO_OFFER while any allowed candidate pays for itself (a paid offer at profit > 0, or a free perk at ≥ 0), the rules fallback sends the best one (`RULES_FALLBACK`, "the agent chose no offer, but an allowed offer is expected to pay for itself, so the rules sent the best one"). This widens task 0 (`aa0db26`). Pre-gate holds are unchanged.
+  - The explainer's `why_offer` and `rejected` are now deterministic, built from candidates, numbers and rule results only. The agent's reasoning stays in `agent_output` (the trace) and never reaches /why, the Lab or the dashboard.
+- **Tests:** Rohan's exact candidates with MockLLM("no_offer") → SENT free shipping; no explanation field contains the agent's words. `pytest tests/core -q` → 108 passed (property tests green); full `pytest tests -q` → 303 passed; `ruff` is clean.
+- **Commits:** `2c51812`
+
+### 2026-10-25 · Main · post-GATE-4 fixes merged
+- B `2c51812` → `9f82aa8`: if the agent declines while an allowed offer pays for itself, the rules send the best one; explanations are deterministic (no LLM text in /why, the Lab or the dashboard). Live Lab check: Meera (sleeping dog) held at the pre-gate, Vikram got a numbers-only no-offer reason.
+- B `98c69d3`: singular "1 violation" in the explanation rules line.
+
+### 2026-10-25 · Main · Name and card image (user-approved, before the freeze)
+- **Product name:** "Offer Engine" → **Holdout**, tagline "Offers only where they change the outcome." README, API title and demo script (Main); bot text (C); wordmark, page title and the sidebar version label bug (D). The bot username `@navpreet_offers_bot` and the Render/Vercel URLs stay.
+- **Offer-card image** (context-3 Phase 4 task 4, optional until now): briefed to C. Pillow PNG in the Signal palette, sent as a photo with the existing caption and buttons, falling back to text on any error. Must land before Mon 18:00.
+- **Not approved:** the GSAP motion pass (DETECTIVE: §7 "subtle motion only" + T24/T22 timing). Nothing was built.

@@ -92,11 +92,18 @@ def num(params: dict, key: str) -> float | None:
 
 
 def fmt_hours(hours: float) -> str:
-    if hours < 1:
-        return f"{round(hours * 60)} min"
-    if hours < 48 or hours % 24:
-        return f"{hours:g} h"
-    return f"{int(hours // 24)} days"
+    """Durations for people (customers read these in /why): "35 min", "3 h 34 min", "21 h", "2 days 3 h"."""
+    minutes = round(hours * 60)
+    if minutes < 60:
+        return f"{minutes} min"
+    h, m = divmod(minutes, 60)
+    if h < 6:
+        return f"{h} h {m} min" if m else f"{h} h"
+    h = round(hours)
+    if h < 48:
+        return f"{h} h"
+    days, rest = divmod(h, 24)
+    return f"{days} days {rest} h" if rest else f"{days} days"
 
 
 def join_words(words: list[str]) -> str:

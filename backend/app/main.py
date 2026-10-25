@@ -17,7 +17,7 @@ from app.contracts import CONTRACT_VERSION
 from app.db import init_db
 from app.scheduler import runner
 
-VERSION = "0.4.0"
+VERSION = "1.0.0"
 WEBHOOK_PATH = "/telegram/webhook/{secret}"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
         await app.state.tg.shutdown()
 
 
-app = FastAPI(title="Offer Engine", version=VERSION, lifespan=lifespan)
+app = FastAPI(title="Holdout", version=VERSION, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],

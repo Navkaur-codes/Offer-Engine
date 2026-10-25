@@ -48,7 +48,7 @@ def _customer(engine, cid: str, **kw) -> None:
 async def test_non_admin_is_refused(chat, monkeypatch):
     monkeypatch.setattr(settings, "admin_telegram_ids", "1")
     await admin.killswitch_cmd(chat.message_update("/killswitch on"), chat.context(["on"]))
-    assert chat.last_text == "That command is for Offer Engine admins." and not runtime.killswitch_on()
+    assert chat.last_text == "That command is for Holdout admins." and not runtime.killswitch_on()
 
 
 async def test_killswitch_on_off_and_status(chat):
