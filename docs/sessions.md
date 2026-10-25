@@ -7,7 +7,7 @@
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-2 passed → Phase 3 (deploys, contract requests) | ☑ GATE-1 ☑ MAIN-API ☑ GATE-2 | v1.1 frozen | none | 25 Oct |
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 2 done (A2) → Phase 3 next | ☑ P2 `1646fe0` (P1 `8b2e903`) | v1.1 | none (the `test_ports` fix was applied by Main at GATE-2) | 25 Oct |
-| B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer, quiet hours) → Phase 3 next | ☑ P2 `0302b17`, `3d1f941` | v1.1 | none (budget guard approved) | 25 Oct |
+| B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 3 B3 done (Groq agent, budget guard, validators) → Phase 4 next | ◐ P3 awaiting commit | v1.1 | Groq model ids must be switched to gpt-oss in Render | 25 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 2 done (/simulate, recorded buttons, /why, /history, rate limit, `initiated_by`) → Phase 3 next | ☑ P2 `9cfaf33`, `21e43d9` (P1 `1e5e102`) | v1.1 | P3 needs the 10 Lab bots + group (user) | 25 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer) → Phase 3 next; Lighthouse not yet measured | ☑ P2 `a9aa536`, `181eb92`, `fc08f23` (P1 `e5d9116`) | v1.1 | none (CR-D1, CR-D2 accepted in v1.1) | 25 Oct |
 
@@ -54,6 +54,7 @@ Format: `ID · date · from session · what change · why · status (open/accept
 - _none yet_
 - CR-D1 · 24 Oct · D · `Kpis.deltas`: use the same keys as the `Kpis` fields (`sent_today`, `claim_rate`, `incremental_revenue`, `budget_used_pct`, `blocked_by_rules`, `margin_saved`), with values as a fractional change vs yesterday (`0.12` = +12%). The API currently sends `{"sent","claim_rate","blocked"}` and it's unclear whether those are absolute or relative. · The KPI strip shows ▲▼ per tile and can't map the current keys without guessing. · open · v1
 - CR-D2 · 24 Oct · D · Add `festival: str | None` to `DecisionLight` and a `festival=` filter to `GET /api/decisions`. · context-4 Phase 2 asks for a festival filter on the Decisions log; today only `trigger=festival` exists, which misses festival-phase decisions from other triggers. · open · v1
+- CCR-B1 · 25 Oct · B · Add ports `llm_budget_status` → `app.agent.budget.status` and `decide_batch` → `app.agent.harness.decide_batch` · so `/health`, the dashboard meter, campaign dry-runs and the Lab use the budget guard and the top-5 rule through ports · open · v1.1
 
 ## 7. Notes for other sessions
 Format: `date · from → to · note`
@@ -87,6 +88,11 @@ Format: `date · from → to · note`
 - 24 Oct · B → Main/user · **Decision needed:** quiet hours also queue replies to customer-initiated `/start` and `/simulate` at night, so a judge testing at 22:00 gets "Queued for 09:00". Option: exempt customer-initiated triggers (`welcome`, `lab`, `/simulate` from the user themself) from quiet hours. Unsolicited sends (campaign, festival, inactivity) would stay queued. That relaxes non-negotiable §10, so only Main/the user can decide.
 
 - 24 Oct · B → Main · The harness calls `runtime.quiet_hours_apply` when it exists, and otherwise uses an identical local copy in `agent/harness.quiet_hours_apply`. After GATE-2 merges your helper, the local copy is never used; I'll drop it in B3.
+
+- 25 Oct · B → Main/user · **Groq model ids:** this key has no llama models (`llama-3.3-70b-versatile` → 404). Set `GROQ_MODEL_AGENT=openai/gpt-oss-120b` and `GROQ_MODEL_FAST=openai/gpt-oss-20b` in Render and `.env`, or change the defaults in `config.py`. 20 live runs on gpt-oss-120b: 1 call per decision, about 2.3k tokens, about 3 s.
+- 25 Oct · B → Main · New B functions that need ports (contract change request CCR-B1 in §6): `app.agent.budget.status() -> dict` for `/health` and the dashboard's LLM budget meter, and `app.agent.harness.decide_batch(items: list[(customer_id, trigger, meta)], *, dry_run, now, agent_top_n=5) -> list[Decision]` for campaign dry-runs and `/lab run` > 5 rounds (top-5 rule, T26).
+- 25 Oct · B → D · `budget.status()` returns `{"agent": {"used", "limit", "model"}, "fast": {...}, "mode": "70b"|"8b"|"rules"}`. The mode is still called "70b"/"8b" even on gpt-oss.
+- 25 Oct · B → C · Agent messages are now validated for facts: a festival greeting only appears for opted-in customers, every number matches the offer, and the expiry date is real. `evaluate()` without a catalogue now uses the default 10 offers when the `offers` table is empty.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:

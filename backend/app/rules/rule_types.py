@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import math
 import re
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Any, ClassVar, Literal, get_args
 
 from app import ports
@@ -38,6 +38,8 @@ CATEGORIES: tuple[str, ...] = get_args(Category)
 DISCOUNT_TYPES = frozenset({"pct_off", "flat_off"})
 VALUE_KEYS = ("pct", "amount", "multiplier")  # params that make an offer more generous as they grow
 ZERO_COST_TYPES = frozenset({"cart_nudge", "early_access", "points_reminder"})  # free perks
+NO_COUPON_TYPES = frozenset({"cart_nudge", "points_reminder"})  # nothing to redeem, so no code or expiry
+EXPIRY_DAYS = 2
 
 POLICY_LABELS = {
     "vip": "VIP customers",
@@ -790,7 +792,9 @@ class EscalationLadder(RuleSpec):
 
 
 class MessageRule(RuleSpec):
-    """params: max_len, banned_phrases, competitors. Phase 3 adds number/expiry matching."""
+    """params: max_len, banned_phrases, competitors, check_facts (default on): every %, ×, ₹ amount and number
+    must match the final params, the expiry date must be the real one, and a festival greeting may appear
+    only as the exact greeting the harness put in context (it does so only for opted-in customers)."""
 
     type = "message"
     scope = "message"
@@ -811,7 +815,13 @@ class MessageRule(RuleSpec):
         for name in self.p.get("competitors", []):
             if re.search(rf"\b{re.escape(name.lower())}\b", low):
                 return False, f"names a competitor ({name})"
-        return True, "message is clean"
+        if self.p.get("check_facts", True):
+            problem = greeting_problem(message, context) or (
+                facts_problem(message, profile, context, offer, params) if offer is not None else None
+            )
+            if problem:
+                return False, problem
+        return True, "message is clean and its facts match the offer"
 
     def describe(self):
         bits = []
@@ -821,7 +831,92 @@ class MessageRule(RuleSpec):
             bits.append("never say " + join_words([f"“{b}”" for b in self.p["banned_phrases"]]))
         if self.p.get("competitors"):
             bits.append("never name competitors")
+        if self.p.get("check_facts", True):
+            bits.append(
+                "quote only the offer's real value and expiry date, and use a festival greeting only for "
+                "customers who opted in"
+            )
         return "Messages " + ", ".join(bits or ["are checked"]) + "."
+
+
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_DATE = re.compile(rf"\b(\d{{1,2}})\s?({'|'.join(_MONTHS)})[a-z]*\b", re.I)
+_CODE = re.compile(r"\b(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])[A-Z0-9]{6,}\b")
+_PCT = re.compile(r"(\d+(?:\.\d+)?)\s?%")
+_MULT = re.compile(r"(\d+(?:\.\d+)?)\s?[×x]\b")
+_RUPEES = re.compile(r"(?:₹|rs\.?\s?|inr\s?)\s?(\d[\d,]*)", re.I)
+_NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+
+def offer_expiry(send_at: datetime, ctx: Context) -> datetime:
+    """When a coupon sent at `send_at` expires: in 2 days at 23:59, or sooner if a festival delivery cutoff
+    comes first (an offer that can't arrive in time shouldn't outlive the cutoff)."""
+    local = send_at.astimezone(IST)
+    expires = datetime.combine(local.date() + timedelta(days=EXPIRY_DAYS), time(23, 59), IST)
+    cutoff = ctx.delivery_cutoff
+    if cutoff and ctx.festival_phase in {"build_up", "last_minute"} and cutoff > local.date():
+        expires = min(expires, datetime.combine(cutoff, time(23, 59), IST))
+    return expires
+
+
+def _num(text: str) -> float:
+    return float(text.replace(",", ""))
+
+
+def greeting_problem(message: str, context: Context) -> str | None:
+    low = message.lower()
+    for fest in ports.festivals():
+        g = fest.greeting
+        if g and g.lower() in low and g != context.greeting:
+            return f"uses the greeting “{g}” without the customer's opt-in for it"
+    if context.greeting and context.greeting.lower() in low and context.greeting not in message:
+        return f"changes the festival greeting; it must read exactly “{context.greeting}”"
+    return None
+
+
+def facts_problem(
+    message: str, profile: CustomerProfile, context: Context, offer: Offer, params: dict
+) -> str | None:
+    text = _CODE.sub(" ", message)
+    item = (profile.open_cart or {}).get("item")
+    if item:
+        text = text.replace(str(item), " ")
+    if context.greeting:
+        text = text.replace(context.greeting, " ")
+
+    expiry = offer_expiry(context.now, context)
+    dates = [(int(d), m[:3].title()) for d, m in _DATE.findall(text)]
+    for day, month in dates:
+        if (day, month) != (expiry.day, f"{expiry:%b}"):
+            return f"says the offer ends {day} {month}, but it ends {expiry:%d %b}"
+    if offer.type not in NO_COUPON_TYPES and not dates:
+        return f"must state the expiry date ({expiry:%d %b})"
+    text = _DATE.sub(" ", text)
+
+    pct = num(params, "pct")
+    for found in _PCT.findall(text):
+        if pct is None or _num(found) != pct:
+            actual = "not a % discount" if pct is None else f"{pct:g}% off"
+            return f"mentions {found}% but the offer is {actual}"
+    text = _PCT.sub(" ", text)
+    mult = num(params, "multiplier")
+    for found in _MULT.findall(text):
+        if mult is None or _num(found) != mult:
+            actual = "no points multiplier" if mult is None else f"{mult:g}×"
+            return f"mentions {found}× but the offer gives {actual}"
+    text = _MULT.sub(" ", text)
+
+    cart_value = (profile.open_cart or {}).get("value")
+    money = {v for v in (num(params, "amount"), num(params, "min_basket"), cart_value) if v}
+    for found in _RUPEES.findall(text):
+        if _num(found) not in money:
+            return f"mentions ₹{found}, which is not part of this offer"
+    text = _RUPEES.sub(" ", text)
+    other = money | {profile.points_balance, profile.points_expiring}
+    for found in _NUMBER.findall(text):
+        if _num(found) not in other:
+            return f"mentions the number {found}, which doesn't come from the offer"
+    return None
 
 
 class FestivalRestriction(RuleSpec):

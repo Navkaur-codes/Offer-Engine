@@ -170,7 +170,7 @@ def test_escalation_ladder():
 
 def test_message_rule():
     p, ctx = make_profile(), make_context()
-    assert check("G_MESSAGE", p, ctx, "OF_FREE_SHIP", message="Hi! Free shipping till 25 Oct.").passed
+    assert check("G_MESSAGE", p, ctx, "OF_FREE_SHIP", message="Hi! Free shipping till 26 Oct.").passed
     assert check("G_MESSAGE", p, ctx, "OF_FREE_SHIP", message=None).passed
     assert not check("G_MESSAGE", p, ctx, "OF_FREE_SHIP", message="x" * 281).passed
     assert not check("G_MESSAGE", p, ctx, "OF_FREE_SHIP", message="Guaranteed lowest price!").passed
@@ -198,3 +198,42 @@ def test_unknown_condition_key_never_applies():
         updated_at=NOW,
     )
     assert not spec_for(rule).applies(make_profile(), make_context())
+
+
+def test_message_facts_must_match_the_offer():
+    p = make_profile("C000002")  # deal hunter, no open cart
+    ctx = make_context()  # 24 Oct 14:00 → coupons expire 26 Oct
+    params = {"pct": 10, "min_basket": 999, "category": "ethnic_wear"}
+
+    def ok(msg, offer="OF_PCT_CAT", prm=params, c=ctx):
+        return check("G_MESSAGE", p, c, offer, prm, message=msg)
+
+    assert ok("Hi Priya! 10% off ethnic wear above ₹999 till 26 Oct. Code SAVEPRI7QX2.").passed
+    assert ok("Hi Priya! 10% off ethnic wear above ₹999 till 26 October. Code SAVEPRI7QX2.").passed
+    res = ok("Hi Priya! 15% off ethnic wear above ₹999 till 26 Oct.")
+    assert not res.passed and "15%" in res.detail
+    assert "₹499" in ok("Hi Priya! 10% off above ₹499 till 26 Oct.").detail
+    assert "ends 28 Oct" in ok("Hi Priya! 10% off above ₹999 till 28 Oct.").detail
+    assert "expiry" in ok("Hi Priya! 10% off ethnic wear above ₹999.").detail
+    assert "48" in ok("Hi Priya! 10% off above ₹999 for 48 hours, till 26 Oct.").detail
+    # a reminder has no coupon, so no expiry is needed; the points balance is a real number
+    assert ok("Hi Priya! Your cart is waiting.", "OF_NUDGE", {}).passed
+    assert ok(f"Hi Priya! You have {p.points_balance} points.", "OF_NUDGE", {}).passed
+    # the cart's own price and item name may be quoted
+    carted = make_profile(
+        open_cart={"category": "electronics", "item": "Redmi 13C", "value": 8999, "since": "x"}
+    )
+    msg = "Hi! Your Redmi 13C (₹8,999) ships free till 26 Oct. Code SHIPNAV8K2P."
+    assert check("G_MESSAGE", carted, ctx, "OF_FREE_SHIP", {"min_basket": 0}, message=msg).passed
+
+
+def test_greeting_only_with_opt_in():
+    p = make_profile()
+    diwali = make_context(festival="diwali_2026", festival_phase="teaser")
+    msg = "Happy Diwali, Navpreet! Early access to our sale till 26 Oct. Code EARLYNAV7Q2X."
+    res = check("G_MESSAGE", p, diwali, "OF_EARLY", {}, message=msg)
+    assert not res.passed and "opt-in" in res.detail  # harness leaves greeting empty without opt-in
+    opted = diwali.model_copy(update={"greeting": "Happy Diwali"})
+    assert check("G_MESSAGE", p, opted, "OF_EARLY", {}, message=msg).passed
+    altered = msg.replace("Happy Diwali", "happy diwali")
+    assert "exactly" in check("G_MESSAGE", p, opted, "OF_EARLY", {}, message=altered).detail

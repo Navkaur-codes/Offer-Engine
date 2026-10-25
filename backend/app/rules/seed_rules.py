@@ -122,6 +122,16 @@ FESTIVAL_RULES = [
     ),
 ]
 
+FESTIVAL_RULES.append(
+    _rule(
+        "F_FESTIVAL_PROMOS",
+        "festival",
+        "festival_restriction",
+        {"restricted_terms": [], "use_festival_list": True},
+        {"festival": "*"},
+    )
+)
+
 PERSONA_RULES = [
     _rule(
         "P_VIP_PERKS",

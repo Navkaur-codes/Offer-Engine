@@ -57,17 +57,11 @@ def load_rules() -> list[Rule]:
 
 
 def load_catalogue() -> list[Offer]:
-    from app import stubs
-    from app.db import engine as db_engine
-    from app.models import OfferRow
+    """Same source as the harness (offers table, else the default catalogue), so every caller of evaluate()
+    judges an offer id against the same catalogue."""
+    from app.rules.offers import load_offers
 
-    try:
-        with Session(db_engine) as s:
-            rows = s.exec(select(OfferRow)).all()
-    except SQLAlchemyError:
-        log.debug("offers table not readable; using fixture catalogue")
-        return list(stubs.CATALOGUE)
-    return [Offer.model_validate(r.model_dump()) for r in rows] or list(stubs.CATALOGUE)
+    return load_offers()
 
 
 # ---------------------------------------------------------------- layers

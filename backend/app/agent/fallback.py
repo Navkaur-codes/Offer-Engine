@@ -10,9 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.contracts import CustomerProfile, OfferCandidate, TriggerType
-from app.rules.rule_types import VALUE_KEYS, ZERO_COST_TYPES, category_label, inr
-
-NO_COUPON_TYPES = {"cart_nudge", "points_reminder"}
+from app.rules.rule_types import NO_COUPON_TYPES, VALUE_KEYS, ZERO_COST_TYPES, category_label, inr
 
 
 @dataclass

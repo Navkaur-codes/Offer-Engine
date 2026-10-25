@@ -73,12 +73,12 @@ class MockLLM:
             return LLMResponse(json.dumps(self._output(None, {}, "No offer needed.", facts)), tokens=300)
 
         cand = cands[0]
-        params = {k: r.get("min", 0) for k, r in cand["allowed_params"].items()}
+        params = {k: r.get("min", 0) for k, r in cand["params"].items()}
         greedy = self.behaviour in {"over_limit", "injected"} or (
             self.behaviour == "fix_on_retry" and self.calls == 1
         )
         if greedy:
-            pct_cand = next((c for c in cands if "pct" in c["allowed_params"]), cand)
+            pct_cand = next((c for c in cands if "pct" in c["params"]), cand)
             cand, params = pct_cand, {"pct": 90 if self.behaviour == "injected" else 50, "min_basket": 0}
         first_user = next(m["content"] for m in messages if m["role"] == "user")
         typed = re.search(r'<customer_text field="first_name">(.*?)</customer_text>', first_user, re.S)
@@ -107,7 +107,7 @@ class MockLLM:
                     for c in facts.get("candidates", [])[1:3]
                 ],
                 "key_signals": [f"trigger {facts.get('trigger')}"],
-                "expected_impact_inr": cand["est_incremental_profit"] if cand else 0,
+                "expected_impact_inr": cand["profit"] if cand else 0,
             },
             "confidence": 0.7,
         }

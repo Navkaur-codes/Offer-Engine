@@ -10,12 +10,13 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from app import db, ports
-from app.agent import harness
+from app.agent import harness  # noqa: F401
 from app.agent.context import get_context, pacing_factor
 from app.agent.harness import decide
 from app.agent.llm import MockLLM
 from app.config import IST
 from app.models import CustomerRow, DecisionRow, SettingRow
+from app.rules import rule_types
 from app.rules.engine import evaluate
 from app.rules.offers import DEFAULT_OFFERS
 from tests.core.helpers import NOW
@@ -97,7 +98,7 @@ def test_over_limit_is_blocked_retried_then_fallback_sends_compliant_offer():
 def test_fix_on_retry_is_agent_retry():
     d = decide("C000002", "browse_interest", now=NOW, llm=MockLLM("fix_on_retry"))
     assert (d.status, d.decided_by) == ("SENT", "AGENT_RETRY")
-    assert len(d.agent_trace) == 2
+    assert sum(t.name == "llm" for t in d.agent_trace) == 2
     assert_compliant(d)
 
 
@@ -140,7 +141,7 @@ def test_quiet_hours_queue_until_morning():
     night = NOW.replace(hour=22, minute=15)
     d = decide("C000001", "cart_abandoned", {}, now=night, llm=MockLLM("good"))
     assert d.status == "QUEUED" and d.coupon_code
-    assert d.expires_at.date() == (night + timedelta(days=1 + harness.EXPIRY_DAYS)).date()
+    assert d.expires_at.date() == (night + timedelta(days=1 + rule_types.EXPIRY_DAYS)).date()
     assert d.explanation.title.startswith("Queued for 09:00")
 
 
