@@ -35,7 +35,7 @@ Numbers change as classmates use the bot; the dashboard's Experiments page alway
 | 7 | Dashboard → Playground | Pick a customer and trigger → Run | The **Decision Pipeline Lens**: Pre-gate → Policy → Agent → Validator → Sent, with every tool call and rule ✓/✗. Toggle "force LLM failure" to watch the fallback take over |
 | 8 | Dashboard → Rules | Change "Deal hunters get at most **10%**" to 8% | An **impact preview** (customers affected, budget change) appears before you save; Save gives you version history and one-click revert |
 
-A longer, timed walk-through for presenting is in [`docs/demo-script.md`](docs/demo-script.md). Every feature is explained in [`docs/final.md`](docs/final.md), and the 2-page summary for the panel is [`docs/Holdout-summary.pdf`](docs/Holdout-summary.pdf).
+A longer, timed walk-through for presenting is in [`docs/demo-script.md`](docs/demo-script.md). Every feature is explained in [`docs/final.md`](docs/final.md), and the 2-page summary for the panel is [`docs/Holdout-summary.pdf`](docs/Holdout-summary.pdf). All documentation (user guide, architecture, API, operations) is indexed in [`docs/README.md`](docs/README.md).
 
 ### Screenshots (live data)
 | | |
