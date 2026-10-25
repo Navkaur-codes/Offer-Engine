@@ -571,3 +571,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
   - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
 - **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
+
+### 2026-10-25 · Main · Phase 4: README + demo script (draft)
+- **Did:** `README.md` for judges: pitch, "Demo in 5 minutes", a mermaid architecture diagram, rule layers, incrementality, cultural safety, judging criteria → evidence, setup/deploy, env var names, repo map, the CLAUDE.md multi-session workflow. `docs/demo-script.md`: a timed 5-minute talk track with a pre-flight checklist and backup answers.
+- **To verify at GATE-4** (written for the v1.0 state; these land in Phase 4): Playground with force-LLM-failure, Experiments, Festivals and Realism pages (D); admin `/summary`, `/killswitch`, `/campaign run`, `/impersonate` (C); `docs/data-dictionary.md` (A); rule impact preview and digest real (B). Add screenshots from `frontend/screenshots/` and `docs/screenshots/` once they exist.
