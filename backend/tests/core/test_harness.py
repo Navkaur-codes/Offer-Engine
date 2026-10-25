@@ -492,3 +492,22 @@ def test_no_offer_explanation_never_repeats_the_agents_words(monkeypatch):
     ]
     assert all("No offer needed" not in t for t in texts)  # MockLLM's own wording
     assert d.explanation.why_offer.startswith("No allowed offer is expected to pay for itself; the best,")
+
+
+def test_rules_line_uses_singular_for_one_violation(monkeypatch):
+    from app.agent.explainer import _rules_line
+    from app.contracts import RuleCheck, ValidationResult
+
+    d = decide("C000002", "browse_interest", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("good"))
+
+    def line(n_fail: int) -> str:
+        bad = [
+            RuleCheck(rule_id=f"R{i}", description="x", passed=False, severity="hard") for i in range(n_fail)
+        ]
+        ok = [RuleCheck(rule_id="OK", description="x", passed=True, severity="hard")] * 11
+        return _rules_line(
+            d.model_copy(update={"validation": ValidationResult(ok=not bad, checks=ok + bad, violations=bad)})
+        )
+
+    assert "11 passed · 1 violation ·" in line(1)
+    assert "· 0 violations ·" in line(0) and "· 2 violations ·" in line(2)
