@@ -623,3 +623,11 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
 - **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
 - **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: `8fee9be`
+
+### 2026-10-26 · B · GATE-4 fix: the agent may not decline a paying offer, and explanations never repeat its free text
+- **Live bug (Main, Lab 22:26 IST):** Rohan (C900002, cart_abandoner) had free shipping allowed at ₹20 cost / +₹404 expected profit, but the agent answered NO_OFFER, citing a hero-category rule that doesn't exist (`evaluate` had passed 13/0). The group saw that invented reason (detective T18).
+- **Fix:**
+  - If the agent answers NO_OFFER while any allowed candidate pays for itself (a paid offer at profit > 0, or a free perk at ≥ 0), the rules fallback sends the best one (`RULES_FALLBACK`, "the agent chose no offer, but an allowed offer is expected to pay for itself, so the rules sent the best one"). This widens task 0 (`aa0db26`). Pre-gate holds are unchanged.
+  - The explainer's `why_offer` and `rejected` are now deterministic, built from candidates, numbers and rule results only. The agent's reasoning stays in `agent_output` (the trace) and never reaches /why, the Lab or the dashboard.
+- **Tests:** Rohan's exact candidates with MockLLM("no_offer") → SENT free shipping; no explanation field contains the agent's words. `pytest tests/core -q` → 108 passed (property tests green); full `pytest tests -q` → 303 passed; `ruff` is clean.
+- **Commits:** `2c51812`
