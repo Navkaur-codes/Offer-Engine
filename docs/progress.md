@@ -739,3 +739,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - The explainer's `why_offer` and `rejected` are now deterministic, built from candidates, numbers and rule results only. The agent's reasoning stays in `agent_output` (the trace) and never reaches /why, the Lab or the dashboard.
 - **Tests:** Rohan's exact candidates with MockLLM("no_offer") → SENT free shipping; no explanation field contains the agent's words. `pytest tests/core -q` → 108 passed (property tests green); full `pytest tests -q` → 303 passed; `ruff` is clean.
 - **Commits:** `2c51812`
+
+### 2026-10-25 · Main · post-GATE-4 fixes merged
+- B `2c51812` → `9f82aa8`: if the agent declines while an allowed offer pays for itself, the rules send the best one; explanations are deterministic (no LLM text in /why, the Lab or the dashboard). Live Lab check: Meera (sleeping dog) held at the pre-gate, Vikram got a numbers-only no-offer reason.
+- B `98c69d3`: singular "1 violation" in the explanation rules line.
