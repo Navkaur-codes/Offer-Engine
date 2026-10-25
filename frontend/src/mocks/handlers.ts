@@ -25,7 +25,7 @@ const on = (method: string, pattern: string, h: Handler) =>
 const byTsDesc = (a: DecisionLight, b: DecisionLight) => b.ts.localeCompare(a.ts)
 
 on('GET', '/health', (): Health => ({
-  ok: true, version: '0.4-mock',
+  ok: true, version: '1.0-mock',
   llm_budget: {
     agent: { used: 13100, limit: 80000, model: 'openai/gpt-oss-120b' },
     fast: { used: 0, limit: 400000, model: 'openai/gpt-oss-20b' },
