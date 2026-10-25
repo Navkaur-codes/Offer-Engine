@@ -26,8 +26,10 @@ from app.scoring import churn, rfm
 
 POLICY_THRESHOLDS: dict = {
     "high_returner": {"min_return_rate": 0.40, "min_orders": 3},
-    # every offer type must be predicted to *hurt*, by a margin above model noise
-    "sleeping_dog": {"max_uplift_below": -0.005},
+    # every offer type must be predicted to *hurt*, by a margin above model noise, AND the customer must have
+    # shown it ("Not for me" at least once): a prediction alone never permanently mutes someone, and a
+    # full-price regular the model is merely unsure about isn't a customer who pushes back on marketing
+    "sleeping_dog": {"max_uplift_below": -0.005, "min_declines": 1},
     "vip": {"ltv_percentile": 90, "max_recency_days": 30, "min_orders": 3},
     "dormant": {"min_days_inactive": 120},
     # churn ≥ 0.6 alone catches most active buyers (the 60-day base rate is ~65%), so the churn path
@@ -387,7 +389,12 @@ def assign_policy(profile: CustomerProfile) -> PolicyName:
     t = th["high_returner"]
     if profile.return_rate > t["min_return_rate"] and orders >= t["min_orders"]:
         return "high_returner"
-    if profile.uplift and max(profile.uplift.values()) < th["sleeping_dog"]["max_uplift_below"]:
+    t = th["sleeping_dog"]
+    if (
+        profile.uplift
+        and max(profile.uplift.values()) < t["max_uplift_below"]
+        and r.get("offers_declined", 0) >= t["min_declines"]
+    ):
         return "sleeping_dog"
     t = th["vip"]
     vip_spend = r.get("vip_spend_365d", 30000)

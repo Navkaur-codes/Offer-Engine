@@ -753,3 +753,29 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Product name:** "Offer Engine" → **Holdout**, tagline "Offers only where they change the outcome." README, API title and demo script (Main); bot text (C); wordmark, page title and the sidebar version label bug (D). The bot username `@navpreet_offers_bot` and the Render/Vercel URLs stay.
 - **Offer-card image** (context-3 Phase 4 task 4, optional until now): briefed to C. Pillow PNG in the Signal palette, sent as a photo with the existing caption and buttons, falling back to text on any error. Must land before Mon 18:00.
 - **Not approved:** the GSAP motion pass (DETECTIVE: §7 "subtle motion only" + T24/T22 timing). Nothing was built.
+
+### 2026-10-26 · Session A · GATE-4 fix: every new Telegram user gets a welcome
+- **Problem (Main's sweep, main 98cfe03):** 13 of 48 simulated `/start` users got no welcome perk.
+  - At-risk users had no candidates.
+  - VIPs had a generated purchase under 48 h old, which tripped G_POST_PURCHASE.
+  - Some users became `sleeping_dog`.
+- **Fix in `data/onboarding.py`** (realism, no special case for Telegram ids):
+  - No generated purchase in the last 3 days.
+  - Weekly/monthly shoppers bought within 21/45 days (topped up if the run produced none).
+  - Coupon use follows the hidden response type, as in the generator since A3.
+  - The hidden type is drawn without `sleeping_dog`: someone who just opted in isn't offer-averse.
+  - VIP visit boost ×1.8 → ×1.2, back to real-VIP volume.
+  - Established accounts simulate the last 365 days, with signup 1.5–2 years back. 180-day accounts buying heavily were outside the uplift model's experience, and it called them sleeping dogs.
+  - At-risk users stop buying but keep browsing (70% of visits): the win-back-able kind.
+- **Fix in `scoring/profile.py`, applied to every customer:** `sleeping_dog` now needs both a negative uplift prediction for every offer type **and** at least one "Not for me" on record (`POLICY_THRESHOLDS["sleeping_dog"]["min_declines"]`). A prediction alone never permanently mutes a customer. This matches the data, where real sleeping dogs decline 45% of offers vs 2–4% for others.
+- **Sweep results (scratch 500 customers, seed 7, 26 Oct 14:00):**
+  - Main's sweep: 40/48 → **44/48**.
+  - Widened to 192 users (4 ids per answer combination): 167/192 (16 sleeping dogs) → **183/192, 0 sleeping dogs**.
+  - Every remaining miss is monthly + balanced (the at-risk persona). B's `P_ATRISK_WINBACK` needs uplift > 0.05 (reached by only 21% of real at-risk customers), and during the Karwa Chauth build-up `F_BUILDUP_HERO` blocks non-hero-category discounts.
+  - That needs a rules-side fix (a lower at-risk min uplift or the welcome guarantee), passed to Main and B.
+- **Tests:**
+  - New `tests/data/test_onboarding_welcome.py`: no sleeping dog, no purchase within 3 days, frequency shows in recency, everyone outside at-risk gets DRY_RUN, at-risk carries a winback signal.
+  - The policy test now needs a decline for `sleeping_dog`.
+  - Backend 360 passed · ruff clean.
+- **Knock-on for C:** Meera (C900008) needs at least one "Not for me" in her Lab history to stay a sleeping dog (message sent to C).
+- **Commits:** _pending the user's commit_
