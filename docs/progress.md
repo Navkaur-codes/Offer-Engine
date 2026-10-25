@@ -591,7 +591,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
     - a proper 404 page;
     - Lighthouse accessibility **100 on all 8 pages** (was 94–100): contrast, accessible names, heading order.
   - **Screenshots:** 9 PNGs at 1440×900 in `frontend/screenshots/` (Overview light and dark, decision drawer, Rules, Customers, Experiments, Festivals, Realism, Playground mid-run). Real `TG…` IDs were kept out.
-- **Commits:** `daa709b` split + LLM budget · `86ae2cc` Playground · `95ab296` campaign dry-run · `7dca98c` Experiments · `e1b3d1d` Festivals · `46c160f` Realism · `87d3b22` mobile + a11y · D4h (screenshots, Rules policy-share fix, docs) pending.
+- **Commits:** `daa709b` split + LLM budget · `86ae2cc` Playground · `95ab296` campaign dry-run · `7dca98c` Experiments · `e1b3d1d` Festivals · `46c160f` Realism · `87d3b22` mobile + a11y · `7ecb0af` screenshots, Rules policy-share fix, docs.
 - **Tests:** `npm run lint` clean · `npm run build` ✓ · Lighthouse a11y 100 × 8 pages (Chrome headless, live API)
 - **Open issues / risks:**
   - CR-D3 (per-run `force_llm_fail`) is accepted and lands with B at GATE-4; until then the Playground shows an amber "ignored" note.
