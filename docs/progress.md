@@ -571,3 +571,14 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
   - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
 - **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
+
+### 2026-10-25 · B · Phase 4, task 0: the agent no longer withholds free perks
+- **Live finding (Main, Customer Lab on gpt-oss-120b):** the agent answered "no offer is worth its cost" for a cart abandoner, a new user and a deal hunter, where the rules fallback would have sent a zero-cost perk.
+- **Did:**
+  - **Harness rule:** if the agent answers NO_OFFER while an allowed zero-cost perk (`cart_nudge`, `early_access`, `points_reminder`) has expected profit ≥ 0, the harness sends the best such perk instead. It is `decided_by=RULES_FALLBACK` with `fallback_reason` "the agent chose no offer, but a free perk is allowed and costs nothing, so the rules sent it". The perk still passes `evaluate()`, and the agent's NO_OFFER stays in the log (`agent_output`).
+  - Paid offers are never forced. The welcome guarantee keeps priority for first-time welcomes. Sleeping dogs, recent buyers and the like never reach this point, because the pre-gate stops them.
+  - **Prompt:** prefer a zero-cost candidate with profit ≥ 0 over NO_OFFER; answer NO_OFFER only when no candidate has profit ≥ 0.
+  - `fallback.zero_cost_perk(candidates)` picks the perk.
+- **Tests:** MockLLM("no_offer") for a cart abandoner, a new user and a deal hunter → SENT with a ₹0 perk via RULES_FALLBACK, compliant. With only paid offers allowed and nothing paying, NO_OFFER stands (decided by AGENT). `pytest tests/core -q` → 88 passed (property tests green). Full `pytest tests -q` → 283 passed. `ruff` is clean.
+- **Commits:** _pending_
+- **Suggestion (not changed):** A notes `P_ATRISK_WINBACK.min_uplift = 0.05` blocks about 82% of at-risk customers with the real uplift model, and suggests 0.02. That's a marketer-tunable rule value, so it's for the user to change on the Rules page if wanted.

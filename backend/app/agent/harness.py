@@ -50,6 +50,9 @@ AGENT_TIMEOUT_S = 20.0
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
+FREE_PERK_OVERRIDE = (
+    "the agent chose no offer, but a free perk is allowed and costs nothing, so the rules sent it"
+)
 WELCOME_GUARANTEE = "welcome guarantee: a first-time customer always gets a free perk"
 
 
@@ -446,8 +449,8 @@ def decide(
             expected_incremental_profit=profit,
         )
 
-    def use_fallback(reason: str, extra: dict) -> Decision:
-        choice = fallback.choose(candidates)
+    def use_fallback(reason: str, extra: dict, pick=fallback.choose) -> Decision:
+        choice = pick(candidates)
         if choice is None and welcome_guaranteed:
             choice = fallback.welcome_perk(candidates)
             if choice is not None:
@@ -506,6 +509,9 @@ def decide(
     extra = {"agent_trace": agent.trace, "agent_output": agent.output, "llm_tokens": agent.tokens}
     if agent.decided_by and agent.offer is None and welcome_guaranteed:
         return use_fallback(f"the agent chose no offer; {WELCOME_GUARANTEE}", extra)
+    if agent.decided_by and agent.offer is None and fallback.zero_cost_perk(candidates):
+        # a free perk can't waste margin, so "no offer" would only leave the customer without a nudge
+        return use_fallback(FREE_PERK_OVERRIDE, extra, pick=fallback.zero_cost_perk)
     if agent.decided_by and agent.offer is None:
         return finish(
             decided_by=agent.decided_by,

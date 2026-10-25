@@ -386,3 +386,35 @@ def test_every_fallback_template_passes_the_message_validator(trigger):
                     )
                     checked.add(cand.type)
     assert "bonus_points" in checked  # the GATE-3 case: "Earn 2× reward points"
+
+
+# ---------------------------------------------------------------- Phase 4 task 0: agent too conservative
+@pytest.mark.parametrize(
+    "cid, trigger",
+    [("C000001", "cart_abandoned"), ("C000005", "browse_interest"), ("C000002", "browse_interest")],
+    ids=["cart_abandoner", "new_user", "deal_hunter"],
+)
+def test_agent_no_offer_becomes_the_free_perk(memory_db, cid, trigger):
+    decide(cid, "browse_interest", {}, now=NOW - timedelta(days=30), dry_run=True)  # not a first welcome
+    d = decide(cid, trigger, {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
+    assert d.status == "SENT" and d.decided_by == "RULES_FALLBACK"
+    assert d.fallback_reason == harness.FREE_PERK_OVERRIDE
+    perk = next(c for c in d.candidates if c.offer_id == d.final_offer_id)
+    assert perk.type in {"cart_nudge", "early_access", "points_reminder"} and d.cost == 0
+    assert d.agent_output and d.agent_output.decision == "NO_OFFER"  # the agent's answer stays in the log
+    assert_compliant(d)
+
+
+def test_agent_no_offer_stands_when_no_free_perk_is_allowed(monkeypatch):
+    paid_only = [o for o in DEFAULT_OFFERS if o.type not in {"cart_nudge", "early_access", "points_reminder"}]
+    monkeypatch.setattr(harness, "load_offers", lambda: paid_only)
+    real = ports.build_profile
+    monkeypatch.setattr(
+        ports,
+        "build_profile",
+        lambda cid, now: real(cid, now).model_copy(
+            update={"uplift": {k: 0.0 for k in real(cid, now).uplift}}
+        ),
+    )
+    d = decide("C000002", "browse_interest", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
+    assert d.status == "NO_OFFER" and d.decided_by == "AGENT"
