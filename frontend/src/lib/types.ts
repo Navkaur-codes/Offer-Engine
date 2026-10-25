@@ -273,6 +273,38 @@ export interface ArmStats {
   conv_rate: number
   revenue: number
   cost: number
+  revenue_per_customer?: number
+}
+
+// Row shapes inside ExperimentStats' list[dict] fields, as Session A's experiments_compute() sends them.
+export interface PolicyUplift {
+  policy: PolicyName
+  n_treated: number
+  n_control: number
+  treated_conv: number
+  control_conv: number
+  uplift: number
+}
+export interface OfferRoi {
+  type: OfferType
+  n: number
+  incremental_revenue: number
+  cost: number
+  incremental_profit: number
+  roi: number
+}
+export interface QiniPoint {
+  targeted: number
+  model: number
+  random: number
+}
+export interface FestivalLift {
+  festival: string
+  id: string
+  date: IsoDate
+  revenue_per_day: number
+  baseline_per_day: number
+  lift: number
 }
 
 export interface ExperimentStats {
@@ -281,10 +313,10 @@ export interface ExperimentStats {
   incremental_revenue: number
   incremental_profit: number
   margin_saved_sure_things: number
-  uplift_by_policy: Json[]
-  roi_by_offer_type: Json[]
-  qini: Json[] | null
-  festival_vs_baseline: Json[]
+  uplift_by_policy: PolicyUplift[]
+  roi_by_offer_type: OfferRoi[]
+  qini: QiniPoint[] | null
+  festival_vs_baseline: FestivalLift[]
 }
 
 export interface Kpis {

@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
 })
 
 const PHASE: Record<string, string> = {
- '/experiments': 'v1.0', '/festivals': 'v1.0', '/realism': 'v1.0',
+ '/festivals': 'v1.0', '/realism': 'v1.0',
 }
 
 // Each page (and its charts) is its own chunk, loaded on first visit.
@@ -23,6 +23,7 @@ const router = createBrowserRouter([
       { index: true, lazy: async () => ({ Component: (await import('./pages/Overview')).Overview }) },
       { path: 'decisions', lazy: async () => ({ Component: (await import('./pages/Decisions')).Decisions }) },
       { path: 'rules', lazy: async () => ({ Component: (await import('./pages/Rules')).Rules }) },
+      { path: 'experiments', lazy: async () => ({ Component: (await import('./pages/Experiments')).Experiments }) },
       { path: 'playground', lazy: async () => ({ Component: (await import('./pages/Playground')).Playground }) },
       { path: 'customers', lazy: async () => ({ Component: (await import('./pages/Customers')).Customers }) },
       ...NAV.filter((n) => PHASE[n.to]).map((n) => ({ path: n.to.slice(1), element: <Placeholder item={n} phase={PHASE[n.to]} /> })),
