@@ -588,7 +588,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - We kept σ = 0.85 and the committed models (`dad6a5a`). All benchmarks are inside their ranges across ten worlds; Pareto runs high (0.76–0.79). This is documented in the data dictionary.
   - The σ is now the named constant `VISIT_SPREAD_SIGMA`; behaviour is unchanged.
 - **Files:** `backend/app/data/generator.py`, `backend/app/scoring/{profile,uplift}.py`, `backend/tests/data/test_edge_cases.py`, `docs/data-dictionary.md`, `docs/sessions.md`, `docs/progress.md` (Task 0: `backend/app/data/seed.py`, `backend/tests/data/test_seed_and_calendar.py`)
-- **Commits:** `142bdad` (Task 0) · final A4 commit _pending the user's commit_
+- **Commits:** `142bdad` (Task 0) · `5b8af06` fix(scoring): clamp time-travel ages, edge-case tests; docs: data dictionary
 - **Tests:** `python -m pytest tests -q` (backend) → 285 passed · `ruff check .` clean
 - **Open issues / risks:**
   - Per-customer uplift targeting is noisy (the hidden type is ~80% identifiable).
