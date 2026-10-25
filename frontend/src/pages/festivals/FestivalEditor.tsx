@@ -121,7 +121,7 @@ export function FestivalEditor({ f }: { f: Festival }) {
                 Sent word for word from this table, never written by the AI. Only customers who opted in to {f.name.split(/[/(]/)[0].trim()} see it; everyone else gets neutral “festive season” wording.
               </span>
             </label>
-            <div className="rounded-[8px] border border-line bg-surface-2 p-3">
+            <div className="rounded-[8px] border border-line bg-bg p-3">
               <div className="rounded-[10px] rounded-bl-[3px] border border-line bg-surface px-3 py-2 text-[13px] text-ink">
                 <p className="font-semibold">{greeting || '—'}, Aditi!</p>
                 <p className="text-muted">…offer text follows…</p>

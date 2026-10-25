@@ -68,7 +68,7 @@ export function Rules() {
             >
               <span className="num text-[11px] text-muted">{i + 1}</span>
               {l.label}
-              <span className="num rounded-[4px] bg-surface-2 px-1 text-[11px] text-muted">{n}</span>
+              <span className="num rounded-[4px] border border-line px-1 text-[11px] text-muted">{n}</span>
             </button>
           )
         })}

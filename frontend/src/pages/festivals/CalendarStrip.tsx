@@ -47,7 +47,7 @@ export function CalendarStrip({
               onClick={() => onSelect(f.id)}
               aria-pressed={selected === f.id}
               aria-label={`${f.name}, ${formatDate(f.date)}`}
-              className={cn('grid w-full grid-cols-[124px_1fr] items-center gap-2 rounded-[5px] py-0.5 pr-1 text-left hover:bg-surface-2', selected === f.id && 'bg-surface-2')}
+              className={cn('grid w-full grid-cols-[124px_1fr] items-center gap-2 rounded-[5px] py-0.5 pr-1 text-left hover:bg-surface-2', selected === f.id && 'bg-bg shadow-[inset_2px_0_0_var(--ink)]')}
             >
               <span className={cn('truncate pl-1 text-[12.5px]', selected === f.id ? 'text-ink' : 'text-muted')}>{f.name.split(/[/(]/)[0].trim()}</span>
               <span className="relative h-4">

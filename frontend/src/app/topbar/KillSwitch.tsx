@@ -19,7 +19,7 @@ export function KillSwitch({ open, onOpenChange }: { open: boolean; onOpenChange
           'inline-flex h-8 items-center gap-2 rounded-[6px] border px-2.5 text-[13px] font-medium',
           on ? 'border-danger/50 bg-danger-soft text-danger-text' : 'border-line bg-surface text-ink hover:bg-surface-2',
         )}
-        aria-label={on ? 'Kill switch is ON: all sending paused. Click to resume.' : 'Kill switch is off: sending is live. Click to pause all sends.'}
+        aria-label={on ? 'Sending paused: kill switch is on. Click to resume.' : 'Sending live: kill switch is off. Click to pause all sends.'}
       >
         <span aria-hidden className={cn('size-2 rounded-full', on ? 'bg-danger' : 'bg-ink')} />
         {on ? 'Sending paused' : 'Sending live'}

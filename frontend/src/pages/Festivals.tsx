@@ -54,7 +54,7 @@ export function Festivals() {
                     <button
                       onClick={() => select(f.id)}
                       aria-current={f.id === selectedId}
-                      className={cn('flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left hover:bg-surface-2', f.id === selectedId && 'bg-surface-2')}
+                      className={cn('flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left hover:bg-surface-2', f.id === selectedId && 'bg-bg shadow-[inset_2px_0_0_var(--ink)]')}
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-[13px] text-ink">{f.name}</span>

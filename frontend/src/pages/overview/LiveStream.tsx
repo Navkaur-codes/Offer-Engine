@@ -51,7 +51,7 @@ export function LiveStream({ className }: { className?: string }) {
                 <button
                   onClick={() => open(d.id)}
                   className="grid w-full grid-cols-[64px_14px_1fr_auto] items-baseline gap-x-2 px-4 py-1.5 text-left hover:bg-surface-2 focus-visible:bg-surface-2"
-                  aria-label={`${d.first_name}: ${d.explanation_title}. Open decision ${d.id}`}
+                  title={`Open decision ${d.id}`}
                 >
                   <span className="text-muted">{timeFmt.format(new Date(d.ts))}</span>
                   <span aria-hidden className={cn(d.status === 'BLOCKED' ? 'text-danger-text' : d.status === 'QUEUED' ? 'text-amber-text' : 'text-ink')}>

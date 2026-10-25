@@ -84,7 +84,8 @@ export function CohortHeatmap({ rows }: { rows: RealismStats['retention_cohorts'
                   <td
                     key={m}
                     className="num h-7 rounded-[3px] text-center"
-                    style={v === null ? undefined : { background: `color-mix(in oklab, var(--slate) ${Math.round(Math.min(1, v / 0.5) * 85)}%, var(--surface))`, color: v >= 0.3 ? 'var(--bg)' : 'var(--ink)' }}
+                    // Capped at 60% so dark ink stays readable on every cell (light and dark mode).
+                    style={v === null ? undefined : { background: `color-mix(in oklab, var(--slate) ${Math.round(Math.min(1, v / 0.5) * 60)}%, var(--surface))`, color: 'var(--ink)' }}
                     title={v === null ? 'not yet' : `${(v * 100).toFixed(1)}% still buying in month ${m.slice(1)}`}
                   >
                     {v === null ? '' : `${Math.round(v * 100)}%`}
