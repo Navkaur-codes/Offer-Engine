@@ -335,3 +335,20 @@ async def test_lab_offer_reply_is_the_card_image(four_bots, monkeypatch):
     monkeypatch.setattr(FakeBot, "send_photo", send_photo, raising=False)
     await _run(log, factory, 1)
     assert len(photos) == 1 and photos[0].startswith("📨 <b>For Arjun</b>")
+
+
+def test_meera_has_declined_past_offers(memory_db):
+    registry.ensure_lab_customers()
+    with Session(memory_db) as s:
+        types = [e.type for e in s.exec(select(EventRow).where(EventRow.customer_id == "C900008")).all()]
+    assert types.count("offer_received") == 2 and types.count("offer_declined") == 2
+
+
+def test_deployed_meera_without_declines_is_repaired(memory_db):
+    """Production's Meera already has 9 orders; the missing declines alone must trigger a rebuild."""
+    registry.ensure_lab_customers()
+    with Session(memory_db) as s:
+        for e in s.exec(select(EventRow).where(EventRow.type == "offer_declined")).all():
+            s.delete(e)
+        s.commit()
+    assert registry.ensure_lab_customers() == 1
