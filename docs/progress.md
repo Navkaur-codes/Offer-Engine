@@ -571,3 +571,31 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
   - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
 - **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
+
+### 2026-10-25 · D · Phase 4: every page real, Playground, polish, screenshots
+- **Version/Phase:** v1.0 / Phase 4. Done before the freeze.
+- **Did:**
+  - **Performance:** each page is lazy-loaded with route `lazy`. The app shell is ~290 kB, and Recharts only loads on chart pages (it was one 1 MB bundle).
+  - **Top bar:** the LLM token budget from `/health.llm_budget` (both models, used/limit), plus an amber "⚠ AI: fast model / rules only" chip when the AI is degraded.
+  - **Playground (demo hero):**
+    - customer search plus quick picks by policy, a trigger, time travel (IST, with presets), and a force-LLM-failure switch;
+    - the trace reveals one stage at a time: trigger/context → pre-gate → effective policy → allowed offers → agent tool calls or fallback → validator → result card, with Replay.
+    - Dry runs show "✓ Would send" in the Lens.
+  - **Campaign dry-run** (⌘K and Customers): policy, festival, budget and size → totals (would send, cost vs budget, expected profit, skipped/blocked/over-budget), "why customers got nothing", and a per-customer table. Live: 9 of 10 cart abandoners → ₹39 cost for ₹573 expected profit.
+  - **Experiments:** a 30 d / 90 d / 12 mo switch; KPIs; offers vs holdout (small multiples); uplift by policy; extra profit by offer type; Qini; festival lift. Each chart opens with a takeaway written in code (`lib/takeaways.ts`).
+  - **Festivals:** a 90-day phase calendar strip (neutral, today in orange), an upcoming list with countdowns, and an editor for date, budget, hero categories, per-phase strategy and greeting (with an "opt-in only" preview), all saved via PATCH.
+  - **Realism:** "6 of 6 benchmarks ✓"; tiles with target band, value tick and source; funnel; retention heatmap; seasonality with festival bands; AOV and return rate by category (fashion band). Every chart has a takeaway.
+  - **Polish:**
+    - a mobile menu (☰ sheet), and the mobile Overview checked at 375 px;
+    - zero horizontal overflow on all 8 pages at 1280 px;
+    - a proper 404 page;
+    - Lighthouse accessibility **100 on all 8 pages** (was 94–100): contrast, accessible names, heading order.
+  - **Screenshots:** 9 PNGs at 1440×900 in `frontend/screenshots/` (Overview light and dark, decision drawer, Rules, Customers, Experiments, Festivals, Realism, Playground mid-run). Real `TG…` IDs were kept out.
+- **Commits:** `daa709b` split + LLM budget · `86ae2cc` Playground · `95ab296` campaign dry-run · `7dca98c` Experiments · `e1b3d1d` Festivals · `46c160f` Realism · `87d3b22` mobile + a11y · D4h (screenshots, Rules policy-share fix, docs) pending.
+- **Tests:** `npm run lint` clean · `npm run build` ✓ · Lighthouse a11y 100 × 8 pages (Chrome headless, live API)
+- **Open issues / risks:**
+  - CR-D3 (per-run `force_llm_fail`) is accepted and lands with B at GATE-4; until then the Playground shows an amber "ignored" note.
+  - `/api/customers` is slow on prod (5.6 s per 100 when idle, ~32 s under load; note in sessions §7). D now asks for 50 per page, and Rules shows policy shares from one 50-customer sample.
+  - The signal/violet/slate/amber chart palette fails the dataviz validator for amber lightness and slate chroma. It is kept because CLAUDE.md mandates it, with legends and value labels on every chart.
+  - The 12-month incremental revenue and profit in Experiments are slightly negative on current data (A's simulation). The page shows this honestly.
+- **Next:** after the freeze, fixes only. Retake screenshots if the data changes before submission.

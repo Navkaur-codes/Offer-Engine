@@ -20,7 +20,8 @@ import { cn } from '@/lib/utils'
 import { CustomerDrawer } from './customers/CustomerDrawer'
 import { PolicyGlyph, SegmentScatter } from './customers/Scatter'
 
-const PAGE = 100 // the API's maximum page size
+// The API builds each profile live (~55 ms on Neon), so 50 keeps the first paint near 3 s.
+const PAGE = 50
 const col = createColumnHelper<CustomerProfile>()
 
 const columns = [
