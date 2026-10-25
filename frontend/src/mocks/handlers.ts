@@ -143,6 +143,12 @@ on('POST', '/api/rules/:id/revert/:version', (m): Rule => {
 })
 
 on('GET', '/api/festivals', (): Festival[] => FESTIVALS)
+on('PATCH', '/api/festivals/:id', (m, _q, body): Festival => {
+  const i = FESTIVALS.findIndex((f) => f.id === m[1])
+  if (i < 0) throw new MockHttpError(404, `Festival ${m[1]} not found`)
+  FESTIVALS[i] = { ...FESTIVALS[i], ...(body as Partial<Festival>) }
+  return FESTIVALS[i]
+})
 on('GET', '/api/scheduler', (): SchedulerStatus => {
   const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
   return { running: true, next_runs: { cart_abandonment: at(0.1), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
