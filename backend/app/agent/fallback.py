@@ -45,6 +45,15 @@ def choose(candidates: list[OfferCandidate]) -> FallbackChoice | None:
     return FallbackChoice(best, cheapest_params(best))
 
 
+def zero_cost_perk(candidates: list[OfferCandidate]) -> FallbackChoice | None:
+    """The best allowed free perk that doesn't lose money, if there is one."""
+    perks = [c for c in candidates if c.type in ZERO_COST_TYPES and c.est_incremental_profit >= 0]
+    if not perks:
+        return None
+    best = max(perks, key=lambda c: (c.est_incremental_profit, c.offer_id))
+    return FallbackChoice(best, cheapest_params(best))
+
+
 def welcome_perk(candidates: list[OfferCandidate]) -> FallbackChoice | None:
     """Welcome guarantee: a first-time customer always gets the best allowed free perk (free shipping if no
     zero-cost perk is allowed), so onboarding never ends in silence."""

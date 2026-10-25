@@ -50,6 +50,10 @@ AGENT_TIMEOUT_S = 20.0
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
+LLM_OFF_FOR_RUN = "the LLM is forced off for this run (Playground)"
+FREE_PERK_OVERRIDE = (
+    "the agent chose no offer, but a free perk is allowed and costs nothing, so the rules sent it"
+)
 WELCOME_GUARANTEE = "welcome guarantee: a first-time customer always gets a free perk"
 
 
@@ -338,6 +342,9 @@ def decide(
     started = timer.perf_counter()
     now = now or clock()
     meta = dict(trigger_meta or {})
+    # Playground switch (CR-D3): honoured on dry runs only, and never logged, so no caller can turn the
+    # agent off for real sends through trigger_meta
+    llm_off_for_run = bool(meta.pop("force_llm_fail", False)) and dry_run
     all_rules = load_rules()
     catalogue = load_offers()
     profile = with_trigger(ports.build_profile(customer_id, now), trigger, meta, now)
@@ -446,8 +453,8 @@ def decide(
             expected_incremental_profit=profit,
         )
 
-    def use_fallback(reason: str, extra: dict) -> Decision:
-        choice = fallback.choose(candidates)
+    def use_fallback(reason: str, extra: dict, pick=fallback.choose) -> Decision:
+        choice = pick(candidates)
         if choice is None and welcome_guaranteed:
             choice = fallback.welcome_perk(candidates)
             if choice is not None:
@@ -494,6 +501,8 @@ def decide(
     kind: budget.Kind | None = "agent"
     if not use_agent:
         return use_fallback("batch rule: only the top 5 by expected profit go to the agent", {})
+    if llm_off_for_run:
+        return use_fallback(LLM_OFF_FOR_RUN, {})
     if llm is None:
         llm, kind, why = pick_llm(now)
         if llm is None:
@@ -506,6 +515,9 @@ def decide(
     extra = {"agent_trace": agent.trace, "agent_output": agent.output, "llm_tokens": agent.tokens}
     if agent.decided_by and agent.offer is None and welcome_guaranteed:
         return use_fallback(f"the agent chose no offer; {WELCOME_GUARANTEE}", extra)
+    if agent.decided_by and agent.offer is None and fallback.zero_cost_perk(candidates):
+        # a free perk can't waste margin, so "no offer" would only leave the customer without a nudge
+        return use_fallback(FREE_PERK_OVERRIDE, extra, pick=fallback.zero_cost_perk)
     if agent.decided_by and agent.offer is None:
         return finish(
             decided_by=agent.decided_by,
