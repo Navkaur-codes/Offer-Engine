@@ -22,13 +22,16 @@ from app.contracts import Customer, Persona
 from app.data.catalog import CATEGORIES, PRODUCTS
 from app.data.festivals import OPT_IN_KEYS
 from app.data.generator import CATS, CITIES, HOUR_WEIGHTS, _day_factors, _match_products
-from app.data.personas import PERSONAS, RESPONSE_BASELINE
+from app.data.personas import PERSONAS, RESPONSE_BASELINE, RESPONSE_COUPON_MULT
 from app.models import CustomerRow, EventRow, OrderRow, PointsLedgerRow
 
-HISTORY_DAYS = 180
+HISTORY_DAYS = 365
 FREQUENCY_MULT = {"weekly": 1.6, "monthly": 0.9, "occasionally": 0.55, "rarely": 0.35}
 POINTS_EXPIRY_DAYS = 180
 MIN_ORDERS: dict[str, int] = {"new_user": 0, "window_shopper": 0, "loyal_vip": 6, "at_risk_regular": 4}
+MIN_DAYS_SINCE_PURCHASE = 3
+AT_RISK_BROWSE_SHARE = 0.7  # visits an at-risk regular keeps making after they stop buying
+RECENT_PURCHASE_DAYS = {"weekly": 21, "monthly": 45}  # latest order is at most this old, per stated frequency
 _PERSONA: dict[tuple[str, str], Persona] = {
     ("weekly", "deal"): "deal_hunter",
     ("monthly", "deal"): "deal_hunter",
@@ -59,9 +62,13 @@ def create_profile_from_answers(telegram_id: int, first_name: str, answers: dict
     festivals = [f for f in answers.get("festivals", []) if f in OPT_IN_KEYS]
     persona = persona_for(answers)
     spec = PERSONAS[persona]
-    mix = spec.response_mix
+    # someone who just opted in to an offers bot is, by definition, not offer-averse: no sleeping dogs
+    mix = {r: w for r, w in spec.response_mix.items() if r != "sleeping_dog"}
+    total = sum(mix.values())
     city, tier, state, _ = CITIES[rng.choice(len(CITIES), p=_city_weights())]
-    history_days = int(rng.integers(8, 13)) if persona == "new_user" else HISTORY_DAYS
+    history_days = (
+        int(rng.integers(8, 13)) if persona == "new_user" else HISTORY_DAYS + int(rng.integers(180, 420))
+    )
     customer = Customer(
         id=f"TG{telegram_id}",
         first_name=first_name,
@@ -72,7 +79,7 @@ def create_profile_from_answers(telegram_id: int, first_name: str, answers: dict
         device="mobile",
         preferred_payment="upi",
         persona=persona,
-        response_type=str(rng.choice(list(mix), p=list(mix.values()))),
+        response_type=str(rng.choice(list(mix), p=[w / total for w in mix.values()])),
         telegram_chat_id=telegram_id,
         opt_in_festivals=festivals,
         # Real classmates are never held out: a silent bot would read as broken during judging.
@@ -94,7 +101,9 @@ def _history(
 ):
     spec = PERSONAS[customer.persona]
     base_visit, base_conv = RESPONSE_BASELINE[customer.response_type]
-    start = customer.signup_date
+    # the simulated window is at most the last year; established customers signed up well before it, as in
+    # the seeded world (a one-year-old account with a year of heavy buying looks like nobody real)
+    start = max(customer.signup_date, clock.date() - timedelta(days=HISTORY_DAYS))
     days = [start + timedelta(days=i) for i in range((clock.date() - start).days)]
     f = _day_factors(days)
 
@@ -109,9 +118,14 @@ def _history(
     hour_p = HOUR_WEIGHTS / HOUR_WEIGHTS.sum()
     rate = spec.visit_rate * FREQUENCY_MULT.get(frequency, 0.9) * base_visit
     if customer.persona == "loyal_vip":
-        rate *= 1.8  # self-declared weekly quality shoppers are the store's best customers
+        # self-declared weekly quality shoppers are the store's best customers; ×1.2 keeps them at real-VIP
+        # volume (~6 orders a quarter), anything far beyond that is outside what the uplift model has seen
+        rate *= 1.2
     quiet_from = len(days) - int(rng.integers(62, 80)) if customer.persona == "at_risk_regular" else len(days)
     can_buy = customer.persona != "window_shopper"
+    # no generated purchase in the last few days: a fresh one would trip the post-purchase cooling-off rule
+    # and silence the welcome the user just asked for
+    last_buy_day = len(days) - MIN_DAYS_SINCE_PURCHASE
 
     cid = customer.id
     events: list[dict] = []
@@ -132,7 +146,7 @@ def _history(
             )
         )
 
-    def session(t: int, sid: str, force: bool = False) -> None:
+    def session(t: int, sid: str, force: bool = False, browse_only: bool = False) -> None:
         conv = base_conv * f["conv"][t] * (1 + spec.festival_sensitivity * (f["fest_conv"][t] - 1))
         day_w = weights * f["catmult"][t]
         ts = datetime.combine(days[t], time(int(rng.choice(24, p=hour_p)), int(rng.integers(60))), IST)
@@ -149,7 +163,7 @@ def _history(
             seen = PRODUCTS[k * 12 + int(rng.integers(12))]
             ts += timedelta(seconds=int(rng.integers(20, 180)))
             event("view", ts, CATS[k], seen.name, seen.price, sid=sid)
-        if not force and rng.random() >= min(spec.p_cart * conv, 0.95):
+        if browse_only or (not force and rng.random() >= min(spec.p_cart * conv, 0.95)):
             return
         ts += timedelta(seconds=60)
         event("add_to_cart", ts, CATS[k], product.name, product.price * qty, sid=sid)
@@ -157,23 +171,34 @@ def _history(
             return
         ts += timedelta(minutes=3)
         event("checkout_started", ts, CATS[k], product.name, product.price * qty, sid=sid)
-        if not force and rng.random() >= spec.p_purchase:
+        if t >= last_buy_day or (not force and rng.random() >= spec.p_purchase):
             return
         ts += timedelta(minutes=2)
         _order(customer, product, qty, ts, sid, spec, rng, clock, event, orders, ledger)
 
     for t in range(len(days)):
         lam = rate * f["visit"][t] * (1 + spec.festival_sensitivity * (f["fest_visit"][t] - 1))
-        if t >= quiet_from:
-            lam *= 0.02
+        lapsed = t >= quiet_from
+        if lapsed:
+            # a lapsing regular stops buying but still browses: the win-back-able at-risk customer
+            lam *= AT_RISK_BROWSE_SHARE
         for s in range(rng.poisson(lam)):
-            session(t, f"{t}-{s}")
+            session(t, f"{t}-{s}", browse_only=lapsed)
 
     # a short history can come out empty by chance; top up so the profile matches the answers
     shortfall = MIN_ORDERS.get(customer.persona, 2) - len(orders)
-    lo, hi = (0, quiet_from) if quiet_from < len(days) else (max(len(days) - 40, 0), len(days))
+    lo, hi = (0, quiet_from) if quiet_from < len(days) else (max(len(days) - 40, 0), last_buy_day)
+    hi = min(hi, last_buy_day)
     for n in range(max(shortfall, 0)):
         session(int(rng.integers(lo, max(hi, lo + 1))), f"top-{n}", force=True)
+
+    # someone who says they shop weekly / monthly has bought something lately
+    within = RECENT_PURCHASE_DAYS.get(frequency)
+    if within and customer.persona not in ("at_risk_regular", "window_shopper", "new_user"):
+        recent_from = clock - timedelta(days=within)
+        if not any(o["ts"] >= recent_from for o in orders):
+            first = max(len(days) - within + 1, 0)  # +1: any hour of that day stays inside the window
+            session(int(rng.integers(first, max(last_buy_day, first + 1))), "recent", force=True)
 
     if (
         customer.persona == "cart_abandoner"
@@ -199,7 +224,9 @@ def _order(customer, product, qty, ts, sid, spec, rng, clock, event, orders, led
     cid = customer.id
     value = product.price * qty
     oid = f"O{cid}-{len(orders) + 1:04d}"
-    pct = int(rng.choice([5, 10, 15])) if rng.random() < spec.discount_usage else 0
+    # same response-type trace as the generator: persuadables buy on coupons, sure-things pay full price
+    coupon_p = min(spec.discount_usage * RESPONSE_COUPON_MULT[customer.response_type], 0.95)
+    pct = int(rng.choice([5, 10, 15])) if rng.random() < coupon_p else 0
     return_at = ts + timedelta(days=int(rng.integers(3, 13)))
     returned = (
         rng.random() < CATEGORIES[product.category].return_rate * spec.return_mult and return_at < clock

@@ -94,7 +94,12 @@ def _p(**kw) -> CustomerProfile:
     [
         ("default", {}),
         ("high_returner", {"return_rate": 0.5}),
-        ("sleeping_dog", {"uplift": {"pct_off": -0.02, "free_shipping": -0.01}}),
+        (
+            "sleeping_dog",
+            {"uplift": {"pct_off": -0.02, "free_shipping": -0.01}, "rfm": {"offers_declined": 1}},
+        ),
+        # predicted harm without any "Not for me" on record never mutes a customer
+        ("default", {"uplift": {"pct_off": -0.02, "free_shipping": -0.01}}),
         ("vip", {"rfm": {"spend_365d": 52000}, "recency_days": 4}),
         ("dormant", {"rfm": {"days_since_active": 150}, "recency_days": 150}),
         ("at_risk", {"recency_days": 61, "rfm": {"days_since_active": 61}}),
