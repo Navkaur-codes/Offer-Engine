@@ -388,7 +388,7 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Checked:**
   - On live production (read-only): Overview with real decisions; the festival filter (5 Karwa Chauth decisions); all Rules tabs; Customers scatter and table; a dry run for C000003 (rules-fallback "No offer" with a full explanation).
   - On mocks (writes): rule edit 10% → 8%, preview, save v4, revert to v5 at 10%; Simulate → toast → nested decision drawer → Escape closes only the top drawer.
-- **Commits:** `82ada66` (v1.1 + live API + automations) · `f0fa291` (Rules editor) · D3c (Customers + docs) pending a hash.
+- **Commits:** `82ada66` (v1.1 + live API + automations) · `f0fa291` (Rules editor) · `59015a5` (Customers + docs).
 - **Tests:** `npm run lint` clean · `npm run build` ✓
 - **Open issues / risks:**
   - The bundle is now ~1 MB (Recharts); route-level code-splitting in Phase 4.
