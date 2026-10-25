@@ -609,4 +609,4 @@ _none yet_ (format: `date · trap ID · session · reason`)
 ### 2026-10-25 · B · CR-D3: Playground can force the rules fallback for one dry run
 - **Did:** `decide(..., trigger_meta={"force_llm_fail": True}, dry_run=True)` skips the LLM for that run only: `decided_by=RULES_FALLBACK` with "the LLM is forced off for this run (Playground)". **Safety:** the flag is honoured only when `dry_run=True`; on a live decide it is ignored. It is always removed from `trigger_meta`, so it is never logged and no API or Telegram caller can switch the agent off for real sends.
 - **Tests:** a dry run with the flag goes to the fallback, makes no LLM call and persists nothing; a live run with the flag still goes to the agent, and the flag is absent from the saved payload. `pytest tests/core -q` → 100 passed; full `pytest tests -q` → 295 passed; `ruff` is clean.
-- **Commits:** _pending_
+- **Commits:** `b3dc666`
