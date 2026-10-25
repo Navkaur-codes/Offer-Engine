@@ -1,10 +1,16 @@
 """ExperimentStats for the Experiments page: does the engine create value we wouldn't get anyway?
 
-Two randomised sources, pooled per date range:
-  - past campaigns (campaign_history): treated vs the random 10% control;
-  - live decisions: SENT vs HELD_OUT (the 10% holdout), converted = a purchase within 7 days.
-"Margin saved on sure-things" is what a blanket campaign pays people who'd have bought anyway: coupon cost ×
-(control conversion ÷ treated conversion), i.e. the non-incremental share of redemptions that targeting skips.
+Two randomised sources per date range, each its own *stratum*:
+  - every past campaign (campaign_history): its treated customers vs its own random 10% control, revenue in
+    the campaign's own response window;
+  - live decisions: SENT vs HELD_OUT (the 10% holdout), revenue = purchases within 7 days.
+Treated and control are only ever compared inside a stratum (pooling strata with different seasons, offers and
+control shares invites Simpson's paradox). Incremental revenue of a cell = (treated − control conversion) ×
+treated customers × the stratum's average basket per buyer. The headline, the ROI table and uplift by policy
+are all sums of the same (stratum × offer type) cells, so they always agree. A stratum with fewer than
+MIN_CONTROL control customers isn't measured; its treated customers are reported as `unmeasured_n`.
+"Margin saved on sure-things" is what a blanket offer pays people who'd have bought anyway: per stratum,
+coupon cost × (control conversion ÷ treated conversion), the non-incremental share of redemptions.
 Cached for 10 minutes per date range.
 """
 
@@ -28,6 +34,7 @@ from app.scoring import uplift
 
 CACHE_TTL_S = 600
 CONVERSION_WINDOW_DAYS = 7
+MIN_CONTROL = 20  # control customers a stratum needs before its treated customers count as measured
 # hidden personas are reported under the policy they usually land in
 PERSONA_POLICY = {
     "loyal_vip": "vip",
@@ -79,7 +86,16 @@ def compute(start: date, end: date) -> ExperimentStats:
     return result
 
 
-_COLUMNS = ["source", "customer_id", "treated", "converted", "revenue", "cost", "offer_type", "policy"]
+_COLUMNS = [
+    "stratum",
+    "customer_id",
+    "treated",
+    "converted",
+    "revenue",
+    "cost",
+    "offer_type",
+    "policy",
+]
 
 
 def _campaign_rows(s: Session, lo: datetime, hi: datetime) -> list[tuple]:
@@ -103,7 +119,7 @@ def _campaign_rows(s: Session, lo: datetime, hi: datetime) -> list[tuple]:
         cost = 0 if r.is_control else spent.get((r.campaign_id, r.customer_id), 0)
         out.append(
             (
-                "campaign",
+                r.campaign_id,
                 r.customer_id,
                 not r.is_control,
                 r.converted,
@@ -174,10 +190,45 @@ def _margin(orders: pd.DataFrame) -> float:
     return float((orders["value"] * m).sum() / max(orders["value"].sum(), 1))
 
 
-def _incremental(t: dict, c: dict) -> int:
-    if not t["n"] or not c["n"]:
-        return 0
-    return int((t["revenue_per_customer"] - c["revenue_per_customer"]) * t["n"])
+def _cells(df: pd.DataFrame, margin: float) -> pd.DataFrame:
+    """One row per (stratum, offer type): its treated customers measured against the stratum's own control.
+    Every cost is a treated customer's own coupon spend, so it is subtracted exactly once."""
+    rows = []
+    for stratum, g in df.groupby("stratum"):
+        control = g[~g["treated"]]
+        measured = len(control) >= MIN_CONTROL
+        c_conv = float(control["converted"].mean()) if len(control) else 0.0
+        # extra buyers × the stratum's typical basket: per-customer revenue is heavy-tailed (one ₹19k gold
+        # coin in a 26-person control swings a raw revenue comparison by lakhs), conversion isn't
+        buyers = g[g["converted"]]
+        basket = float(buyers["revenue"].sum() / len(buyers)) if len(buyers) else 0.0
+        for offer_type, t in g[g["treated"]].groupby("offer_type"):
+            t_conv = float(t["converted"].mean())
+            inc = (t_conv - c_conv) * len(t) * basket if measured else 0.0
+            cost = float(t["cost"].sum())
+            rows.append(
+                {
+                    "stratum": stratum,
+                    "offer_type": offer_type,
+                    "n": len(t),
+                    "measured": measured,
+                    "incremental_revenue": inc,
+                    "cost": cost,
+                    "incremental_profit": inc * margin - cost if measured else 0.0,
+                    "saved": cost * min(c_conv / t_conv, 1.0) if measured and t_conv else 0.0,
+                }
+            )
+    cols = [
+        "stratum",
+        "offer_type",
+        "n",
+        "measured",
+        "incremental_revenue",
+        "cost",
+        "incremental_profit",
+        "saved",
+    ]
+    return pd.DataFrame(rows, columns=cols)
 
 
 def _stats(df: pd.DataFrame, orders: pd.DataFrame, start: date, end: date) -> ExperimentStats:
@@ -194,64 +245,74 @@ def _stats(df: pd.DataFrame, orders: pd.DataFrame, start: date, end: date) -> Ex
             qini=uplift.qini(),
             festival_vs_baseline=_festivals(orders, start, end),
         )
-    t, c = _arm(df[df["treated"]]), _arm(df[~df["treated"]])
-    inc_rev = _incremental(t, c)
-    non_incremental = min(c["conv_rate"] / t["conv_rate"], 1.0) if t["conv_rate"] else 0.0
+    cells = _cells(df, margin)
+    measured = cells[cells["measured"]]
+    t = _arm(df[df["treated"]])
+    t.update(
+        measured_n=int(measured["n"].sum()),
+        unmeasured_n=int(cells.loc[~cells["measured"], "n"].sum()),
+        method="extra buyers × typical basket; each campaign vs its own control, live vs the holdout; summed",
+    )
     return ExperimentStats(
         treatment=t,
-        control=c,
-        incremental_revenue=inc_rev,
-        incremental_profit=int(inc_rev * margin - t["cost"]),
-        margin_saved_sure_things=int(t["cost"] * non_incremental),
-        uplift_by_policy=_by(df, "policy", margin),
-        roi_by_offer_type=_roi(df, margin),
+        control=_arm(df[~df["treated"]]),
+        incremental_revenue=int(round(measured["incremental_revenue"].sum())),
+        incremental_profit=int(round(measured["incremental_profit"].sum())),
+        margin_saved_sure_things=int(round(measured["saved"].sum())),
+        uplift_by_policy=_by_policy(df),
+        roi_by_offer_type=_roi(measured),
         qini=uplift.qini(),
         festival_vs_baseline=_festivals(orders, start, end),
     )
 
 
-def _by(df: pd.DataFrame, col: str, margin: float) -> list[dict]:
+def _by_policy(df: pd.DataFrame) -> list[dict]:
+    """Conversion uplift per policy, measured inside each stratum and weighted by treated customers."""
+    acc: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    for _, g in df.groupby("stratum"):
+        for policy, p in g.groupby("policy"):
+            t, c = p[p["treated"]], p[~p["treated"]]
+            if not len(t) or len(c) < 3:
+                continue
+            a = acc[policy]
+            a["n_t"] += len(t)
+            a["n_c"] += len(c)
+            a["t_conv"] += float(t["converted"].mean()) * len(t)
+            a["c_conv"] += float(c["converted"].mean()) * len(t)
     out = []
-    for value, g in df.groupby(col):
-        t, c = g[g["treated"]], g[~g["treated"]]
-        if len(t) < 20 or len(c) < 5:
+    for policy, a in acc.items():
+        if a["n_t"] < 20:
             continue
+        t_conv, c_conv = a["t_conv"] / a["n_t"], a["c_conv"] / a["n_t"]
         out.append(
             {
-                "policy": value,
-                "n_treated": int(len(t)),
-                "n_control": int(len(c)),
-                "treated_conv": round(float(t["converted"].mean()), 4),
-                "control_conv": round(float(c["converted"].mean()), 4),
-                "uplift": round(float(t["converted"].mean() - c["converted"].mean()), 4),
+                "policy": policy,
+                "n_treated": int(a["n_t"]),
+                "n_control": int(a["n_c"]),
+                "treated_conv": round(t_conv, 4),
+                "control_conv": round(c_conv, 4),
+                "uplift": round(t_conv - c_conv, 4),
             }
         )
     return sorted(out, key=lambda r: -r["uplift"])
 
 
-def _roi(df: pd.DataFrame, margin: float) -> list[dict]:
-    """Each offer type is compared with the control customers of the same campaigns / the live holdout."""
+def _roi(measured: pd.DataFrame) -> list[dict]:
+    """Sums of the same cells as the headline, so the rows always add up to it."""
     out = []
-    control = df[~df["treated"]]
-    for offer_type, t in df[df["treated"]].groupby("offer_type"):
-        if offer_type == "none" or len(t) < 20:
-            continue
-        same = control[control["offer_type"] == offer_type]
-        c = same if len(same) >= 20 else control
-        tt, cc = _arm(t), _arm(c)
-        inc = _incremental(tt, cc)
-        profit = inc * margin - tt["cost"]
+    for offer_type, g in measured.groupby("offer_type"):
+        profit, cost = float(g["incremental_profit"].sum()), float(g["cost"].sum())
         out.append(
             {
                 "type": offer_type,
-                "n": tt["n"],
-                "incremental_revenue": inc,
-                "cost": tt["cost"],
-                "incremental_profit": int(profit),
-                "roi": round(profit / tt["cost"], 2) if tt["cost"] else None,
+                "n": int(g["n"].sum()),
+                "incremental_revenue": int(round(g["incremental_revenue"].sum())),
+                "cost": int(round(cost)),
+                "incremental_profit": int(round(profit)),
+                "roi": round(profit / cost, 2) if cost else None,
             }
         )
-    return sorted(out, key=lambda r: -(r["incremental_profit"]))
+    return sorted(out, key=lambda r: -r["incremental_profit"])
 
 
 def _festivals(orders: pd.DataFrame, start: date, end: date) -> list[dict]:

@@ -595,3 +595,24 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - `build_profile` p95 hasn't been measured on Neon over the network (~5 round-trips per call).
   - Lohri 2027 has conflicting sources (13 vs 14 Jan).
 - **Next:** post-freeze fixes only.
+
+### 2026-10-26 · Session A · GATE-4 fix: Experiments headline consistent with its breakdown
+- **Problem (live, Neon, 1,500 customers):**
+  - The headline incremental revenue was −₹2,185 and profit −₹22,909, while every ROI row was positive.
+  - The headline pooled all treated vs all control across campaigns plus live decisions (Simpson's paradox), and compared raw revenue per customer with only 199 controls.
+  - The ROI table used a different method again, and fell back to *all* controls when an offer had fewer than 20 of its own.
+- **Fix (`scoring/experiments.py`):**
+  - Every number is now a sum of the same (stratum × offer type) cells, where a stratum is one campaign vs its own control, or live decisions vs the holdout.
+  - A cell's incremental revenue = (treated − control conversion) × treated n × the stratum's average basket per buyer. Raw revenue per customer is heavy-tailed: one ₹18,999 order in a 26-person control turned Holi from +₹39k into −₹1.44 lakh.
+  - Strata with fewer than 20 controls aren't measured (`treatment.unmeasured_n`).
+  - Each coupon cost is subtracted once.
+  - `/api/kpis` `incremental_revenue` uses the same function (Main's `api/analytics.py` calls `experiments_compute(day − 30, day)`). It shows ₹0 when the last 30 days have no measurable stratum.
+- **No data or generator changes.**
+- **Local equivalent (1,500 customers, seed 42), 26 Oct 2025 → 26 Oct 2026:**
+  - before: headline +₹89k revenue / +₹2.9k profit, with the ROI rows summing to −₹9.0k (inconsistent);
+  - after: +₹2.06 lakh / +₹34.6k, equal to the ROI rows. flat ₹ off +₹15.6k (1.73×), % off +₹14.8k (1.33×), bonus points +₹10.7k, free shipping −₹6.5k.
+  - The 90-day window is −₹17k: it holds only Independence Day, whose 47 controls happened to convert at 8.5% vs 4.0% treated. That's honest small-sample noise.
+- **Tests:**
+  - Simpson's-paradox regression (pooled < 0, per-campaign > 0), unmeasured strata, a control outlier, and headline = Σ ROI rows on a seeded world.
+  - `python -m pytest tests/data -q` → 90 passed · `ruff check .` clean.
+- **Commits:** _pending the user's commit_
