@@ -96,6 +96,12 @@ def recent_decisions(customer_id: str, limit: int = 10) -> list[Decision]:
     return [d for d in map(_parse, rows) if d]
 
 
+def decision_by_message(message_id: int) -> Decision | None:
+    with _session() as s:
+        row = s.exec(select(DecisionRow).where(DecisionRow.telegram_message_id == message_id)).first()
+    return _parse(row) if row else None
+
+
 def set_message_id(decision_id: str, message_id: int) -> None:
     with _session() as s:
         row = s.get(DecisionRow, decision_id)
@@ -129,6 +135,14 @@ def pick_product(category: str, seed: str) -> tuple[str, int]:
     with _session() as s:
         rows = s.exec(select(ProductRow).where(ProductRow.category == category).order_by(ProductRow.id)).all()
     items = [(r.name, r.price) for r in rows] or FALLBACK_PRODUCTS[category]
+    return items[sum(map(ord, seed)) % len(items)]
+
+
+def premium_product(category: str, seed: str) -> tuple[str, int]:
+    """One of the 3 priciest products in the category (VIP histories need VIP-sized baskets)."""
+    with _session() as s:
+        rows = s.exec(select(ProductRow).where(ProductRow.category == category)).all()
+    items = sorted([(r.name, r.price) for r in rows] or FALLBACK_PRODUCTS[category], key=lambda i: -i[1])[:3]
     return items[sum(map(ord, seed)) % len(items)]
 
 

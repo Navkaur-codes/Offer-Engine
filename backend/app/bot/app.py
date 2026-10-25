@@ -17,6 +17,7 @@ from telegram.ext import (
 
 from app.bot import commands, onboarding, simulate
 from app.config import settings
+from app.lab import commands as lab_commands
 
 log = logging.getLogger(__name__)
 
@@ -72,6 +73,9 @@ def register_handlers(application: Application) -> None:
     }.items():
         application.add_handler(CommandHandler(name, handler, filters=private))
     application.add_handler(MessageHandler(private & (filters.TEXT | filters.COMMAND), commands.unknown))
+    groups = filters.ChatType.GROUPS
+    application.add_handler(CommandHandler("lab", lab_commands.lab_cmd, filters=groups))
+    application.add_handler(CommandHandler("why", lab_commands.why_in_group, filters=groups))
     application.add_error_handler(on_error)
 
 

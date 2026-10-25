@@ -20,7 +20,7 @@
 | Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ◐ | ☐ |
 | A: Data & Scoring | ☑ `8b2e903` | ☑ | ◐ | ☐ |
 | B: Decision Core | ☑ `0202dd8` | ☑ | ◐ | ☐ |
-| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ◐ | ☐ |
+| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☐ |
 | D: Dashboard | ☑ `e5d9116` | ☑ | ◐ | ☐ |
 
 ## claude-progressive.md history
@@ -489,3 +489,23 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Open issues:**
   - Production config still defaults to llama model ids that this key can't use. Main/user: set `GROQ_MODEL_AGENT=openai/gpt-oss-120b` and `GROQ_MODEL_FAST=openai/gpt-oss-20b` in Render (and `.env`), or change the defaults in `config.py`.
   - Free-tier TPM for gpt-oss-120b means only about 3 agent decisions a minute; bursts beyond that go to the rules fallback by design.
+
+### 2026-10-25 · Session C · Phase 3: Customer Lab
+- **Version/Phase:** v0.4 / Phase 3. Done; `/lab here` + `/lab run 5` checked live in the Customer Lab group with the dev bot.
+- **Did:**
+  - `lab/registry.py`: 10 fixed Lab customers `C900001`–`C900010` (Arjun VIP … Neha festive gifter) with hand-written character sheets whose history makes the real `assign_policy` land on 8 distinct policies (Meera reaches `sleeping_dog` once uplift goes negative, A3). Voiced round-robin by 1–10 Lab Shopper bots (4 today → 3/3/2/2). `ensure_lab_customers()` is idempotent and runs before every round (a re-seed wipes `C…` history). Only bot usernames stored (`customers.attrs.lab_voice`), never tokens. Lab customers are never holdout.
+  - `lab/scripts.py`: per-persona activity (cart left 45 min ago, price comparisons, first visit in weeks, nothing for the dormant one), festival-aware (hero categories ≤ 21 days out).
+  - `lab/runner.py`: `run_rounds_async` / `run_rounds` port. Each round: "👤 Name · persona" post → `decide(trigger="lab")` → Offer bot replies by name (card, or "No offer for … Margin protected ₹X", with decided-by + rules line) → customer reacts in character from the hidden response type (sure-things claim "was going to buy it anyway", sleeping dogs get annoyed) → outcome via `decision_store`. 2–4 s pacing; rotation persisted in `settings` so all 10 play before repeats.
+  - `lab/commands.py`: admin-only `/lab here | run [n] | who | persona <name> inactive|cart|purchase|next | date YYYY-MM-DD|off | reset`; reply-`/why` on any Lab message. Rounds run as a background task so the webhook returns at once. No shadow channel.
+  - Verified `/simulate` against the **real** harness (scratch DB): purchase → cart = "no proactive offers within 2 days of a purchase" ✓ (Done-when 1); `inactive 60` still "no offer" until the A3/B3 priority fix (Done-when 2 pending).
+- **Fixes:** Lab setup read products in a nested session while its write transaction was open (on SQLite the inner rollback discarded the write); history is now built before the write session.
+- **Files:** `backend/app/lab/{registry,scripts,runner,commands}.py`, `backend/app/bot/{app,store}.py`, `backend/tests/bot/test_lab.py`
+- **Commits:** `fe3e883` feat(lab): customer lab with 10 personas voiced by lab shopper bots, /lab commands
+- **Tests:** `python -m pytest -q` (backend) → 241 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - `customer_bots` has `username` as its only primary key, so it can't map 4 bots to 10 customers → CR-C1. Voices live in `customers.attrs.lab_voice` meanwhile.
+  - With prod + dev Offer bots both in the group, use `/lab@<bot>` once this code is in production, or remove the dev bot.
+  - Production needs `ADMIN_TELEGRAM_IDS` and `CUSTOMER_BOT_TOKENS` set on Render for `/lab` to work there.
+  - `/lab date` moves the engine clock for the whole process (prod too); `/lab date off` restores it.
+- **Contract change requests:** CR-C1 (sessions.md §6)
+- **Next:** Phase 4: admin commands, copy polish, resilience (403/429, update_id dedupe).
