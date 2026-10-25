@@ -26,6 +26,8 @@ from app.scoring import churn, rfm
 
 POLICY_THRESHOLDS: dict = {
     "high_returner": {"min_return_rate": 0.40, "min_orders": 3},
+    # every offer type must be predicted to *hurt*, by a margin above model noise
+    "sleeping_dog": {"max_uplift_below": -0.005},
     "vip": {"ltv_percentile": 90, "max_recency_days": 30, "min_orders": 3},
     "dormant": {"min_days_inactive": 120},
     # churn ≥ 0.6 alone catches most active buyers (the 60-day base rate is ~65%), so the churn path
@@ -192,6 +194,7 @@ def _assemble(
     views_by_cat: dict[str, float] = {}
     last_cart, last_purchase_ts = None, 0.0
     offer_ts: list[float] = []
+    declines = sum(r[2] == "declined" for r in sent)  # "Not for me" taps on logged decisions
     for typ, ts, cat, item, value in events:
         t = _epoch(ts)
         last_active = max(last_active, t)
@@ -215,6 +218,8 @@ def _assemble(
             last_cart = (t, cat, item, value)
         elif typ == "offer_received":
             offer_ts.append(t)
+        elif typ == "offer_declined":
+            declines += 1
 
     orders_total = len(purchase_ts)
     day = 86400
@@ -256,6 +261,8 @@ def _assemble(
         tenure_days=tenure_days,
         spend_365d=int(sum(v for _, v in orders_365)),
         vip_spend_365d=int(pop["vip_spend_365d"]),
+        offers_received=len(offer_ts) + len(sent),
+        offers_declined=declines,
     )
 
     affinity = _normalise(
@@ -327,6 +334,10 @@ def _assemble(
         suppressed_categories=_suppressed(cust.suppressed, now),
         as_of=now,
     )
+    from app.scoring import uplift as uplift_model  # lazy: uplift's trainer imports this module
+
+    if uplift_model.family_probabilities(profile):  # the trained T-learner replaces the prior
+        profile = profile.model_copy(update={"uplift": uplift_model.predict_all(profile)})
     return profile.model_copy(update={"policy": assign_policy(profile)})
 
 
@@ -375,7 +386,7 @@ def assign_policy(profile: CustomerProfile) -> PolicyName:
     t = th["high_returner"]
     if profile.return_rate > t["min_return_rate"] and orders >= t["min_orders"]:
         return "high_returner"
-    if profile.uplift and max(profile.uplift.values()) < 0:
+    if profile.uplift and max(profile.uplift.values()) < th["sleeping_dog"]["max_uplift_below"]:
         return "sleeping_dog"
     t = th["vip"]
     vip_spend = r.get("vip_spend_365d", 30000)

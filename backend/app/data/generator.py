@@ -24,7 +24,13 @@ from app.config import IST
 from app.contracts import Category, OfferType
 from app.data.catalog import CATEGORIES, PRODUCTS
 from app.data.festivals import FESTIVALS, OPT_IN_KEYS, Lift, lifts, phase_on
-from app.data.personas import PERSONAS, RESPONSE_BASELINE, response_effect
+from app.data.personas import (
+    PERSONAS,
+    RESPONSE_BASELINE,
+    RESPONSE_COUPON_MULT,
+    RESPONSE_DECLINE_P,
+    response_effect,
+)
 
 SIM_START = date(2025, 10, 1)
 DEFAULT_END = date(2026, 10, 23)
@@ -388,7 +394,12 @@ def generate(
     p_chk = np.array([s.p_checkout for s in spec])
     p_pur = np.array([s.p_purchase for s in spec])
     aov_mult = np.array([s.aov_mult for s in spec])
-    disc_use = np.array([s.discount_usage for s in spec])
+    disc_use = np.clip(
+        np.array([s.discount_usage for s in spec])
+        * np.array([RESPONSE_COUPON_MULT[r] for r in cust["response_type"]]),
+        0,
+        0.95,
+    )
     ret_mult = np.array([s.return_mult for s in spec]) * np.where(
         cust["heavy_returner"].to_numpy() & (personas != "high_returner"), 3.0, 1.0
     )
@@ -758,8 +769,9 @@ def _events(sess, orders, camp_state, cust, rng, day0, T) -> pd.DataFrame:
             used["ts_s"].to_numpy() - 30,
             campaign=np.full(len(used), camp.id, dtype=object),
         )
-        declined = treated[rng.random(len(treated)) < 0.03]
-        add(declined, "offer_declined", sent[: len(declined)] + 600, campaign=cid[: len(declined)])
+        resp = cust["response_type"].to_numpy()[treated]
+        no = rng.random(len(treated)) < np.array([RESPONSE_DECLINE_P[r] for r in resp])
+        add(treated[no], "offer_declined", sent[no] + rng.integers(300, 7200, no.sum()), campaign=cid[no])
 
     ev = pd.concat(parts, ignore_index=True)
     ev = ev[ev["ts_s"] < end_ts].sort_values("ts_s", kind="stable").reset_index(drop=True)

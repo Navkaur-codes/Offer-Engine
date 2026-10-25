@@ -185,6 +185,7 @@ def test_open_cart_makes_a_cart_abandoner(engine):
         for p in (build_profile(c, NOW) for c in _ids(engine))
         if p.policy in ("default", "new_user", "window_shopper")
         and p.recency_days > 1  # no purchase after the cart
+        and max(p.uplift.values()) > 0.02  # well clear of sleeping_dog, which outranks a cart
     )
     _add_event(
         engine,
