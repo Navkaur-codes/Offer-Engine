@@ -47,6 +47,12 @@ A longer, timed walk-through for presenting is in [`docs/demo-script.md`](docs/d
 
 Dark mode: [`02-overview-dark.png`](frontend/screenshots/02-overview-dark.png).
 
+**Offer cards in Telegram** are drawn on the server in the same design system, sent as a photo with the explanation as the caption and the 4 buttons; if drawing ever fails, the text card goes out instead.
+
+| | |
+|---|---|
+| ![Offer card: 10% off ethnic wear above ₹999](docs/screenshots/bot-card-pct.png) | ![Offer card: free shipping](docs/screenshots/bot-card-free-shipping.png) |
+
 ---
 
 ## How it decides
