@@ -15,7 +15,7 @@ from telegram.ext import ContextTypes
 
 from app import ports
 from app.bot import sender, store
-from app.bot.render import CATEGORY_LABELS, escape
+from app.bot.render import CATEGORY_LABELS, escape, short_name
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ def festival_keyboard(chosen: list[str]) -> InlineKeyboardMarkup:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     context.user_data["onboarding"] = {"categories": [], "festivals": []}
-    name = escape(update.effective_user.first_name or "there")
+    name = escape(short_name(update.effective_user.first_name))
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("✅ Sounds good, let's go", callback_data="ob:consent:yes")],

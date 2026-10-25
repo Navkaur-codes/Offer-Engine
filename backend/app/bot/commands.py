@@ -12,7 +12,7 @@ from telegram.ext import ContextTypes
 from app import ports
 from app.bot import resilience, sender, store
 from app.bot.onboarding import FESTIVALS
-from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why
+from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why, short_name
 from app.config import IST, now
 from app.contracts import Decision
 
@@ -99,7 +99,7 @@ def profile_text(row, profile) -> str:
     cats = ", ".join(CATEGORY_LABELS.get(c, c) for c, _ in top) or "Still learning"
     fests = ", ".join(FESTIVALS.get(f, f) for f in (row.opt_in_festivals or [])) or "Off"
     return (
-        f"<b>Your profile, {escape(profile.first_name)}</b>\n"
+        f"<b>Your profile, {escape(short_name(profile.first_name))}</b>\n"
         f"👤 Shopper type: {PERSONA_LABELS.get(profile.persona, profile.persona)}\n"
         f"🎯 How we treat you: {POLICY_LABELS.get(profile.policy, profile.policy)}\n"
         f"❤️ Top categories: {cats}\n"
