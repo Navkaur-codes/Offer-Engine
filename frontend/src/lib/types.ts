@@ -257,15 +257,24 @@ export interface Festival {
   delivery_days_by_tier: Record<string, number>
 }
 
+/** One benchmark row as Session A's realism_compute() sends it. */
+export interface Benchmark {
+  min: number
+  max: number
+  value: number
+  ok: boolean
+  source: string
+}
 export interface RealismStats {
   pareto_top20_share: number
   cart_abandon_rate: number
-  funnel: Json
-  retention_cohorts: Json[]
+  funnel: Partial<Record<EventType, number>>
+  /** {cohort: "2025-10", size, m1..m6: share still buying}. */
+  retention_cohorts: ({ cohort: string; size: number } & Record<string, number | string>)[]
   aov_by_category: Partial<Record<Category, number>>
   return_rate_by_category: Partial<Record<Category, number>>
-  seasonality_daily: Json[]
-  benchmarks: Json
+  seasonality_daily: { date: IsoDate; revenue: number }[]
+  benchmarks: Record<string, Benchmark>
 }
 
 export interface ArmStats {
