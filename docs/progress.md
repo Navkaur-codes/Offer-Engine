@@ -779,3 +779,15 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Backend 360 passed · ruff clean.
 - **Knock-on for C:** Meera (C900008) needs at least one "Not for me" in her Lab history to stay a sleeping dog (message sent to C).
 - **Commits:** _pending the user's commit_
+
+### 2026-10-26 · Main · Final merges (GATE-4c) and demo rehearsal
+- **Merged and live (v1.0.0, all ports real):**
+  - D `cc27797` → `f7b90e7`: product renamed **Holdout** ("Offers only where they change the outcome."), sidebar shows the live API version, screenshots retaken.
+  - C `2c37cb6` → `a5443af`: **offer-card image** (Pillow, Signal palette, Geist fonts in `bot/assets`, text fallback) for every SENT offer; bot text renamed. Checked live: one message with the picture and the caption + buttons.
+  - Main `d94d9e5`, `7dcc8cf`, `150d4d7`: README final (Holdout, live results, test coverage, card images), demo script.
+  - A `97570db` → `06ec524`: realistic onboarding history (no purchase < 3 days, no sleeping dog for new users); **sleeping_dog now needs ≥1 recorded decline** (applies to everyone).
+  - C `ae76a61` → `3980923`: Lab Meera has two recorded declines; live she is `sleeping_dog`.
+  - Suite **362 passed**, ruff clean; frontend lint + build ✓.
+- **Welcome check** (48 new users, all `/start` answer combinations): 35/48 → **44/48**. The 4 misses are monthly + balanced → at_risk with too little predicted uplift; lowering `P_ATRISK_WINBACK.min_uplift` to 0.02 does not help (checked). **Open user decision:** map new users away from at_risk (A) or keep it.
+- **Demo rehearsal (live API):** health 0.8 s, KPIs 0.7 s, Experiments 0.3 s (+₹91,760 / +₹1,725 / ₹14,916 margin saved), Realism 3.2 s on first load, Playground 0.6–2 s.
+  - Finding: Lab customers Arjun, Priya, Aisha and Neha are at the **3-offers-per-7-days cap** after tonight's testing (Rohan close), so the Playground and a Lab run show "Blocked" for them. `/lab reset` rebuilds history but rightly keeps the decision log. Demo script now uses fresh synthetic customers in the Playground (`C000129`, `C000075`, `C000056`) and says not to run the Lab the day before. **Open user decision:** raise the `G_FREQ` weekly cap for the judging window or not.
