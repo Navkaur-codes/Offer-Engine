@@ -13,7 +13,8 @@ export function Switch({
       title={title}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="inline-flex items-center gap-1.5 text-[12px] text-muted disabled:cursor-not-allowed disabled:opacity-60"
+      // Light dimming only: a locked "On" switch must still read as on.
+      className="inline-flex items-center gap-1.5 text-[12px] text-muted disabled:cursor-not-allowed disabled:opacity-85"
     >
       <span className={cn('relative h-4 w-7 rounded-full border transition-colors', checked ? 'border-ink bg-ink' : 'border-line bg-surface-2')}>
         <span className={cn('absolute top-[1px] size-3 rounded-full transition-transform', checked ? 'translate-x-[13px] bg-bg' : 'translate-x-[1px] bg-muted')} />

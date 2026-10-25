@@ -257,15 +257,24 @@ export interface Festival {
   delivery_days_by_tier: Record<string, number>
 }
 
+/** One benchmark row as Session A's realism_compute() sends it. */
+export interface Benchmark {
+  min: number
+  max: number
+  value: number
+  ok: boolean
+  source: string
+}
 export interface RealismStats {
   pareto_top20_share: number
   cart_abandon_rate: number
-  funnel: Json
-  retention_cohorts: Json[]
+  funnel: Partial<Record<EventType, number>>
+  /** {cohort: "2025-10", size, m1..m6: share still buying}. */
+  retention_cohorts: ({ cohort: string; size: number } & Record<string, number | string>)[]
   aov_by_category: Partial<Record<Category, number>>
   return_rate_by_category: Partial<Record<Category, number>>
-  seasonality_daily: Json[]
-  benchmarks: Json
+  seasonality_daily: { date: IsoDate; revenue: number }[]
+  benchmarks: Record<string, Benchmark>
 }
 
 export interface ArmStats {
@@ -273,6 +282,38 @@ export interface ArmStats {
   conv_rate: number
   revenue: number
   cost: number
+  revenue_per_customer?: number
+}
+
+// Row shapes inside ExperimentStats' list[dict] fields, as Session A's experiments_compute() sends them.
+export interface PolicyUplift {
+  policy: PolicyName
+  n_treated: number
+  n_control: number
+  treated_conv: number
+  control_conv: number
+  uplift: number
+}
+export interface OfferRoi {
+  type: OfferType
+  n: number
+  incremental_revenue: number
+  cost: number
+  incremental_profit: number
+  roi: number
+}
+export interface QiniPoint {
+  targeted: number
+  model: number
+  random: number
+}
+export interface FestivalLift {
+  festival: string
+  id: string
+  date: IsoDate
+  revenue_per_day: number
+  baseline_per_day: number
+  lift: number
 }
 
 export interface ExperimentStats {
@@ -281,10 +322,10 @@ export interface ExperimentStats {
   incremental_revenue: number
   incremental_profit: number
   margin_saved_sure_things: number
-  uplift_by_policy: Json[]
-  roi_by_offer_type: Json[]
-  qini: Json[] | null
-  festival_vs_baseline: Json[]
+  uplift_by_policy: PolicyUplift[]
+  roi_by_offer_type: OfferRoi[]
+  qini: QiniPoint[] | null
+  festival_vs_baseline: FestivalLift[]
 }
 
 export interface Kpis {
@@ -305,9 +346,16 @@ export interface Page<T> {
   items: T[]
   next: string | null
 }
+export interface LlmMeter {
+  used: number
+  limit: number
+  model: string
+}
 export interface Health {
   ok: boolean
   version: string
+  /** Main's extra (not in contracts §4): per-day LLM token budget from agent/budget.py. */
+  llm_budget?: { agent: LlmMeter; fast: LlmMeter; mode: '70b' | '8b' | 'rules' }
 }
 export interface CustomerDetail {
   profile: CustomerProfile
@@ -327,7 +375,16 @@ export interface SchedulerStatus {
 }
 export interface CampaignDryRun {
   rows: DecisionLight[]
-  totals: Json
+  /** Contract says `{...}`; these are the keys the API sends (over_budget is Main's extra). */
+  totals: {
+    customers: number
+    would_send: number
+    no_offer: number
+    blocked: number
+    over_budget?: number
+    cost: number
+    expected_incremental_profit: number
+  }
 }
 export interface Digest {
   day: IsoDate

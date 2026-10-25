@@ -10,7 +10,7 @@ export interface LensStep {
 }
 
 const FINAL_LABEL: Record<DecisionStatus, string> = {
-  SENT: 'Sent', QUEUED: 'Queued', NO_OFFER: 'No offer', BLOCKED: 'Sent', HELD_OUT: 'Held out', DRY_RUN: 'Dry run',
+  SENT: 'Sent', QUEUED: 'Queued', NO_OFFER: 'No offer', BLOCKED: 'Sent', HELD_OUT: 'Held out', DRY_RUN: 'Would send',
 }
 
 export function lensSteps(d: { decided_by: DecidedBy; status: DecisionStatus; fallback_reason?: string | null; explanation_title?: string }): LensStep[] {
@@ -29,7 +29,7 @@ export function lensSteps(d: { decided_by: DecidedBy; status: DecisionStatus; fa
   else if (d.status === 'QUEUED') Object.assign(final, { state: 'wait', note: 'Queued until quiet hours end (09:00 IST)' })
   else if (d.status === 'NO_OFFER') Object.assign(final, { state: 'skip', note: 'Decided not to send anything' })
   else if (d.status === 'HELD_OUT') Object.assign(final, { state: 'skip', note: 'Held out to measure incrementality' })
-  else if (d.status === 'DRY_RUN') Object.assign(final, { state: 'skip', note: 'Dry run: nothing sent' })
+  else if (d.status === 'DRY_RUN') Object.assign(final, { note: 'Dry run: this offer would be sent; nothing was actually sent' })
 
   return [
     blocked

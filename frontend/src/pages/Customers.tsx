@@ -1,9 +1,10 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { createColumnHelper } from '@tanstack/react-table'
-import { X } from 'lucide-react'
+import { Megaphone, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { PolicyBadge } from '@/components/badges'
+import { CampaignDialog } from '@/components/CampaignDialog'
 import { DataTable } from '@/components/DataTable'
 import { EmptyState } from '@/components/EmptyState'
 import { Money } from '@/components/Money'
@@ -19,7 +20,8 @@ import { cn } from '@/lib/utils'
 import { CustomerDrawer } from './customers/CustomerDrawer'
 import { PolicyGlyph, SegmentScatter } from './customers/Scatter'
 
-const PAGE = 100 // the API's maximum page size
+// The API builds each profile live (~55 ms on Neon), so 50 keeps the first paint near 3 s.
+const PAGE = 50
 const col = createColumnHelper<CustomerProfile>()
 
 const columns = [
@@ -74,7 +76,11 @@ export function Customers() {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-4 p-4 md:p-6">
-      <PageHeader title="Customers" why={NAV[3].why} />
+      <PageHeader
+        title="Customers"
+        why={NAV[3].why}
+        action={<Button variant="primary" onClick={() => set('dryrun', '1')}><Megaphone /> Campaign dry-run</Button>}
+      />
 
       <div role="search" aria-label="Filter customers" className="flex flex-wrap items-center gap-2">
         <SearchBox value={q} onChange={(v) => set('q', v)} />
@@ -149,6 +155,7 @@ export function Customers() {
       ) : null}
 
       <CustomerDrawer id={openId} onClose={() => set('id', null)} />
+      <CampaignDialog open={params.get('dryrun') === '1'} onOpenChange={(v) => set('dryrun', v ? '1' : null)} />
     </div>
   )
 }

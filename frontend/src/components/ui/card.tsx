@@ -9,8 +9,9 @@ export function CardHeader({ className, ...props }: ComponentProps<'div'>) {
   return <div className={cn('flex items-center justify-between gap-3 border-b border-line px-4 py-2.5', className)} {...props} />
 }
 
-export function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
-  return <h3 className={cn('title text-[13px] text-ink', className)} {...props} />
+// h2: pages have one h1, so card titles are the next level (Lighthouse heading-order).
+export function CardTitle({ className, ...props }: ComponentProps<'h2'>) {
+  return <h2 className={cn('title text-[13px] text-ink', className)} {...props} />
 }
 
 export function CardBody({ className, ...props }: ComponentProps<'div'>) {

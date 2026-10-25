@@ -19,7 +19,7 @@ export function Wordmark() {
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: ks } = useKillswitch()
   return (
     <aside className="flex h-full w-[212px] shrink-0 flex-col border-r border-rail-line bg-rail text-rail-ink">
@@ -33,6 +33,7 @@ export function Sidebar() {
               <NavLink
                 to={to}
                 end={to === '/'}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
                     'relative flex h-8 items-center gap-2.5 rounded-[6px] px-2.5 text-[13px] transition-colors',

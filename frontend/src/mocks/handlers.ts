@@ -24,7 +24,14 @@ const on = (method: string, pattern: string, h: Handler) =>
 
 const byTsDesc = (a: DecisionLight, b: DecisionLight) => b.ts.localeCompare(a.ts)
 
-on('GET', '/health', (): Health => ({ ok: true, version: '0.2-mock' }))
+on('GET', '/health', (): Health => ({
+  ok: true, version: '0.4-mock',
+  llm_budget: {
+    agent: { used: 13100, limit: 80000, model: 'openai/gpt-oss-120b' },
+    fast: { used: 0, limit: 400000, model: 'openai/gpt-oss-20b' },
+    mode: '70b',
+  },
+}))
 on('GET', '/api/meta', (): Meta => ({
   bot_username: 'navpreet_offers_bot', lab_group_link: null, now: new Date().toISOString(), demo_time_override: null,
 }))
@@ -136,6 +143,12 @@ on('POST', '/api/rules/:id/revert/:version', (m): Rule => {
 })
 
 on('GET', '/api/festivals', (): Festival[] => FESTIVALS)
+on('PATCH', '/api/festivals/:id', (m, _q, body): Festival => {
+  const i = FESTIVALS.findIndex((f) => f.id === m[1])
+  if (i < 0) throw new MockHttpError(404, `Festival ${m[1]} not found`)
+  FESTIVALS[i] = { ...FESTIVALS[i], ...(body as Partial<Festival>) }
+  return FESTIVALS[i]
+})
 on('GET', '/api/scheduler', (): SchedulerStatus => {
   const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
   return { running: true, next_runs: { cart_abandonment: at(0.1), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
@@ -147,8 +160,16 @@ on('GET', '/api/digest', (): Digest => ({
   generated_by: 'mock',
 }))
 on('POST', '/api/campaigns/dry-run', (): CampaignDryRun => {
-  const rows = DECISIONS.filter((d) => d.status === 'SENT').slice(0, 20)
-  return { rows, totals: { customers: rows.length, cost: rows.reduce((s, d) => s + d.cost, 0) } }
+  const rows = DECISIONS.slice(0, 30)
+  const sent = rows.filter((d) => d.final_offer_id)
+  return {
+    rows,
+    totals: {
+      customers: rows.length, would_send: sent.length, no_offer: rows.filter((d) => d.status === 'NO_OFFER').length,
+      blocked: rows.filter((d) => d.status === 'BLOCKED').length, over_budget: 0,
+      cost: sent.reduce((s, d) => s + d.cost, 0), expected_incremental_profit: sent.reduce((s, d) => s + d.expected_incremental_profit, 0),
+    },
+  }
 })
 
 export async function mockFetch(method: string, path: string, body?: unknown): Promise<unknown> {

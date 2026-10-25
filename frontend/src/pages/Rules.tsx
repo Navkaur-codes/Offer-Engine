@@ -68,7 +68,7 @@ export function Rules() {
             >
               <span className="num text-[11px] text-muted">{i + 1}</span>
               {l.label}
-              <span className="num rounded-[4px] bg-surface-2 px-1 text-[11px] text-muted">{n}</span>
+              <span className="num rounded-[4px] border border-line px-1 text-[11px] text-muted">{n}</span>
             </button>
           )
         })}
@@ -109,13 +109,18 @@ function GroupHeader({ layer, groupKey }: { layer: RuleLayer; groupKey: string }
   )
 }
 
-/** "Who is in this policy now": live count from the customers endpoint (first page). */
+/**
+ * "Who is in this policy now": one shared sample of profiles, counted per policy.
+ * Ten per-policy requests each scan 600 rows server-side and starve the free Render instance.
+ */
 function PolicyMembers({ policy }: { policy: PolicyName }) {
-  const { data } = useQuery({ queryKey: ['customers', 'policy-count', policy], queryFn: () => api.customers({ policy, limit: 200 }), staleTime: 60_000 })
-  const n = data ? `${data.items.length}${data.next ? '+' : ''}` : '…'
+  // 50, not 100: the API builds every profile live (~55 ms each on Neon).
+  const { data } = useQuery({ queryKey: ['customers', 'policy-sample'], queryFn: () => api.customers({ limit: 50 }), staleTime: 5 * 60_000 })
+  const n = data?.items.filter((c) => c.policy === policy).length
+  const share = data?.items.length && n !== undefined ? Math.round((n / data.items.length) * 100) : null
   return (
-    <Link to={`/customers?policy=${policy}`} className="text-[12.5px] text-muted hover:text-ink">
-      <span className="num text-ink">{n}</span> customers in this policy now →
+    <Link to={`/customers?policy=${policy}`} className="text-[12.5px] text-muted hover:text-ink" title="Share of a live sample of 50 customers">
+      <span className="num text-ink">{share === null ? '…' : `${share}%`}</span> of customers are in this policy now →
     </Link>
   )
 }

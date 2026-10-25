@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils'
 // Every badge carries a glyph or text, never colour alone.
 type Tone = 'neutral' | 'signal' | 'violet' | 'amber' | 'danger' | 'ink'
 const TONE: Record<Tone, string> = {
-  neutral: 'border-line bg-surface-2 text-muted',
+  // White, not surface-2: muted text on surface-2 is 4.39:1, just under WCAG AA.
+  neutral: 'border-line bg-surface text-muted',
   ink: 'border-line bg-surface text-ink',
   signal: 'border-signal/40 bg-signal-soft text-signal-text',
   violet: 'border-violet/40 bg-violet-soft text-violet-text',
