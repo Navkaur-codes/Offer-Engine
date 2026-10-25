@@ -10,9 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.contracts import CustomerProfile, OfferCandidate, TriggerType
-from app.rules.rule_types import VALUE_KEYS, category_label, inr
-
-NO_COUPON_TYPES = {"cart_nudge", "points_reminder"}
+from app.rules.rule_types import NO_COUPON_TYPES, VALUE_KEYS, ZERO_COST_TYPES, category_label, inr
 
 
 @dataclass
@@ -34,11 +32,28 @@ def cheapest_params(cand: OfferCandidate) -> dict:
     return params
 
 
+def worth_sending(c: OfferCandidate) -> bool:
+    """Paid offers must earn more than they cost; a free perk only must not lose anything."""
+    return c.est_incremental_profit >= 0 if c.type in ZERO_COST_TYPES else c.est_incremental_profit > 0
+
+
 def choose(candidates: list[OfferCandidate]) -> FallbackChoice | None:
-    paying = [c for c in candidates if c.est_incremental_profit > 0]
+    paying = [c for c in candidates if worth_sending(c)]
     if not paying:
         return None
     best = max(paying, key=lambda c: (c.est_incremental_profit, -c.est_cost))
+    return FallbackChoice(best, cheapest_params(best))
+
+
+def welcome_perk(candidates: list[OfferCandidate]) -> FallbackChoice | None:
+    """Welcome guarantee: a first-time customer always gets the best allowed free perk (free shipping if no
+    zero-cost perk is allowed), so onboarding never ends in silence."""
+    perks = [c for c in candidates if c.type in ZERO_COST_TYPES] or [
+        c for c in candidates if c.type == "free_shipping"
+    ]
+    if not perks:
+        return None
+    best = max(perks, key=lambda c: (c.est_incremental_profit, -c.est_cost, c.offer_id))
     return FallbackChoice(best, cheapest_params(best))
 
 

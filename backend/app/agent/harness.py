@@ -21,7 +21,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
 from app import decision_store, ports, runtime
-from app.agent import fallback, prompts
+from app.agent import budget, fallback, prompts, tools
 from app.agent.context import festival_key, get_context
 from app.agent.explainer import explain, placeholder
 from app.agent.llm import LLMClient, LLMError, LLMRateLimited, LLMTimeout
@@ -42,14 +42,15 @@ from app.contracts import (
 )
 from app.rules.engine import effective_policy, evaluate, load_rules, screen_offers
 from app.rules.offers import load_offers
+from app.rules.rule_types import NO_COUPON_TYPES, estimate_offer, offer_expiry
 
 log = logging.getLogger(__name__)
 
 AGENT_TIMEOUT_S = 20.0
-EXPIRY_DAYS = 2
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
+WELCOME_GUARANTEE = "welcome guarantee: a first-time customer always gets a free perk"
 
 
 # ---------------------------------------------------------------- reads (the harness's only DB inputs)
@@ -88,9 +89,26 @@ def customer_flags(customer_id: str) -> CustomerFlags:
     )
 
 
-def default_llm() -> LLMClient | None:
-    """Phase 2 has no real model: decisions go to the rules fallback unless a client is passed in."""
-    return None
+def is_first_decision(customer_id: str) -> bool:
+    try:
+        return not decision_store.query(customer_id=customer_id, limit=1)
+    except SQLAlchemyError:
+        return True
+
+
+def pick_llm(now: datetime) -> tuple[LLMClient | None, budget.Kind | None, str | None]:
+    """(client, budget kind to charge, why there is none). The budget guard picks 70B → 8B → rules."""
+    if settings.force_llm_fail:
+        return None, None, "the LLM is forced off (FORCE_LLM_FAIL)"
+    if not settings.groq_api_key:
+        return None, None, "no LLM is configured"
+    target = budget.model_for(budget.mode(now))
+    if target is None:
+        return None, None, budget.EXHAUSTED_REASON
+    kind, model = target
+    from app.agent.groq_client import GroqClient
+
+    return GroqClient(model), kind, None
 
 
 # ---------------------------------------------------------------- small helpers
@@ -106,7 +124,7 @@ def coupon_code(offer_type: str, first_name: str) -> str:
 
 
 def fill_code(message: str, offer_type: str, code: str | None) -> str:
-    if offer_type in fallback.NO_COUPON_TYPES or code is None:
+    if offer_type in NO_COUPON_TYPES or code is None:
         return message.replace(" Code {CODE}.", "").replace("{CODE}", "").strip()
     if "{CODE}" in message:
         return message.replace("{CODE}", code)
@@ -119,16 +137,6 @@ def next_send_time(now: datetime, rules: list[Rule]) -> datetime:
     local = now.astimezone(IST)
     send = datetime.combine(local.date(), end, IST)
     return send if send > local else send + timedelta(days=1)
-
-
-def expiry(send_at: datetime, ctx: Context) -> datetime:
-    local = send_at.astimezone(IST)
-    expires = datetime.combine(local.date() + timedelta(days=EXPIRY_DAYS), time(23, 59), IST)
-    # before a festival, an offer that can't arrive in time shouldn't outlive the delivery cutoff
-    cutoff = ctx.delivery_cutoff
-    if cutoff and ctx.festival_phase in {"build_up", "last_minute"} and cutoff > local.date():
-        expires = min(expires, datetime.combine(cutoff, time(23, 59), IST))
-    return expires
 
 
 def with_trigger(
@@ -147,19 +155,14 @@ def with_trigger(
     return profile.model_copy(update={"open_cart": cart})
 
 
-def quiet_hours_apply(trigger: TriggerType, meta: dict) -> bool:
-    """Main's runtime.quiet_hours_apply decides; the local copy only covers the gap until GATE-2 merges it."""
-    shared = getattr(runtime, "quiet_hours_apply", None)
-    if shared is not None:
-        return shared(trigger, meta)
-    return not (meta.get("initiated_by") in {"customer", "admin"} or trigger == "lab")
-
-
 def _rule_types(rules: list[Rule]) -> dict[str, str]:
     return {r.id: r.type for r in rules}
 
 
 # ---------------------------------------------------------------- the agent step
+MAX_TOOL_STEPS = 3  # single-call design: normally 0 tools; at most one check_offer, hard cap 3 steps
+
+
 @dataclass
 class AgentResult:
     output: AgentOutput | None = None
@@ -174,7 +177,7 @@ class AgentResult:
     tokens: int = 0
 
 
-def _facts(
+def facts_for(
     profile: CustomerProfile,
     ctx: Context,
     trigger: TriggerType,
@@ -184,41 +187,82 @@ def _facts(
     expires_at: datetime,
     greeting: str | None,
 ) -> dict:
-    top = sorted(profile.category_affinity, key=lambda c: -profile.category_affinity[c])[:3]
-    cart = profile.open_cart or None
+    """Everything the agent needs, pre-computed, so a normal decision is one LLM call."""
     return {
         "trigger": trigger,
         "trigger_meta": {
             k: v for k, v in meta.items() if k in {"category", "item", "value", "minutes", "days"}
         },
-        "customer": {
-            "policy": profile.policy,
-            "persona": profile.persona,
-            "segment": profile.rfm.get("segment"),
-            "city_tier": profile.city_tier,
-            "recency_days": profile.recency_days,
-            "orders_90d": profile.orders_90d,
-            "aov": profile.aov,
-            "churn_risk": round(profile.churn_risk, 2),
-            "price_sensitivity": round(profile.price_sensitivity, 2),
-            "points_balance": profile.points_balance,
-            "tier": profile.tier,
-            "top_categories": top,
-            "open_cart": {k: cart.get(k) for k in ("category", "item", "value")} if cart else None,
-            "uplift": {k: round(v, 3) for k, v in profile.uplift.items()},
-        },
-        "context": {
-            "festival": ctx.festival,
-            "phase": ctx.festival_phase,
-            "days_to_festival": ctx.days_to_festival,
-            "hero_categories": ctx.hero_categories,
-            "greeting": greeting,  # only when the customer opted in; otherwise say "festive season" at most
-            "payday_window": ctx.is_payday_window,
-        },
+        "customer": tools.profile_summary(profile),
+        "recent_events": tools.recent_events(profile.customer_id, ctx.now),
+        "context": tools.context_summary(ctx, greeting),
         "policy": policy_summary,
-        "candidates": [c.model_dump(mode="json") for c in candidates],
+        "candidates": [tools.candidate_summary(c) for c in candidates],
         "expiry": f"{expires_at.astimezone(IST):%d %b}",
     }
+
+
+def parse_output(content: str) -> AgentOutput:
+    """Strict JSON, but tolerate a ```json fence or a sentence around the object."""
+    text = content.strip()
+    start, end = text.find("{"), text.rfind("}")
+    if start == -1 or end < start:
+        raise ValueError("no JSON object")
+    return AgentOutput.model_validate_json(text[start : end + 1])
+
+
+def _ask(llm: LLMClient, messages: list[dict], box: tools.ToolBox, result: AgentResult, attempt: int):
+    """One answer from the model, after at most MAX_TOOL_STEPS read-only tool calls. None on failure."""
+    for step in range(MAX_TOOL_STEPS + 1):
+        offered = tools.TOOL_SCHEMAS if step < MAX_TOOL_STEPS else None  # the last step must answer
+        started = timer.perf_counter()
+        try:
+            resp = llm.chat(messages, offered, AGENT_TIMEOUT_S)
+        except LLMTimeout:
+            result.failure = "the agent timed out"
+        except LLMRateLimited:
+            result.failure = "the LLM rate limit was hit (429)"
+        except LLMError as exc:
+            result.failure = f"the LLM call failed ({exc.__class__.__name__})"
+        ms = int((timer.perf_counter() - started) * 1000)
+        args = {"attempt": attempt, "step": step + 1}
+        if result.failure:
+            result.trace.append(ToolCall(name="llm", args=args, result_summary=result.failure, ms=ms))
+            return None
+        result.tokens += resp.tokens
+        if not resp.tool_calls:
+            result.trace.append(ToolCall(name="llm", args=args, result_summary="answered", ms=ms))
+            return resp
+        names = ", ".join(c["name"] for c in resp.tool_calls)
+        result.trace.append(ToolCall(name="llm", args=args, result_summary=f"asked for {names}", ms=ms))
+        messages.append(
+            {
+                "role": "assistant",
+                "content": resp.content or "",
+                "tool_calls": [
+                    {
+                        "id": c["id"],
+                        "type": "function",
+                        "function": {"name": c["name"], "arguments": c["arguments"]},
+                    }
+                    for c in resp.tool_calls
+                ],
+            }
+        )
+        for call in resp.tool_calls:
+            t0 = timer.perf_counter()
+            out = box.run(call["name"], call["arguments"])
+            result.trace.append(
+                ToolCall(
+                    name=call["name"],
+                    args={"raw": str(call["arguments"])[:200]},
+                    result_summary=out[:200],
+                    ms=int((timer.perf_counter() - t0) * 1000),
+                )
+            )
+            messages.append({"role": "tool", "tool_call_id": call["id"], "content": out})
+    result.failure = "the agent kept calling tools instead of answering"
+    return None
 
 
 def run_agent(
@@ -227,6 +271,7 @@ def run_agent(
     ctx_eval: Context,
     facts: dict,
     candidates: list[OfferCandidate],
+    box: tools.ToolBox,
     rules: list[Rule],
     catalogue: list[Offer],
     *,
@@ -239,34 +284,16 @@ def run_agent(
     ]
     by_id = {c.offer_id: c for c in candidates}
     for attempt in (1, 2):
-        started = timer.perf_counter()
-        try:
-            resp = llm.chat(messages, None, AGENT_TIMEOUT_S)
-        except LLMTimeout:
-            result.failure = "the agent timed out"
-        except LLMRateLimited:
-            result.failure = "the LLM rate limit was hit (429)"
-        except LLMError as exc:
-            result.failure = f"the LLM call failed ({exc.__class__.__name__})"
-        ms = int((timer.perf_counter() - started) * 1000)
-        if result.failure:
-            result.trace.append(
-                ToolCall(name="llm", args={"attempt": attempt}, result_summary=result.failure, ms=ms)
-            )
+        resp = _ask(llm, messages, box, result, attempt)
+        if resp is None:
             return result
-        result.tokens += resp.tokens
         try:
-            out = AgentOutput.model_validate_json(resp.content)
-        except ValidationError:
-            result.trace.append(
-                ToolCall(name="llm", args={"attempt": attempt}, result_summary="invalid JSON", ms=ms)
-            )
+            out = parse_output(resp.content)
+        except (ValueError, ValidationError):
+            result.trace.append(ToolCall(name="parse", args={}, result_summary="invalid JSON", ms=0))
             result.failure = "the agent returned invalid JSON"
             return result
         result.output = out
-        summary = f"{out.decision} {out.offer_id or ''} {json.dumps(out.params)}".strip()
-        result.trace.append(ToolCall(name="llm", args={"attempt": attempt}, result_summary=summary, ms=ms))
-
         if out.decision == "NO_OFFER":
             result.decided_by = "AGENT" if attempt == 1 else "AGENT_RETRY"
             return result
@@ -276,6 +303,10 @@ def run_agent(
         message = fill_code(out.message, otype, code)
         res = evaluate(profile, ctx_eval, out.offer_id, out.params, message, rules=rules, catalogue=catalogue)
         result.validation = res
+        summary = f"{out.offer_id} {json.dumps(out.params)}: {'ok' if res.ok else 'rejected'}"
+        result.trace.append(
+            ToolCall(name="validate", args={"attempt": attempt}, result_summary=summary, ms=0)
+        )
         if res.ok and cand is not None:
             result.offer, result.params, result.message, result.code = cand, out.params, message, code
             result.decided_by = "AGENT" if attempt == 1 else "AGENT_RETRY"
@@ -302,6 +333,7 @@ def decide(
     dry_run: bool = False,
     now: datetime | None = None,
     llm: LLMClient | None = None,
+    use_agent: bool = True,
 ) -> Decision:
     started = timer.perf_counter()
     now = now or clock()
@@ -312,7 +344,9 @@ def decide(
     ctx = get_context(now, rules=all_rules)
     # quiet hours guard proactive sends only; a reply to something the customer just did goes out now
     rules = (
-        all_rules if quiet_hours_apply(trigger, meta) else [r for r in all_rules if r.type != "quiet_hours"]
+        all_rules
+        if runtime.quiet_hours_apply(trigger, meta)
+        else [r for r in all_rules if r.type != "quiet_hours"]
     )
     flags = customer_flags(customer_id)
     policy = effective_policy(profile, ctx, rules=rules)
@@ -382,32 +416,30 @@ def decide(
             validation=gate,
         )
 
-    expires_at = expiry(send_at, ctx_eval)
+    expires_at = offer_expiry(send_at, ctx_eval)
+    welcome_guaranteed = trigger == "welcome" and is_first_decision(customer_id)
     opted = ctx.festival and festival_key(ctx.festival) in flags.opt_in_festivals
     greeting = ctx.greeting if opted else None
+    ctx_eval = ctx_eval.model_copy(update={"greeting": greeting})  # the validator allows only this greeting
 
     def sent_fields(
         cand: OfferCandidate, params: dict, headline: str, message: str, code: str | None
     ) -> dict:
-        cost, profit = ports.impact_estimate(
-            profile, cand.type, params, params.get("category", cand.category)
-        )
+        cost, profit = estimate_offer(profile, cand.type, params, params.get("category", cand.category))
         if flags.is_holdout:
             status, channel, code = "HELD_OUT", "none", None
         elif dry_run:
             status, channel, code = "DRY_RUN", "none", None
         else:
             status = "QUEUED" if queued else "SENT"
-            channel = (
-                "lab_group" if flags.is_lab_bot else ("dm" if flags.telegram_chat_id else "shadow_channel")
-            )
+            channel = "lab_group" if flags.is_lab_bot else ("dm" if flags.telegram_chat_id else "none")
         return dict(
             status=status,
             channel=channel,
             final_offer_id=cand.offer_id,
             final_params=params,
-            coupon_code=code if cand.type not in fallback.NO_COUPON_TYPES else None,
-            expires_at=expires_at if cand.type not in fallback.NO_COUPON_TYPES else None,
+            coupon_code=code if cand.type not in NO_COUPON_TYPES else None,
+            expires_at=expires_at if cand.type not in NO_COUPON_TYPES else None,
             headline=headline,
             message=message,
             cost=cost,
@@ -416,6 +448,10 @@ def decide(
 
     def use_fallback(reason: str, extra: dict) -> Decision:
         choice = fallback.choose(candidates)
+        if choice is None and welcome_guaranteed:
+            choice = fallback.welcome_perk(candidates)
+            if choice is not None:
+                reason = f"{reason}; {WELCOME_GUARANTEE}"
         decided_by = "HOLDOUT" if flags.is_holdout else "RULES_FALLBACK"
         if choice is None:
             status = "HELD_OUT" if flags.is_holdout else "NO_OFFER"
@@ -454,18 +490,22 @@ def decide(
     if flags.is_holdout:
         return use_fallback("holdout group (control): logged, not sent", {})
 
-    # 4. agent → evaluate → retry once → fallback
-    llm = llm if llm is not None else default_llm()
-    if llm is None or settings.force_llm_fail:
-        why = (
-            "the LLM is forced off (FORCE_LLM_FAIL)"
-            if settings.force_llm_fail
-            else "no LLM is configured yet"
-        )
-        return use_fallback(why, {})
-    facts = _facts(profile, ctx_eval, trigger, meta, policy.summary, candidates, expires_at, greeting)
-    agent = run_agent(llm, profile, ctx_eval, facts, candidates, rules, catalogue, dry_run=dry_run)
+    # 4. agent → evaluate → retry once → fallback (the budget guard may hand it to the rules up front)
+    kind: budget.Kind | None = "agent"
+    if not use_agent:
+        return use_fallback("batch rule: only the top 5 by expected profit go to the agent", {})
+    if llm is None:
+        llm, kind, why = pick_llm(now)
+        if llm is None:
+            return use_fallback(why, {})
+    facts = facts_for(profile, ctx_eval, trigger, meta, policy.summary, candidates, expires_at, greeting)
+    box = tools.ToolBox(profile, ctx_eval, policy, candidates, rules, catalogue, greeting)
+    agent = run_agent(llm, profile, ctx_eval, facts, candidates, box, rules, catalogue, dry_run=dry_run)
+    if kind is not None:
+        budget.record(kind, agent.tokens, now)
     extra = {"agent_trace": agent.trace, "agent_output": agent.output, "llm_tokens": agent.tokens}
+    if agent.decided_by and agent.offer is None and welcome_guaranteed:
+        return use_fallback(f"the agent chose no offer; {WELCOME_GUARANTEE}", extra)
     if agent.decided_by and agent.offer is None:
         return finish(
             decided_by=agent.decided_by,
@@ -483,3 +523,30 @@ def decide(
             **sent_fields(agent.offer, agent.params, out.headline, agent.message, agent.code),
         )
     return use_fallback(agent.failure or "the agent gave no usable answer", extra)
+
+
+def decide_batch(
+    items: list[tuple[str, TriggerType, dict]],
+    *,
+    dry_run: bool = False,
+    now: datetime | None = None,
+    agent_top_n: int = 5,
+) -> list[Decision]:
+    """Campaign dry-runs and Lab rounds (detective T26): the agent only for the top N customers by expected
+    incremental profit; the rules fallback scores everyone else, so a batch can't drain the LLM budget."""
+    now = now or clock()
+    rules, catalogue = load_rules(), load_offers()
+    ctx = get_context(now, rules=rules)
+
+    def best_profit(item: tuple[str, TriggerType, dict]) -> int:
+        cid, trigger, meta = item
+        profile = with_trigger(ports.build_profile(cid, now), trigger, dict(meta), now)
+        cands, _ = screen_offers(profile, ctx, catalogue, rules=rules)
+        return max((c.est_incremental_profit for c in cands), default=-(10**9))
+
+    ranked = sorted(range(len(items)), key=lambda i: -best_profit(items[i]))
+    to_agent = set(ranked[:agent_top_n])
+    return [
+        decide(cid, trigger, meta, dry_run=dry_run, now=now, use_agent=i in to_agent)
+        for i, (cid, trigger, meta) in enumerate(items)
+    ]

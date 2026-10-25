@@ -152,12 +152,12 @@ def assert_inside_hard_limits(p: CustomerProfile, ctx: Context, offer_id, params
         assert ctx.now - p.last_offer_at >= timedelta(hours=gap), "approved inside the minimum gap"
     assert p.active_coupon is None, "approved a second active coupon"
     assert p.policy != "sleeping_dog" and p.customer_id != "C004242", "approved a blocked customer"
-    assert ctx.budget_left_today > 0
     assert p.recency_days * 24 >= 48, "approved within 48 h of a purchase"
     if message is not None:
         assert len(message) <= 280
         assert not any(w in message.lower() for w in BANNED_WORDS[:5])
     if offer_id is None:
+        assert ctx.budget_left_today > 0, "pre-gate passed with no budget left"
         return
 
     offer = OFFERS[offer_id]
@@ -199,6 +199,8 @@ def assert_inside_hard_limits(p: CustomerProfile, ctx: Context, offer_id, params
     if ctx.festival and ctx.festival_phase == "teaser":
         assert offer.type in {"cart_nudge", "early_access", "points_reminder", "bonus_points"}
     cost, _ = ports.impact_estimate(p, offer.type, params, cat)
+    if offer.type in {"cart_nudge", "early_access", "points_reminder"}:
+        cost = 0  # a free perk gives no money away
     assert cost <= ctx.budget_left_today
     if ctx.festival and ctx.budget_left_festival is not None:
         assert cost <= ctx.budget_left_festival
