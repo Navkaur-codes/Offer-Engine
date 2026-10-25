@@ -706,6 +706,11 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - `python -m pytest tests/data -q` → 90 passed · `ruff check .` clean.
 - **Commits:** _pending the user's commit_
 
+### 2026-10-26 · Session C · GATE-4 live fixes
+- **Did:** Lab rounds no longer reply-link across bots in basic groups (per-bot message ids pointed at old service messages); reply links stay in supergroups. Meera (C900008) gets A's long-standing full-price history, so the real scoring makes her `sleeping_dog` (max uplift −0.066) → NO_OFFER; Neon's Meera rebuilds at the first `/lab run` after deploy. Finding 2 (second "Blocked" message) dropped: the user had tapped "❓ Why?".
+- **Commits:** `d43ac8d` fix(lab): no cross-bot reply links in basic groups; sleeping-dog history for Meera
+- **Tests:** `python -m pytest -q` (backend, merged with main 2eb3161) → 331 passed · ruff clean
+
 ### 2026-10-26 · B · GATE-4 polish: plain-English digest suggestion, real budget delta in the rule preview
 - **Digest (Main's live finding):** a live digest said "approve review of NO_CANDIDATES block, which stopped 6 of 6 decisions".
   - Blocks now have plain labels ("no allowed offer", "the kill switch", "the frequency cap", …), and the suggestion counts against all of the day's decisions, e.g. "Suggestion: 6 of 8 decisions found no allowed offer; review the persona caps on the Rules page."

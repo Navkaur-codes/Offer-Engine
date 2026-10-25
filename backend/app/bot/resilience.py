@@ -41,9 +41,34 @@ async def send(
 ) -> Message | None:
     """send_message with retries. A 403 on a customer's chat (they blocked the bot) marks them unreachable
     and returns None instead of raising; in group chats (`customer_chat=False`) it raises."""
+    return await _retrying(lambda: bot.send_message(chat_id, text, **kwargs), chat_id, customer_chat, sleep)
+
+
+async def send_photo(
+    bot: Bot,
+    chat_id: int,
+    photo: bytes,
+    caption: str,
+    *,
+    customer_chat: bool = True,
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    **kwargs,
+) -> Message | None:
+    """send_photo with the same retry and 403 handling as `send`."""
+    return await _retrying(
+        lambda: bot.send_photo(chat_id, photo=photo, caption=caption, **kwargs), chat_id, customer_chat, sleep
+    )
+
+
+async def _retrying(
+    call: Callable[[], Awaitable[Message]],
+    chat_id: int,
+    customer_chat: bool,
+    sleep: Callable[[float], Awaitable[None]],
+) -> Message | None:
     for attempt in range(MAX_TRIES):
         try:
-            return await bot.send_message(chat_id, text, **kwargs)
+            return await call()
         except Forbidden:
             if not customer_chat:
                 raise

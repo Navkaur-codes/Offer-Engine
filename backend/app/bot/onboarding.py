@@ -36,8 +36,8 @@ FESTIVALS = {
 }
 
 CONSENT_TEXT = (
-    "👋 Hi {name}! I'm <b>Offer Engine</b>. I pick the one offer that actually helps you, "
-    "and stay quiet when you don't need one.\n\n"
+    "👋 Hi {name}! I'm <b>Holdout</b>: offers only where they change the outcome. I pick the one offer "
+    "that actually helps you, and stay quiet when you don't need one.\n\n"
     "<b>Heads up:</b> this is a student demo. Every offer and code is synthetic; nothing can be bought "
     "and no real shopping data is used.\n\n"
     "You can /pause or /stop at any time."

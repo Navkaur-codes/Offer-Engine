@@ -34,7 +34,7 @@ async def _say(update: Update, text: str) -> None:
 def admin_only(handler):
     async def guarded(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if update.effective_user is None or update.effective_user.id not in settings.admin_ids:
-            await _say(update, "That command is for Offer Engine admins.")
+            await _say(update, "That command is for Holdout admins.")
             return
         await handler(update, context)
 
