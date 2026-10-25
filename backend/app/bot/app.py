@@ -12,10 +12,11 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    TypeHandler,
     filters,
 )
 
-from app.bot import admin, commands, onboarding, simulate
+from app.bot import admin, commands, onboarding, resilience, simulate
 from app.config import settings
 from app.lab import commands as lab_commands
 
@@ -55,6 +56,7 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def register_handlers(application: Application) -> None:
+    application.add_handler(TypeHandler(Update, resilience.drop_duplicates), group=-1)
     private = filters.ChatType.PRIVATE
     application.add_handler(CommandHandler("start", onboarding.start, filters=private))
     application.add_handler(CallbackQueryHandler(onboarding.on_button, pattern=r"^ob:"))

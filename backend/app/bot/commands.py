@@ -10,7 +10,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from app import ports
-from app.bot import sender, store
+from app.bot import resilience, sender, store
 from app.bot.onboarding import FESTIVALS
 from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why
 from app.config import IST, now
@@ -211,7 +211,8 @@ async def _remind(context: ContextTypes.DEFAULT_TYPE) -> None:
     decision: Decision = context.job.data
     till = f" It's valid till {decision.expires_at:%d %b}." if decision.expires_at else ""
     code = escape(decision.coupon_code or "")
-    await context.bot.send_message(
+    await resilience.send(
+        context.bot,
         context.job.chat_id,
         f"⏰ Reminder: {escape(offer_value(decision))}, code <code>{code}</code>.{till}",
         parse_mode=ParseMode.HTML,

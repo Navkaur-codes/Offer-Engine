@@ -43,10 +43,25 @@ def save_customer(customer: Customer, answers: dict) -> CustomerRow:
         row.opt_in_festivals = list(customer.opt_in_festivals)
         row.opted_out = False
         row.paused_until = None
-        row.attrs = {**(row.attrs or {}), "onboarding": answers}
+        attrs = {k: v for k, v in (row.attrs or {}).items() if k != "unreachable_since"}  # /start = reachable
+        row.attrs = {**attrs, "onboarding": answers}
         s.add(row)
         s.commit()
         return row
+
+
+def mark_unreachable(chat_id: int) -> None:
+    """They blocked the bot (Telegram 403). Proactive sends skip them until they /start again."""
+    with _session() as s:
+        for row in s.exec(select(CustomerRow).where(CustomerRow.telegram_chat_id == chat_id)).all():
+            row.attrs = {**(row.attrs or {}), "unreachable_since": config.now().isoformat()}
+            s.add(row)
+        s.commit()
+
+
+def is_unreachable(customer_id: str) -> bool:
+    row = get_customer(customer_id)
+    return bool(row and (row.attrs or {}).get("unreachable_since"))
 
 
 def set_opted_out(customer_id: str, opted_out: bool) -> bool:

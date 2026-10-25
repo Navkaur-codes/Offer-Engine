@@ -16,7 +16,7 @@ from telegram import Bot, Message
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
 
-from app.bot import store
+from app.bot import resilience, store
 from app.bot.render import render_decision
 from app.config import settings
 from app.contracts import Channel, Decision
@@ -51,16 +51,15 @@ def all_for(customer_id: str) -> list[Decision]:
     return [d for d in reversed(_RECENT.values()) if d.customer_id == customer_id]
 
 
-async def send_decision(bot: Bot, chat_id: int, decision: Decision) -> Message:
+async def send_decision(bot: Bot, chat_id: int, decision: Decision) -> Message | None:
+    """None if the customer has blocked the bot (they're then marked unreachable)."""
     card = render_decision(decision)
-    message = await bot.send_message(
-        chat_id,
-        card.text,
-        parse_mode=ParseMode.HTML,
-        reply_markup=card.keyboard,
+    message = await resilience.send(
+        bot, chat_id, card.text, parse_mode=ParseMode.HTML, reply_markup=card.keyboard
     )
     remember(decision)
-    await asyncio.to_thread(store.set_message_id, decision.id, message.message_id)
+    if message is not None:
+        await asyncio.to_thread(store.set_message_id, decision.id, message.message_id)
     return message
 
 
@@ -86,6 +85,9 @@ def deliver(decision: Decision, channel: Channel) -> None:
     chat_id = _chat_id(decision)
     if chat_id is None or not settings.telegram_bot_token:
         log.info("deliver %s: no chat or no bot token, skipped", decision.id)
+        return
+    if store.is_unreachable(decision.customer_id):
+        log.info("deliver %s: customer blocked the bot, skipped", decision.id)
         return
     try:
         loop = asyncio.get_running_loop()

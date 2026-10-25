@@ -16,7 +16,7 @@ from telegram import Bot, Message, ReplyParameters
 from telegram.constants import ParseMode
 
 from app import ports, runtime
-from app.bot import commands, sender, store
+from app.bot import commands, resilience, sender, store
 from app.bot.render import FOOTER, escape, inr, render_decision, render_why
 from app.config import now, settings
 from app.contracts import Decision
@@ -128,13 +128,13 @@ def next_customers(n: int) -> list[tuple[LabCustomer, int]]:
 
 
 # ---------------------------------------------------------------- rounds
+async def _post(bot: Bot, chat_id: int, text: str, **kwargs) -> Message:
+    return await resilience.send(bot, chat_id, text, customer_chat=False, parse_mode=ParseMode.HTML, **kwargs)
+
+
 async def _reply(bot: Bot, chat_id: int, text: str, to: Message) -> Message:
-    return await bot.send_message(
-        chat_id,
-        text,
-        parse_mode=ParseMode.HTML,
-        reply_parameters=ReplyParameters(message_id=to.message_id, allow_sending_without_reply=True),
-    )
+    replying = ReplyParameters(message_id=to.message_id, allow_sending_without_reply=True)
+    return await _post(bot, chat_id, text, reply_parameters=replying)
 
 
 async def play_round(
@@ -149,7 +149,7 @@ async def play_round(
     """One round. `prepared` = (activity already written, decision already made) for batched runs."""
     act = prepared[0] if prepared else await asyncio.to_thread(scripts.activity, customer, now(), turn)
     header = f"👤 <b>{escape(customer.name)}</b> · {escape(customer.label)}"
-    post = await voice.send_message(chat_id, f"{header}\n{act.line}", parse_mode=ParseMode.HTML)
+    post = await _post(voice, chat_id, f"{header}\n{act.line}")
     if act.events and not prepared:
         await asyncio.to_thread(store.add_events, customer.id, act.events)
     await pause()
