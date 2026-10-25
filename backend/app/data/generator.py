@@ -136,6 +136,7 @@ CHANNELS = (
 )
 POINTS_EXPIRY_DAYS = 180
 CHURNED_ACTIVITY = 0.03
+VISIT_SPREAD_SIGMA = 0.85
 
 
 @dataclass(frozen=True)
@@ -335,7 +336,8 @@ def _customers(n: int, rng: np.random.Generator, fake: Faker, T: int, factors: d
     ]
 
     heavy_returner = (personas == "high_returner") | (rng.random(n) < 0.01)
-    visit_mult = rng.lognormal(-0.5 * 0.85**2, 0.85, n)
+    # per-customer activity spread (mean 1); σ sets how concentrated revenue is (the Pareto benchmark)
+    visit_mult = rng.lognormal(-0.5 * VISIT_SPREAD_SIGMA**2, VISIT_SPREAD_SIGMA, n)
 
     affinity = np.zeros((n, len(CATS)))
     for i, p in enumerate(PERSONA_NAMES):

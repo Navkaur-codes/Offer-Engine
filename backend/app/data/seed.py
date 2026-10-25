@@ -1,7 +1,8 @@
 """Seed the DB with the synthetic world: `python -m app.data.seed --customers 5000 --seed 42`.
 
 Re-runnable: it replaces only synthetic data (customer ids starting with "C") and leaves real Telegram
-users ("TG…"), decisions and rules alone. Customers the Customer Lab bots point at are updated in place.
+users ("TG…"), decisions and rules alone. Lab customers (`is_lab_bot` or listed in `customer_bots`) are
+skipped entirely, together with their events, orders, points and campaign rows.
 """
 
 from __future__ import annotations
@@ -54,8 +55,8 @@ def run(
 
     SQLModel.metadata.create_all(engine)
     with Session(engine) as s:
-        _clear(s)
-        _write(s, data)
+        lab = _clear(s)
+        _write(s, data, lab)
         s.commit()
     log.info(
         "seeded %d customers, %d events, %d orders (generate %.1fs, write %.1fs)",
@@ -67,13 +68,21 @@ def run(
     )
 
 
-def _clear(s: Session) -> None:
+def lab_customer_ids(s: Session) -> set[str]:
+    """Customers the Customer Lab plays (CR-C1): never touched by a re-seed, nor is their history."""
+    bots = set(s.scalars(select(CustomerBotRow.customer_id)))
+    flagged = set(s.scalars(select(CustomerRow.id).where(CustomerRow.is_lab_bot)))
+    return bots | flagged
+
+
+def _clear(s: Session) -> set[str]:
+    lab = lab_customer_ids(s)
     for table in (EventRow, OrderRow, PointsLedgerRow, CampaignHistoryRow):
-        s.execute(delete(table).where(table.customer_id.like(SYNTHETIC)))
-    kept = set(s.scalars(select(CustomerBotRow.customer_id)))
-    s.execute(delete(CustomerRow).where(CustomerRow.id.like(SYNTHETIC), CustomerRow.id.not_in(kept)))
+        s.execute(delete(table).where(table.customer_id.like(SYNTHETIC), table.customer_id.not_in(lab)))
+    s.execute(delete(CustomerRow).where(CustomerRow.id.like(SYNTHETIC), CustomerRow.id.not_in(lab)))
     s.execute(delete(ProductRow))
     s.execute(delete(FestivalRow))
+    return lab
 
 
 def _bulk(s: Session, model: type[SQLModel], rows: Iterable[dict]) -> None:
@@ -91,7 +100,25 @@ def _none(v):
     return None if v is None or (isinstance(v, float) and pd.isna(v)) else v
 
 
-def _write(s: Session, d: SimData) -> None:
+def _write(s: Session, d: SimData, lab: set[str]) -> None:
+    # points rows point at customers by position; pin the id before anything is filtered
+    points = d.points.assign(customer_id=d.customers["id"].to_numpy()[d.points["c"].to_numpy()])
+    if lab:  # a generated id that a Lab customer already owns is skipped with all its rows
+
+        def keep(df: pd.DataFrame, col: str = "customer_id") -> pd.DataFrame:
+            return df[~df[col].isin(lab)] if len(df) else df
+
+        d = SimData(
+            customers=keep(d.customers, "id"),
+            products=d.products,
+            events=keep(d.events),
+            orders=keep(d.orders),
+            points=d.points,
+            campaigns=keep(d.campaigns),
+            start=d.start,
+            end=d.end,
+        )
+        points = keep(points)
     _bulk(s, ProductRow, d.products.to_dict("records"))
     _bulk(
         s,
@@ -99,7 +126,6 @@ def _write(s: Session, d: SimData) -> None:
         ({"id": f.id, "date": f.date, "payload": f.model_dump(mode="json")} for f in FESTIVALS),
     )
 
-    existing = set(s.scalars(select(CustomerRow.id).where(CustomerRow.id.like(SYNTHETIC))))
     new_rows = []
     for r in d.customers.itertuples(index=False):
         row = dict(
@@ -130,10 +156,7 @@ def _write(s: Session, d: SimData) -> None:
                 "heavy_returner": bool(r.heavy_returner),
             },
         )
-        if r.id in existing:  # a Lab bot plays this customer: keep the row, refresh its content
-            s.merge(CustomerRow(**{k: v for k, v in row.items() if k != "is_lab_bot"}))
-        else:
-            new_rows.append(row)
+        new_rows.append(row)
     _bulk(s, CustomerRow, new_rows)
 
     o = d.orders
@@ -200,21 +223,20 @@ def _write(s: Session, d: SimData) -> None:
         ),
     )
 
-    ids = d.customers["id"].to_numpy()
-    p = d.points
+    p = points
     _bulk(
         s,
         PointsLedgerRow,
         (
             dict(
-                customer_id=ids[c],
+                customer_id=cid,
                 ts=pd.Timestamp(ts).to_pydatetime(),
                 delta=int(dl),
                 reason=rs,
                 expires_on=ex,
             )
-            for c, ts, dl, rs, ex in zip(
-                p["c"], p["ts"], p["delta"], p["reason"], p["expires_on"], strict=True
+            for cid, ts, dl, rs, ex in zip(
+                p["customer_id"], p["ts"], p["delta"], p["reason"], p["expires_on"], strict=True
             )
         ),
     )

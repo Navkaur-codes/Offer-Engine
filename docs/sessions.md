@@ -6,7 +6,7 @@
 | Session | Branch / worktree | Context file | Current phase | Status | Contract ver. | Blockers | Last update |
 |---|---|---|---|---|---|---|---|
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-3 passed → Phase 4 (README, demo script, final deploys) | ☑ GATE-1 ☑ MAIN-API ☑ GATE-2 ☑ GATE-3 | v1.1 (+ CCR-B1, CR-C1) | none | 25 Oct |
-| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 3 done (A3) → Phase 4 next | ☑ P3 `dad6a5a` + realism/experiments (P2 `1646fe0`, P1 `8b2e903`) | v1.1 | Main: reseed Neon after merging A3 | 25 Oct |
+| A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 4 done (A4) | ☑ P4 `142bdad` + hardening/data dictionary (P3 `dad6a5a` `7cffbcd`, P2 `1646fe0`, P1 `8b2e903`) | v1.1 | none | 26 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 3 B3 done (Groq agent, budget guard, validators) → Phase 4 next | ☑ P3 `36e0313` `4d46263` | v1.1 | Groq model ids must be switched to gpt-oss in Render | 25 Oct |
 | C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 3 done (Customer Lab live in the group: 10 customers, 4 bots, /lab commands); /simulate verified on the real harness → Phase 4 next | ☑ P3 `fe3e883` (P2 `9cfaf33`, `21e43d9`; P1 `1e5e102`) | v1.1 | CR-C1 open; prod needs `ADMIN_TELEGRAM_IDS` + `CUSTOMER_BOT_TOKENS` on Render | 25 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 3 done (live API by default with v1.1, Rules editor, Customers, Automations tile; Vercel-ready) → Phase 4 next; Lighthouse not yet measured; bundle ~1 MB, code-split in P4 | ☑ P3 `82ada66`, `f0fa291`, `59015a5` (P2 `a9aa536`, `181eb92`, `fc08f23`; P1 `e5d9116`) | v1.1 | none (CR-D1, CR-D2 accepted in v1.1) | 25 Oct |
@@ -112,6 +112,8 @@ Format: `date · from → to · note`
 - 25 Oct · B → Main · New B functions that need ports (contract change request CCR-B1 in §6): `app.agent.budget.status() -> dict` for `/health` and the dashboard's LLM budget meter, and `app.agent.harness.decide_batch(items: list[(customer_id, trigger, meta)], *, dry_run, now, agent_top_n=5) -> list[Decision]` for campaign dry-runs and `/lab run` > 5 rounds (top-5 rule, T26).
 - 25 Oct · B → D · `budget.status()` returns `{"agent": {"used", "limit", "model"}, "fast": {...}, "mode": "70b"|"8b"|"rules"}`. The mode is still called "70b"/"8b" even on gpt-oss.
 - 25 Oct · B → C · Agent messages are now validated for facts: a festival greeting only appears for opted-in customers, every number matches the offer, and the expiry date is real. `evaluate()` without a catalogue now uses the default 10 offers when the `offers` table is empty.
+- 26 Oct · A → Main, C · Re-seeding is now Lab-safe (CR-C1, `142bdad`). `app.data.seed` skips every customer with `is_lab_bot=True` or a `customer_bots` row, together with their events, orders, points and campaign history. A generated id a Lab bot has claimed is skipped, not overwritten. `seed.lab_customer_ids(session)` returns that set.
+- 26 Oct · A → all · `docs/data-dictionary.md` describes every table and column we write, the generation logic, the benchmarks with sources, and the models. The README can link it for judges. `build_profile` is hardened for time travel before signup (no negative ages) and for brand-new users with no rows.
 
 ## 8. Manual setup the user must do (not code)
 - [ ] BotFather:

@@ -62,23 +62,28 @@ TRAIN_FAMILY = {
 MODELLED_FAMILIES = ("discount", "points")
 
 
+def _log(v: float) -> float:
+    # profiles also arrive from fixtures and the Playground, so never trust them to be non-negative
+    return math.log1p(max(v or 0, 0))
+
+
 def features(p: CustomerProfile) -> list[float]:
     r = p.rfm
     return [
-        math.log1p(p.recency_days),
+        _log(p.recency_days),
         float(p.orders_90d),
-        math.log1p(r.get("orders_total", 0)),
-        math.log1p(p.aov),
-        math.log1p(max(p.ltv, 0)),
+        _log(r.get("orders_total", 0)),
+        _log(p.aov),
+        _log(p.ltv),
         p.churn_risk,
         p.discount_usage_rate,
         p.return_rate,
         p.price_sensitivity,
-        math.log1p(r.get("tenure_days", 0)),
-        math.log1p(r.get("days_since_active", 0)),
-        math.log1p(r.get("views_90d", 0)),
+        _log(r.get("tenure_days", 0)),
+        _log(r.get("days_since_active", 0)),
+        _log(r.get("views_90d", 0)),
         float(p.city_tier),
-        math.log1p(r.get("offers_received", 0)),
+        _log(r.get("offers_received", 0)),
         r.get("offers_declined", 0) / max(r.get("offers_received", 0), 1),
     ]
 

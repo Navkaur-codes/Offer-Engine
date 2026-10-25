@@ -12,6 +12,7 @@ from app.data.seed import run
 from app.db import make_engine
 from app.models import (
     CampaignHistoryRow,
+    CustomerBotRow,
     CustomerRow,
     EventRow,
     FestivalRow,
@@ -103,3 +104,79 @@ def test_personas_and_catalogue():
     assert len(CATEGORIES) == 10 and 100 <= len(PRODUCTS) <= 140
     assert CATEGORIES["electronics"].margin < CATEGORIES["grocery"].margin < CATEGORIES["fashion"].margin
     assert len({p.id for p in PRODUCTS}) == len(PRODUCTS)
+
+
+def _history_counts(s: Session, cid: str) -> tuple[int, int, int, int]:
+    return tuple(
+        s.exec(select(func.count()).select_from(m).where(m.customer_id == cid)).one()
+        for m in (EventRow, OrderRow, PointsLedgerRow, CampaignHistoryRow)
+    )
+
+
+def test_reseed_never_touches_lab_customers(tmp_path):
+    """CR-C1: Lab customers (is_lab_bot, or listed in customer_bots) keep their row and all their history."""
+    from datetime import datetime, timedelta
+
+    from app.config import IST
+
+    engine = make_engine(f"sqlite:///{tmp_path / 'lab.db'}")
+    run(200, 1, end=DEFAULT_END, engine=engine)
+    ts = datetime(2026, 10, 20, 18, 0, tzinfo=IST)
+    with Session(engine) as s:
+        s.add(
+            CustomerRow(
+                id="C900001",
+                first_name="Lab Asha",
+                city="Ludhiana",
+                city_tier=2,
+                signup_date=date(2026, 6, 1),
+                channel="lab",
+                device="mobile",
+                preferred_payment="upi",
+                persona="deal_hunter",
+                response_type="persuadable",
+                is_lab_bot=True,
+            )
+        )
+        s.flush()
+        s.add(
+            EventRow(
+                id="EC900001-L00001",
+                customer_id="C900001",
+                type="purchase",
+                ts=ts,
+                category="fashion",
+                item="Cotton Kurta",
+                value=1450,
+            )
+        )
+        s.add(OrderRow(id="OC900001-L0001", customer_id="C900001", ts=ts, category="fashion", value=1450))
+        s.add(
+            PointsLedgerRow(
+                customer_id="C900001",
+                ts=ts,
+                delta=14,
+                reason="lab:earn:OC900001-L0001",
+                expires_on=(ts + timedelta(days=180)).date(),
+            )
+        )
+        s.add(
+            CampaignHistoryRow(
+                campaign_id="lab_test", customer_id="C900001", sent_at=ts, offer_type="pct_off"
+            )
+        )
+        # an id the generator also produces, claimed by a Lab bot: the seed must not overwrite it
+        s.get(CustomerRow, "C000005").first_name = "Lab Bir"
+        s.add(CustomerBotRow(customer_id="C000005", username="lab_shopper_1_bot", persona="deal_hunter"))
+        s.commit()
+        before = {cid: _history_counts(s, cid) for cid in ("C900001", "C000005")}
+
+    run(200, 1, end=DEFAULT_END, engine=engine)
+    with Session(engine) as s:
+        lab = s.get(CustomerRow, "C900001")
+        assert lab is not None and lab.is_lab_bot and lab.first_name == "Lab Asha"
+        assert s.get(CustomerRow, "C000005").first_name == "Lab Bir"
+        for cid, counts in before.items():
+            assert _history_counts(s, cid) == counts, cid
+        assert _history_counts(s, "C900001") == (1, 1, 1, 1)
+        assert _count(s, CustomerRow) == 201  # 199 generated + the 2 Lab customers

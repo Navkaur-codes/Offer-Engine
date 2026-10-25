@@ -223,8 +223,9 @@ def _assemble(
 
     orders_total = len(purchase_ts)
     day = 86400
-    recency_days = (
-        int((now_ts - last_purchase_ts) // day) if orders_total else int((now_ts - signup_ts) // day)
+    # clamped at 0: time-travel to before the signup date must not produce negative ages
+    recency_days = max(
+        int((now_ts - last_purchase_ts) // day) if orders_total else int((now_ts - signup_ts) // day), 0
     )
     orders_90d = sum(now_ts - t <= 90 * day for t in purchase_ts)
     orders_365 = [(t, v) for t, v in zip(purchase_ts, purchase_val, strict=True) if now_ts - t <= 365 * day]
@@ -233,7 +234,7 @@ def _assemble(
     return_rate = round(returns / orders_total, 3) if orders_total else 0.0
     discount_usage = round(sum(d > 0 for d in discounts) / len(discounts), 3) if discounts else 0.0
     tenure_days = max(int((now_ts - signup_ts) // day), 0)
-    days_since_active = int((now_ts - last_active) // day)
+    days_since_active = max(int((now_ts - last_active) // day), 0)
 
     x = churn.features(purchase_ts, purchase_val, session_ts, returns, signup_ts, now_ts)
     churn_risk = (
