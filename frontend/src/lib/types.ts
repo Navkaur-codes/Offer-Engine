@@ -334,7 +334,16 @@ export interface SchedulerStatus {
 }
 export interface CampaignDryRun {
   rows: DecisionLight[]
-  totals: Json
+  /** Contract says `{...}`; these are the keys the API sends (over_budget is Main's extra). */
+  totals: {
+    customers: number
+    would_send: number
+    no_offer: number
+    blocked: number
+    over_budget?: number
+    cost: number
+    expected_incremental_profit: number
+  }
 }
 export interface Digest {
   day: IsoDate

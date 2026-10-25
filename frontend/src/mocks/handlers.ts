@@ -154,8 +154,16 @@ on('GET', '/api/digest', (): Digest => ({
   generated_by: 'mock',
 }))
 on('POST', '/api/campaigns/dry-run', (): CampaignDryRun => {
-  const rows = DECISIONS.filter((d) => d.status === 'SENT').slice(0, 20)
-  return { rows, totals: { customers: rows.length, cost: rows.reduce((s, d) => s + d.cost, 0) } }
+  const rows = DECISIONS.slice(0, 30)
+  const sent = rows.filter((d) => d.final_offer_id)
+  return {
+    rows,
+    totals: {
+      customers: rows.length, would_send: sent.length, no_offer: rows.filter((d) => d.status === 'NO_OFFER').length,
+      blocked: rows.filter((d) => d.status === 'BLOCKED').length, over_budget: 0,
+      cost: sent.reduce((s, d) => s + d.cost, 0), expected_incremental_profit: sent.reduce((s, d) => s + d.expected_incremental_profit, 0),
+    },
+  }
 })
 
 export async function mockFetch(method: string, path: string, body?: unknown): Promise<unknown> {
