@@ -20,7 +20,7 @@
 | Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☐ |
 | A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☐ |
 | B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☐ |
-| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☐ |
+| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☑ `2182b0e` |
 | D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☐ |
 
 ## claude-progressive.md history
@@ -571,3 +571,20 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Customer Lab ran in the group: 6 rounds, the agent sent 1 and chose "no offer" for 3 (Rohan cart abandoner, Simran new user, Priya deal hunter). **Too conservative for a demo → Phase 4 priority for B.**
   - Dashboard on Vercel: https://offer-engine-nu.vercel.app, CORS set, live stream and KPIs show real decisions, no console errors.
 - **Next:** Phase 4 (v1.0). Freeze Mon 26 Oct 18:00; submit by Tue 10:00.
+
+### 2026-10-25 · Session C · Phase 4: admin commands, resilience, copy polish
+- **Version/Phase:** v1.0 / Phase 4. Done except README screenshots (need the user's phone) and the optional card image (skipped for time).
+- **Did:**
+  - CR-C1 follow-up: one `customer_bots` row per Lab customer (upsert by `customer_id`), so the seed keeps the Lab. `/lab run n` with n > 5 writes all activities, then one `ports.decide_batch` (agent for the top 5 only, T26).
+  - Admin commands (ADMIN_TELEGRAM_IDS, DMs and the Lab group, hidden from the public menu): `/summary` (today's counts, agent vs fallback, cost vs expected profit, kill switch, daily digest), `/killswitch on|off`, `/campaign run <policy> [n≤25]` (synthetic non-Lab customers only, one `decide_batch`, background task), `/impersonate <id>|off` (read/simulate commands act as that customer; consent commands always stay the admin's own).
+  - Resilience: `bot/resilience.send` retries 429 (honours `retry_after`) and timeouts/5xx (1/2/4 s), never retries BadRequest; a 403 in a customer chat sets `customers.attrs.unreachable_since` and `deliver()` skips them until `/start`; duplicate `update_id`s dropped in a group −1 handler.
+  - Copy: `short_name()` for long Telegram names; offer cards always fit 280 visible chars (headline ≤ 70, personal lines dropped/clipped first, value/expiry/coupon never cut).
+- **Files:** `backend/app/bot/{admin,resilience,app,commands,simulate,sender,store,render,onboarding}.py`, `backend/app/lab/{registry,runner}.py`, `backend/tests/bot/{test_admin,test_resilience,test_lab,test_render}.py`
+- **Commits:** `bc337b9` lab voices + batch · `695444a` admin commands · `44a5620` resilience · `2182b0e` copy polish
+- **Tests:** `python -m pytest -q` (backend) → 302 passed · `ruff check .` clean
+- **Open issues / risks:**
+  - B: the pre-gate could also skip customers with `attrs.unreachable_since` (today only `deliver()` skips them; decisions are still made and logged).
+  - Reminder jobs and the `/impersonate` map are in memory; a Render restart clears them.
+  - Screenshots for `docs/screenshots/`: **skipped by the user (25 Oct)**, to be taken on a phone later if time allows.
+- **Contract change requests:** none
+- **Next:** after the freeze, fixes and copy only.
