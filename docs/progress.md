@@ -704,3 +704,8 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - Simpson's-paradox regression (pooled < 0, per-campaign > 0), unmeasured strata, a control outlier, and headline = Σ ROI rows on a seeded world.
   - `python -m pytest tests/data -q` → 90 passed · `ruff check .` clean.
 - **Commits:** _pending the user's commit_
+
+### 2026-10-26 · Session C · GATE-4 live fixes
+- **Did:** Lab rounds no longer reply-link across bots in basic groups (per-bot message ids pointed at old service messages); reply links stay in supergroups. Meera (C900008) gets A's long-standing full-price history, so the real scoring makes her `sleeping_dog` (max uplift −0.066) → NO_OFFER; Neon's Meera rebuilds at the first `/lab run` after deploy. Finding 2 (second "Blocked" message) dropped: the user had tapped "❓ Why?".
+- **Commits:** `d43ac8d` fix(lab): no cross-bot reply links in basic groups; sleeping-dog history for Meera
+- **Tests:** `python -m pytest -q` (backend, merged with main 2eb3161) → 331 passed · ruff clean
