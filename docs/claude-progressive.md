@@ -20,8 +20,8 @@
 - **Live numbers (12 months, 25 Oct):** +₹91,760 incremental revenue, +₹1,723 profit, ₹14,916 margin saved.
 
 ## ⚠️ Judging settings on production (data, not code)
-- Rules → Global: `G_FREQ` min gap **0 days** (was 2), `G_ONE_COUPON` **2** (was 1), so `/start` → `/simulate cart` gives an offer.
-- The 3-offers-per-7-days cap and all other limits are unchanged.
+- Rules → Global: `G_FREQ` min gap **0 days** (was 2) and weekly cap **10** (was 3); `G_ONE_COUPON` **2** (was 1). This way `/start` → `/simulate cart` gives an offer, and Lab customers capped by testing can receive offers again.
+- All other limits are unchanged (48 h no-discount after purchase, quiet hours, margin guard, budget, caps).
 - **Revert both under History after judging.** Never revert them silently before then.
 
 ## Open items
