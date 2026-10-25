@@ -34,6 +34,8 @@ CATEGORY_LABELS = {
 
 FOOTER = "<i>Reply /why to see why you got this · /stop to opt out</i>"
 OFFER_STATUSES = {"SENT", "DRY_RUN", "QUEUED"}
+CARD_BUDGET = 280  # visible chars for headline + personal lines + value + coupon (CLAUDE.md §7)
+HEADLINE_MAX = 70
 
 
 @dataclass(frozen=True)
@@ -121,17 +123,40 @@ def why_keyboard(decision_id: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[InlineKeyboardButton("❓ Why?", callback_data=f"o:why:{decision_id}")]])
 
 
+def clip(text: str, limit: int) -> str:
+    text = text.strip()
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def short_name(name: str | None, limit: int = 20) -> str:
+    """First word of a Telegram name (they can be 64 chars of anything), clipped for headlines."""
+    words = (name or "").split()
+    return clip(words[0], limit) if words else "there"
+
+
+def fit_lines(fixed: list[str], lines: list[str], budget: int = CARD_BUDGET) -> list[str]:
+    """Personal lines that fit beside the fixed parts within `budget` visible chars: drop the last line first,
+    then clip the remaining one. The value, expiry and coupon are never cut."""
+    room = budget - sum(len(f) + 1 for f in fixed)
+    kept = list(lines)
+    while kept and sum(len(x) + 1 for x in kept) > room:
+        if len(kept) == 1:
+            return [clip(kept[0], room - 1)] if room > 20 else []
+        kept.pop()
+    return kept
+
+
 def _offer_card(d: Decision) -> Card:
+    headline = clip(d.headline or offer_value(d), HEADLINE_MAX)
+    value = f"🎟 {offer_value(d)}" + (f" · till {d.expires_at:%d %b}" if d.expires_at else "")
+    code = f"Code: {d.coupon_code}" if d.coupon_code else ""
     parts = []
     if d.status == "DRY_RUN":
         parts.append("🧪 <b>Dry run</b> · not sent to anyone")
-    parts.append(f"<b>{escape(d.headline or offer_value(d))}</b>")
-    parts.extend(escape(line) for line in personal_lines(d))
-    value = f"🎟 {escape(offer_value(d))}"
-    if d.expires_at:
-        value += f" · till {d.expires_at:%d %b}"
+    parts.append(f"<b>{escape(headline)}</b>")
+    parts.extend(escape(line) for line in fit_lines([headline, "", value, code], personal_lines(d)))
     parts.append("")
-    parts.append(value)
+    parts.append(escape(value))
     if d.coupon_code:
         parts.append(f"Code: <code>{escape(d.coupon_code)}</code>")
     parts.append("")
@@ -141,7 +166,7 @@ def _offer_card(d: Decision) -> Card:
 
 
 def _no_offer_card(d: Decision) -> Card:
-    name = escape(d.profile_snapshot.first_name)
+    name = escape(short_name(d.profile_snapshot.first_name))
     if d.status == "HELD_OUT":  # never reveal the holdout group to the customer
         body = "Nothing to send you right now. We'll message you when something genuinely fits."
         return Card(f"<b>You're all set, {name}</b>\n{body}")

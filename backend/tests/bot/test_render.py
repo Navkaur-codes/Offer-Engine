@@ -119,3 +119,33 @@ def test_inr_indian_grouping():
 def test_why_text():
     d = _decision("sent_cart_abandoner")
     assert d.explanation.telegram_text in render_why(d)
+
+
+def test_short_name_handles_long_and_empty_names():
+    from app.bot.render import short_name
+
+    assert short_name("Navpreet Kaur") == "Navpreet"
+    assert short_name("Venkatanarasimharajuvaripeta") == "Venkatanarasimharaj…"
+    assert short_name("  ") == "there" and short_name(None) == "there"
+
+
+def test_long_agent_text_is_fitted_into_280_chars():
+    long = "Hi Venkatanarasimharajuvaripeta! " + "This kurta matches the colours you browsed all week. " * 6
+    d = _decision("sent_cart_abandoner").model_copy(
+        update={"headline": "Your kurta is waiting " * 6, "message": long}
+    )
+    text = render_decision(d).text
+    body = _visible(text.removesuffix(FOOTER)).strip()
+    assert len(body) <= 280
+    assert "🎟 Free shipping on Fashion · till" in body and d.coupon_code in body  # never cut
+    assert body.splitlines()[0].endswith("…")  # headline clipped
+
+
+def test_no_offer_uses_short_name():
+    d = _decision("no_offer_vip")
+    d = d.model_copy(
+        update={
+            "profile_snapshot": d.profile_snapshot.model_copy(update={"first_name": "Arjun Mehta Kapoor"})
+        }
+    )
+    assert render_decision(d).text.startswith("<b>No offer right now, Arjun</b>")

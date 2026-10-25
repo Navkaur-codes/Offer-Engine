@@ -18,7 +18,7 @@ from sqlmodel import Session, select
 from app import db
 from app.bot import store
 from app.config import now, settings
-from app.models import CustomerRow, EventRow, OrderRow, PointsLedgerRow
+from app.models import CustomerBotRow, CustomerRow, EventRow, OrderRow, PointsLedgerRow
 
 
 @dataclass(frozen=True)
@@ -341,13 +341,21 @@ def _healthy(s: Session, c: LabCustomer) -> bool:
 
 
 def remember_voices(usernames: list[str]) -> None:
-    """Stores which Lab Shopper voices whom (usernames only) for /lab who and the dashboard."""
+    """Stores which Lab Shopper voices whom (usernames only): one `customer_bots` row per Lab customer, which
+    also tells the seed to keep that customer (CR-C1)."""
     if not usernames:
         return
     with Session(db.engine) as s:
         for c in LAB_CUSTOMERS:
             row = s.get(CustomerRow, c.id)
-            if row is not None:
-                row.attrs = {**(row.attrs or {}), "lab_voice": usernames[voice_index(c, len(usernames))]}
-                s.add(row)
+            if row is None:
+                continue
+            username = usernames[voice_index(c, len(usernames))]
+            row.attrs = {**(row.attrs or {}), "lab_voice": username}
+            s.add(row)
+            voice = s.get(CustomerBotRow, c.id) or CustomerBotRow(
+                customer_id=c.id, username=username, persona=c.persona
+            )
+            voice.username, voice.persona = username, c.persona
+            s.add(voice)
         s.commit()

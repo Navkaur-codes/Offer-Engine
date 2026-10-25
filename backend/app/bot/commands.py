@@ -10,9 +10,9 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from app import ports
-from app.bot import sender, store
+from app.bot import resilience, sender, store
 from app.bot.onboarding import FESTIVALS
-from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why
+from app.bot.render import CATEGORY_LABELS, escape, inr, offer_category, offer_value, render_why, short_name
 from app.config import IST, now
 from app.contracts import Decision
 
@@ -62,7 +62,16 @@ def _level(x: float) -> str:
 
 
 def _customer_id(update: Update) -> str:
+    """The user's own customer: consent commands (/stop, /pause, /resume) always use this."""
     return store.customer_id_for(update.effective_user.id)
+
+
+IMPERSONATING: dict[int, str] = {}  # admin telegram id → customer id (/impersonate)
+
+
+def acting_id(update: Update) -> str:
+    """Who the read/simulate commands act as: the impersonated customer for an admin, else the user."""
+    return IMPERSONATING.get(update.effective_user.id) or _customer_id(update)
 
 
 async def _reply(update: Update, text: str) -> None:
@@ -90,7 +99,7 @@ def profile_text(row, profile) -> str:
     cats = ", ".join(CATEGORY_LABELS.get(c, c) for c, _ in top) or "Still learning"
     fests = ", ".join(FESTIVALS.get(f, f) for f in (row.opt_in_festivals or [])) or "Off"
     return (
-        f"<b>Your profile, {escape(profile.first_name)}</b>\n"
+        f"<b>Your profile, {escape(short_name(profile.first_name))}</b>\n"
         f"👤 Shopper type: {PERSONA_LABELS.get(profile.persona, profile.persona)}\n"
         f"🎯 How we treat you: {POLICY_LABELS.get(profile.policy, profile.policy)}\n"
         f"❤️ Top categories: {cats}\n"
@@ -104,7 +113,7 @@ def profile_text(row, profile) -> str:
 
 
 async def profile_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cid = _customer_id(update)
+    cid = acting_id(update)
     row = await asyncio.to_thread(store.get_customer, cid)
     if row is None:
         await _reply(update, NOT_REGISTERED)
@@ -132,7 +141,7 @@ def active_offers(decisions: list[Decision], at: datetime) -> list[Decision]:
 
 
 async def offers_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cid = _customer_id(update)
+    cid = acting_id(update)
     decisions = _decisions_for(cid, await asyncio.to_thread(store.recent_decisions, cid))
     active = active_offers(decisions, now())
     if not active:
@@ -153,7 +162,7 @@ async def _find(decision_id: str) -> Decision | None:
 
 
 async def why_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cid = _customer_id(update)
+    cid = acting_id(update)
     decisions = _decisions_for(cid, await asyncio.to_thread(store.recent_decisions, cid, 1))
     if not decisions:
         await _reply(update, "Nothing to explain yet. Tap /start to get your welcome offer.")
@@ -202,7 +211,8 @@ async def _remind(context: ContextTypes.DEFAULT_TYPE) -> None:
     decision: Decision = context.job.data
     till = f" It's valid till {decision.expires_at:%d %b}." if decision.expires_at else ""
     code = escape(decision.coupon_code or "")
-    await context.bot.send_message(
+    await resilience.send(
+        context.bot,
         context.job.chat_id,
         f"⏰ Reminder: {escape(offer_value(decision))}, code <code>{code}</code>.{till}",
         parse_mode=ParseMode.HTML,
@@ -288,7 +298,7 @@ def history_line(d: Decision) -> str:
 
 
 async def history_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    cid = _customer_id(update)
+    cid = acting_id(update)
     decisions = _decisions_for(cid, await asyncio.to_thread(store.recent_decisions, cid, 5))[:5]
     if not decisions:
         await _reply(update, "No decisions yet. Try /simulate to see the engine at work.")

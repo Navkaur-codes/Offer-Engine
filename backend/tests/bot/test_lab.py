@@ -270,3 +270,32 @@ async def test_reply_why_in_group(four_bots):
     update, context, sent = _update("/why")
     await lab.why_in_group(update, context)
     assert sent[-1].startswith("Reply /why")
+
+
+async def test_voices_written_as_customer_bot_rows(four_bots, memory_db):
+    log, factory = four_bots
+    await _run(log, factory, 1)
+    await _run(log, factory, 1)  # second run upserts, no duplicate-key error
+    from app.models import CustomerBotRow
+
+    with Session(memory_db) as s:
+        rows = {r.customer_id: r for r in s.exec(select(CustomerBotRow)).all()}
+    assert len(rows) == 10
+    assert rows["C900005"].username == "lab_shopper_1_bot" and rows["C900002"].persona == "deal_hunter"
+
+
+async def test_big_runs_use_one_decide_batch(four_bots, monkeypatch):
+    log, factory = four_bots
+    calls = []
+    real = ports.decide_batch
+
+    def batch(items, **kw):
+        calls.append(items)
+        return real(items, **kw)
+
+    monkeypatch.setattr(ports, "decide", lambda *a, **k: pytest.fail("big runs must not decide one by one"))
+    monkeypatch.setattr(ports, "decide_batch", batch)
+    decisions = await _run(log, factory, 7)
+    assert len(calls) == 1 and len(calls[0]) == 7 and all(t == "lab" for _, t, _ in calls[0])
+    assert [d.customer_id for d in decisions] == [c.id for c in registry.LAB_CUSTOMERS[:7]]
+    assert sum(m.text.startswith("👤") for m in log) == 7
