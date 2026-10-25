@@ -11,10 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from telegram import Update
 
 from app import ports
-from app.api import analytics, catalog, customers, decisions, meta, rules
+from app.api import analytics, catalog, customers, decisions, meta, rules, scheduler
 from app.config import now, settings
 from app.contracts import CONTRACT_VERSION
 from app.db import init_db
+from app.scheduler import runner
 
 VERSION = "0.3.0"
 WEBHOOK_PATH = "/telegram/webhook/{secret}"
@@ -49,7 +50,11 @@ async def lifespan(app: FastAPI):
     init_db()
     log.info("seeded %d rules, %d offers", ports.ensure_rules_seeded(), catalog.ensure_catalogue())
     await _start_bot(app)
+    # proactive jobs send Telegram messages, so they only run where the bot runs
+    app.state.scheduler = runner.start() if settings.scheduler_enabled and app.state.tg else None
     yield
+    if app.state.scheduler is not None:
+        app.state.scheduler.shutdown(wait=False)
     if app.state.tg is not None:
         await app.state.tg.stop()
         await app.state.tg.shutdown()
@@ -62,7 +67,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-for module in (meta, rules, catalog, decisions, customers, analytics):
+for module in (meta, rules, catalog, decisions, customers, analytics, scheduler):
     app.include_router(module.router)
 
 

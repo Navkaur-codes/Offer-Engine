@@ -15,6 +15,11 @@ from app.contracts import Decision, DecisionLight, Outcome
 from app.models import DecisionRow
 
 
+def aware(ts: datetime) -> datetime:
+    """SQLite hands back naive IST wall time; Postgres hands back aware UTC. Normalise to aware IST."""
+    return ts.replace(tzinfo=IST) if ts.tzinfo is None else ts.astimezone(IST)
+
+
 def _session() -> Session:
     return Session(db.engine, expire_on_commit=False)
 

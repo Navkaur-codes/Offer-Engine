@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     public_base_url: str = ""  # e.g. https://offer-engine.onrender.com
     cors_origins: str = "http://localhost:5173"
     demo_time_override: str = ""  # "2026-11-06" or "2026-11-06T19:30"
+    scheduler_enabled: bool = True  # proactive jobs; they only start when the bot is enabled
 
     @property
     def admin_ids(self) -> set[int]:

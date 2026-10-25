@@ -355,3 +355,14 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - the user sends A3–D3 when ready;
   - the user creates the Customer Lab bots;
   - the dashboard goes to Vercel in D3.
+
+### 2026-10-25 · Main · Scheduler: proactive triggers (finishes MAIN-API's scheduler item)
+- **Did:** `app/scheduler/jobs.py` holds sync, testable jobs; `runner.py` uses APScheduler (AsyncIOScheduler, IST) inside the web process and starts only when the bot is enabled.
+  - `cart_abandonment`, every 5 min: a Telegram customer's newest cart is 30 min to 6 h old, not bought, and not nudged since it was added. It runs `decide("cart_abandoned")` (proactive, so quiet hours apply), then `deliver`.
+  - `flush_quiet_queue`, 09:05 IST: re-runs every QUEUED decision from the last 24 h once (`requeued_from`), so the morning's rules and consent decide.
+  - `points_expiry`, 10:00 IST: points expiring within 3 days, at most one reminder per 3 days.
+  - `daily_digest`, 21:00 IST: the digest goes to `ADMIN_TELEGRAM_IDS`.
+  - Synthetic customers are never messaged. A failing job is logged and never stops the others.
+  - API: `GET /api/scheduler` (running, next runs) and `POST /api/scheduler/run/{job}` (admin passcode) to demo a job without waiting.
+  - `decision_store.aware()` normalises naive (SQLite) and UTC (Postgres) timestamps to IST.
+- **Tests:** `tests/api/test_scheduler.py` (8 cases); full suite **222 passed**; ruff clean. A real start registers the 4 jobs with the correct next IST run times.
