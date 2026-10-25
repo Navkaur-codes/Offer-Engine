@@ -509,3 +509,33 @@ _none yet_ (format: `date · trap ID · session · reason`)
   - `/lab date` moves the engine clock for the whole process (prod too); `/lab date off` restores it.
 - **Contract change requests:** CR-C1 (sessions.md §6)
 - **Next:** Phase 4: admin commands, copy polish, resilience (403/429, update_id dedupe).
+
+### 2026-10-25 · D · Phase 3: live API, Rules editor, Customers
+- **Version/Phase:** v0.4 / Phase 3. Done.
+- **Did:**
+  - **Live API by default:**
+    - `VITE_API_URL`, falling back to the Render URL; mocks only with `VITE_USE_MOCKS=1`.
+    - Contracts v1.1: nullable `Kpis.deltas` (no arrow when null), `DecisionLight.festival` column and a `festival=` filter (one option per festival key).
+    - An "Automations" tile on Overview from `GET /api/scheduler`, with an admin "Run now" per job.
+  - **Rules & Policies:**
+    - layer tabs 1–4 with counts;
+    - each rule is the server's `describe()` sentence with its numbers turned into inline inputs (₹, %, days, points, times), so there is no JSON (T16). All 35 live rules' scalar limits are inline; lists stay read-only.
+    - A debounced `POST /api/rules/preview` gives the impact before Save; Save shows a toast with Undo; History lists versions with Revert (saved as a new version).
+    - On/off switch; global hard limits can't be switched off from the UI.
+    - Persona groups show "N customers in this policy now →".
+  - **Customers:**
+    - a recency × lifetime-value scatter (colour **and** shape per policy, √ value scale, legend toggles the filter);
+    - search and a policy filter in the URL; a dense table with cursor paging.
+    - **Drawer:** "Run decision now" (Playground dry run, inline explanation and card); Simulate-trigger buttons (admin, with a confirm for real `TG…` users); profile in plain words; past decisions (opening the decision drawer on top); an event timeline.
+  - **Vercel:** `vercel.json` SPA rewrite already in place; set the project root to `frontend/` and `VITE_API_URL` at build time.
+- **Checked:**
+  - On live production (read-only): Overview with real decisions; the festival filter (5 Karwa Chauth decisions); all Rules tabs; Customers scatter and table; a dry run for C000003 (rules-fallback "No offer" with a full explanation).
+  - On mocks (writes): rule edit 10% → 8%, preview, save v4, revert to v5 at 10%; Simulate → toast → nested decision drawer → Escape closes only the top drawer.
+- **Commits:** `82ada66` (v1.1 + live API + automations) · `f0fa291` (Rules editor) · `59015a5` (Customers + docs).
+- **Tests:** `npm run lint` clean · `npm run build` ✓
+- **Open issues / risks:**
+  - The bundle is now ~1 MB (Recharts); route-level code-splitting in Phase 4.
+  - Lighthouse not measured.
+  - The rule impact preview is still the stub until A's `rule_impact`.
+  - `/api/customers` caps pages at 100 and its policy filter scans 600 rows, so policy counts read "N+".
+- **Next:** Phase 4: Experiments, Festivals, Realism, Playground, campaign dry-run, code-splitting, screenshots.

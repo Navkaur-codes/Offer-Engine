@@ -238,6 +238,8 @@ export interface DecisionLight {
   expected_incremental_profit: number
   outcome: Outcome
   explanation_title: string
+  /** v1.1: festival active at decision time, e.g. "diwali_2026", or null. */
+  festival: string | null
 }
 
 export interface Festival {
@@ -294,8 +296,8 @@ export interface Kpis {
   agent_share: number
   fallback_share: number
   margin_saved: number
-  /** vs yesterday, same keys as above, for ▲▼. */
-  deltas: Partial<Record<Exclude<keyof Kpis, 'deltas'>, number>>
+  /** v1.1: fractional change vs yesterday per KPI field (0.12 = +12%); null = no arrow. */
+  deltas: Partial<Record<Exclude<keyof Kpis, 'deltas' | 'agent_share' | 'fallback_share'>, number | null>>
 }
 
 // ---- REST envelopes (contracts.md §4) ----
@@ -315,7 +317,13 @@ export interface CustomerDetail {
 export interface RuleImpact {
   customers_affected: number
   budget_delta: number
-  examples: Json[]
+  /** Contract leaves the item shape open: customer IDs or small objects. */
+  examples: unknown[]
+}
+/** GET /api/scheduler (main, outside contracts §4). */
+export interface SchedulerStatus {
+  running: boolean
+  next_runs: Record<string, IsoDateTime | null>
 }
 export interface CampaignDryRun {
   rows: DecisionLight[]
@@ -348,6 +356,8 @@ export interface DecisionFilters {
   decided_by?: DecidedBy
   policy?: PolicyName
   trigger?: TriggerType
+  /** v1.1: festival key ("diwali") or id ("diwali_2026"). */
+  festival?: string
   q?: string
   limit?: number
   cursor?: string

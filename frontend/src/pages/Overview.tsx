@@ -10,7 +10,7 @@ import { api } from '@/lib/api'
 import type { DecisionLight } from '@/lib/types'
 import { formatInt, formatPct } from '@/lib/utils'
 import { LiveStream } from './overview/LiveStream'
-import { DecidedByShare, DigestCard, Funnel, MarginCallout, MomentsStrip } from './overview/Panels'
+import { AutomationsCard, DecidedByShare, DigestCard, Funnel, MarginCallout, MomentsStrip } from './overview/Panels'
 
 /** Count of matching decisions per hour over the last `hours` hours (oldest first). */
 function hourly(decisions: DecisionLight[], match: (d: DecisionLight) => boolean, hours = 12): number[] {
@@ -63,6 +63,7 @@ export function Overview() {
           <Funnel className="sm:col-span-2" decisions={ds} />
           <DecidedByShare kpis={k} decisions={ds} />
           <MarginCallout kpis={k} decisions={ds} />
+          <AutomationsCard className="sm:col-span-2" />
         </div>
         <DigestCard />
         <MomentsStrip />

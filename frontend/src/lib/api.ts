@@ -1,13 +1,14 @@
-// Typed client for contracts.md §4. Mocks are used when VITE_USE_MOCKS=1 or no VITE_API_URL is set.
+// Typed client for contracts.md §4 (v1.1). Talks to the real API; mocks only when VITE_USE_MOCKS=1.
 import { toast } from 'sonner'
 import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionFilters, DecisionLight,
   Digest, ExperimentStats, Festival, Health, KillSwitch, Kpis, Meta, Offer, Page, PolicyName,
-  RealismStats, Rule, RuleImpact, RuleLayer, TriggerType,
+  RealismStats, Rule, RuleImpact, RuleLayer, SchedulerStatus, TriggerType,
 } from './types'
 
-const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
-export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === '1' || !API_URL
+const PROD_API = 'https://offer-engine-n4jx.onrender.com'
+const API_URL = (import.meta.env.VITE_API_URL || PROD_API).replace(/\/$/, '')
+export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === '1'
 
 const PASSCODE_KEY = 'oe-admin-passcode'
 export const passcode = {
@@ -109,4 +110,6 @@ export const api = {
   killswitch: () => get<KillSwitch>('/api/settings/killswitch'),
   setKillswitch: (on: boolean) => post<KillSwitch>('/api/settings/killswitch', { on }),
   budget: () => get<Budget>('/api/budget'),
+  scheduler: () => get<SchedulerStatus>('/api/scheduler'),
+  runJob: (job: string) => post<Record<string, unknown>>(`/api/scheduler/run/${encodeURIComponent(job)}`),
 }

@@ -196,6 +196,7 @@ export function makeDecision(ts: Date): DecisionLight {
     expected_incremental_profit: o ? Math.round(cost * (1.5 + r() * 3)) + 40 : 0,
     outcome: status === 'SENT' ? pick(OUTCOMES) : 'pending',
     explanation_title: title,
+    festival: r() < 0.7 ? 'karwa_chauth_2026' : null,
   }
 }
 
@@ -307,7 +308,7 @@ const exampleLight: DecisionLight = {
   id: example.id, ts: example.ts, customer_id: example.customer_id, first_name: 'Navpreet', policy: 'cart_abandoner',
   trigger: 'cart_abandoned', decided_by: 'AGENT', status: 'SENT', final_offer_id: example.final_offer_id,
   headline: example.headline, cost: example.cost, expected_incremental_profit: example.expected_incremental_profit,
-  outcome: 'pending', explanation_title: example.explanation.title,
+  outcome: 'pending', explanation_title: example.explanation.title, festival: 'karwa_chauth_2026',
 }
 DECISIONS.splice(3, 0, exampleLight)
 
@@ -332,5 +333,5 @@ export const KPIS: Kpis = {
   agent_share: 0.71,
   fallback_share: 0.29,
   margin_saved: 18640,
-  deltas: { sent_today: 0.12, claim_rate: 0.021, incremental_revenue: 0.08, budget_used_pct: 0.04, blocked_by_rules: -0.15, margin_saved: 0.11 },
+  deltas: { sent_today: 0.12, claim_rate: 0.021, incremental_revenue: 0.08, budget_used_pct: null, blocked_by_rules: -0.15, margin_saved: 0.11 },
 }
