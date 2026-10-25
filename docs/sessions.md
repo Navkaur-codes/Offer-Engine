@@ -8,7 +8,7 @@
 | Main / Integrator | `main` · `D:\hackathon-2` | `CLAUDE.md`, `docs/PLAN.md` | GATE-2 passed → Phase 3 (deploys, contract requests) | ☑ GATE-1 ☑ MAIN-API ☑ GATE-2 | v1.1 frozen | none | 25 Oct |
 | A: Data & Scoring | `feat/data-scoring` · `D:\offer-engine-A` | `docs/context/context-1.md` | Phase 2 done (A2) → Phase 3 next | ☑ P2 `1646fe0` (P1 `8b2e903`) | v1.1 | none (the `test_ports` fix was applied by Main at GATE-2) | 25 Oct |
 | B: Decision Core | `feat/decision-core` · `D:\offer-engine-B` | `docs/context/context-2.md` | Phase 2 done (harness, fallback, MockLLM, explainer, quiet hours) → Phase 3 next | ☑ P2 `0302b17`, `3d1f941` | v1.1 | none (budget guard approved) | 25 Oct |
-| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 2 done (/simulate, recorded buttons, /why, /history, rate limit, `initiated_by`) → Phase 3 next | ☑ P2 `9cfaf33`, `21e43d9` (P1 `1e5e102`) | v1.1 | P3 needs the 10 Lab bots + group (user) | 25 Oct |
+| C: Telegram + Lab | `feat/telegram-lab` · `D:\offer-engine-C` | `docs/context/context-3.md` | Phase 3 done (Customer Lab live in the group: 10 customers, 4 bots, /lab commands); /simulate verified on the real harness → Phase 4 next | ☑ P3 `fe3e883` (P2 `9cfaf33`, `21e43d9`; P1 `1e5e102`) | v1.1 | CR-C1 open; prod needs `ADMIN_TELEGRAM_IDS` + `CUSTOMER_BOT_TOKENS` on Render | 25 Oct |
 | D: Dashboard | `feat/dashboard` · `D:\offer-engine-D` | `docs/context/context-4.md` | Phase 2 done (Overview bento + live SSE stream, Decisions filters + drawer) → Phase 3 next; Lighthouse not yet measured | ☑ P2 `a9aa536`, `181eb92`, `fc08f23` (P1 `e5d9116`) | v1.1 | none (CR-D1, CR-D2 accepted in v1.1) | 25 Oct |
 
 ## 2. Dependency map (who consumes whom; always through `app.ports` with stubs)
@@ -54,6 +54,7 @@ Format: `ID · date · from session · what change · why · status (open/accept
 - _none yet_
 - CR-D1 · 24 Oct · D · `Kpis.deltas`: use the same keys as the `Kpis` fields (`sent_today`, `claim_rate`, `incremental_revenue`, `budget_used_pct`, `blocked_by_rules`, `margin_saved`), with values as a fractional change vs yesterday (`0.12` = +12%). The API currently sends `{"sent","claim_rate","blocked"}` and it's unclear whether those are absolute or relative. · The KPI strip shows ▲▼ per tile and can't map the current keys without guessing. · open · v1
 - CR-D2 · 24 Oct · D · Add `festival: str | None` to `DecisionLight` and a `festival=` filter to `GET /api/decisions`. · context-4 Phase 2 asks for a festival filter on the Decisions log; today only `trigger=festival` exists, which misses festival-phase decisions from other triggers. · open · v1
+- CR-C1 · 25 Oct · C · `CustomerBotRow` (`customer_bots`): make `customer_id` the primary key (one row per Lab customer) and keep `username` as a plain indexed column. · With 1–10 bots voicing 10 customers, one bot voices several customers, which the current `username` primary key forbids. A's seed also keeps only customers listed there, so today it deletes the Lab customers' rows (C's `ensure_lab_customers()` rebuilds them before each round). Until then C stores the voice in `customers.attrs["lab_voice"]`. · open · v1.1
 
 ## 7. Notes for other sessions
 Format: `date · from → to · note`
@@ -120,3 +121,4 @@ Format: `date · from → to · note`
   - Design for 1–10 bots: 10 fixed Lab customers `C900001`–`C900010`, assigned to bots round-robin.
   - Every post starts with `👤 Name · persona`, and the Offer bot addresses the customer by name.
   - `CUSTOMER_BOT_TOKENS` minimal format is `[{"token":"..."}]`; extra keys are ignored. See context-3 Phase 3.
+- 25 Oct · C → A/D/Main · Customer Lab customers are `C900001`–`C900010` with `is_lab_bot=True`, `is_holdout=False`; their history rows use ids `E<cid>-L…` / `O<cid>-L…`. A: a re-seed deletes them (CR-C1); C rebuilds them before every round, so no action is needed unless CR-C1 is accepted. D: Lab decisions have `trigger="lab"`, and `customers.attrs.lab_voice` holds the Lab Shopper username. Main: production `/lab` needs `ADMIN_TELEGRAM_IDS` and `CUSTOMER_BOT_TOKENS` on Render; the port `run_rounds(n)` is now real (sync, posts into `runtime.lab_group_chat_id()`).
