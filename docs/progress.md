@@ -731,3 +731,11 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Live checks:** `/health` v0.4 → all 25 ports real; Playground agent + force-fail ✓; every dashboard page loads with no console errors; `/simulate cart` → 2× points (agent); `/summary` ✓; Lab 5 rounds → 3 offers (VIP early access, deal hunter 10% over ₹999, at-risk free shipping) and 2 honest no-offers. The Karwa Chauth greeting reached the user only because they opted in.
 - **Judging settings (user decision, data not code):** on prod Rules → Global, `G_FREQ` min gap 2 days → **0** and `G_ONE_COUPON` 1 → **2**, so a judge's `/start` → `/simulate cart` gets an offer (both blocked it before). The 3-per-7-days cap and every other limit stay. **Revert both under History after judging.**
 - **Open:** B is fixing the agent declining a profitable offer with an invented reason (Rohan: free shipping +₹404, "fashion is not a hero category") — widen the override to any profitable candidate and make no-offer reasons deterministic. Classmate test round still to do.
+
+### 2026-10-26 · B · GATE-4 fix: the agent may not decline a paying offer, and explanations never repeat its free text
+- **Live bug (Main, Lab 22:26 IST):** Rohan (C900002, cart_abandoner) had free shipping allowed at ₹20 cost / +₹404 expected profit, but the agent answered NO_OFFER, citing a hero-category rule that doesn't exist (`evaluate` had passed 13/0). The group saw that invented reason (detective T18).
+- **Fix:**
+  - If the agent answers NO_OFFER while any allowed candidate pays for itself (a paid offer at profit > 0, or a free perk at ≥ 0), the rules fallback sends the best one (`RULES_FALLBACK`, "the agent chose no offer, but an allowed offer is expected to pay for itself, so the rules sent the best one"). This widens task 0 (`aa0db26`). Pre-gate holds are unchanged.
+  - The explainer's `why_offer` and `rejected` are now deterministic, built from candidates, numbers and rule results only. The agent's reasoning stays in `agent_output` (the trace) and never reaches /why, the Lab or the dashboard.
+- **Tests:** Rohan's exact candidates with MockLLM("no_offer") → SENT free shipping; no explanation field contains the agent's words. `pytest tests/core -q` → 108 passed (property tests green); full `pytest tests -q` → 303 passed; `ruff` is clean.
+- **Commits:** `2c51812`
