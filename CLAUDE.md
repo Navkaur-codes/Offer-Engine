@@ -172,7 +172,7 @@ cd frontend && npm i && npm run dev                      # :5173, VITE_USE_MOCKS
 
 **Environment variable names** (values never go in the repo):
 - Telegram: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `CUSTOMER_BOT_TOKENS` (JSON), `ADMIN_TELEGRAM_IDS`, and optionally `LAB_GROUP_CHAT_ID` (normally auto-detected with `/lab here`). There is no shadow channel; it was removed on 24 Oct.
-- Groq: `GROQ_API_KEY`, `GROQ_MODEL_AGENT=llama-3.3-70b-versatile`, `GROQ_MODEL_FAST=llama-3.1-8b-instant`, `LLM_DAILY_TOKENS_AGENT`, `LLM_DAILY_TOKENS_FAST` (budget guard).
+- Groq: `GROQ_API_KEY`, `GROQ_MODEL_AGENT=openai/gpt-oss-120b`, `GROQ_MODEL_FAST=openai/gpt-oss-20b`, `LLM_DAILY_TOKENS_AGENT`, `LLM_DAILY_TOKENS_FAST` (budget guard).
 - App: `DATABASE_URL`, `ADMIN_PASSCODE`, `PUBLIC_BASE_URL`, `TZ=Asia/Kolkata`, `DEMO_TIME_OVERRIDE`.
 - Frontend: `VITE_API_URL`, `VITE_USE_MOCKS`.
 

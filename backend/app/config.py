@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # llm
     groq_api_key: str = ""
-    groq_model_agent: str = "llama-3.3-70b-versatile"
-    groq_model_fast: str = "llama-3.1-8b-instant"
+    groq_model_agent: str = "openai/gpt-oss-120b"
+    groq_model_fast: str = "openai/gpt-oss-20b"
     force_llm_fail: bool = False
     llm_daily_tokens_agent: int = 80_000  # budget guard: 70B tokens per IST day
     llm_daily_tokens_fast: int = 400_000  # budget guard: 8B tokens per IST day

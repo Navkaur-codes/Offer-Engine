@@ -18,6 +18,12 @@ BIGINT_COLUMNS = [("customers", "telegram_chat_id"), ("decisions", "telegram_mes
 COLUMN_TYPE_SQL = text(
     "SELECT data_type FROM information_schema.columns WHERE table_name = :t AND column_name = :c"
 )
+PK_COLUMNS_SQL = text(
+    "SELECT k.column_name FROM information_schema.table_constraints c "
+    "JOIN information_schema.key_column_usage k "
+    "ON k.constraint_name = c.constraint_name AND k.table_name = c.table_name "
+    "WHERE c.table_name = :t AND c.constraint_type = 'PRIMARY KEY'"
+)
 
 
 def _normalise_url(url: str) -> str:
@@ -41,8 +47,20 @@ engine = make_engine()
 def init_db() -> None:
     import app.models  # noqa: F401  (registers tables)
 
+    rekey_customer_bots()
     SQLModel.metadata.create_all(engine)
     upgrade_bigint_columns()
+
+
+def rekey_customer_bots() -> None:
+    """CR-C1: `customer_bots` used to be keyed by username. The Lab rebuilds its rows every round, so an
+    old-shaped table is simply dropped and `create_all` recreates it keyed by customer_id. Idempotent."""
+    if engine.dialect.name != "postgresql":
+        return
+    with engine.begin() as conn:
+        if conn.execute(PK_COLUMNS_SQL, {"t": "customer_bots"}).scalars().all() == ["username"]:
+            conn.execute(text('DROP TABLE "customer_bots"'))
+            log.info("dropped customer_bots keyed by username; recreating keyed by customer_id")
 
 
 def upgrade_bigint_columns() -> None:

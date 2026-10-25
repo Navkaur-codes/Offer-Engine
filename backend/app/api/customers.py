@@ -112,8 +112,8 @@ def campaign_dry_run(body: CampaignIn) -> dict:
         "cost": 0,
         "expected_incremental_profit": 0,
     }
-    for p in profiles:
-        d = ports.decide(p.customer_id, "campaign", meta, dry_run=True)
+    batch = ports.decide_batch([(p.customer_id, "campaign", meta) for p in profiles], dry_run=True)
+    for d in batch:
         totals["customers"] += 1
         if d.final_offer_id and totals["cost"] + d.cost > body.budget:
             totals["over_budget"] += 1

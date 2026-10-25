@@ -26,9 +26,12 @@ DATA_PORTS = {
 
 # test folder -> ports that must answer from stubs there
 STUBBED_BY_FOLDER: dict[str, set[str]] = {
-    "core": DATA_PORTS,  # B tests its harness on fixture profiles
-    "bot": DATA_PORTS | {"decide", "explain", "get_context", "daily_digest"},  # C renders fixture decisions
-    "api": DATA_PORTS | {"decide", "explain", "get_context"},  # Main tests plumbing on fixtures
+    # B tests its harness on fixture profiles
+    "core": DATA_PORTS,
+    # C renders fixture decisions
+    "bot": DATA_PORTS | {"decide", "decide_batch", "explain", "get_context", "daily_digest"},
+    # Main tests plumbing on fixtures
+    "api": DATA_PORTS | {"decide", "decide_batch", "explain", "get_context"},
 }
 
 

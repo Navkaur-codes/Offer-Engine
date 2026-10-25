@@ -62,6 +62,8 @@ _PORTS: dict[str, tuple[str, str, Any]] = {
     "rule_impact": ("app.rules.preview", "impact", stubs.rule_impact),
     "get_context": ("app.agent.context", "get_context", stubs.get_context),
     "decide": ("app.agent.harness", "decide", stubs.decide),
+    "decide_batch": ("app.agent.harness", "decide_batch", stubs.decide_batch),
+    "llm_budget_status": ("app.agent.budget", "status", stubs.llm_budget_status),
     "explain": ("app.agent.explainer", "explain", stubs.explain),
     "daily_digest": ("app.agent.digest", "daily", stubs.daily_digest),
     # Session C — telegram & lab
@@ -181,6 +183,22 @@ def decide(
     now: datetime | None = None,
 ) -> Decision:
     return _call("decide")(customer_id, trigger, trigger_meta or {}, dry_run=dry_run, now=now)
+
+
+def decide_batch(
+    items: list[tuple[str, TriggerType, dict]],
+    *,
+    dry_run: bool = False,
+    now: datetime | None = None,
+    agent_top_n: int = 5,
+) -> list[Decision]:
+    """Agent only for the top N by expected incremental profit, rules fallback for the rest (T26)."""
+    return _call("decide_batch")(items, dry_run=dry_run, now=now, agent_top_n=agent_top_n)
+
+
+def llm_budget_status(now: datetime | None = None) -> dict:
+    """{"agent": {used, limit, model}, "fast": {...}, "mode": "agent" | "fast" | "rules"}."""
+    return _call("llm_budget_status")(now)
 
 
 def explain(decision: Decision) -> Explanation:

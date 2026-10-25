@@ -190,6 +190,6 @@ class CustomerBotRow(SQLModel, table=True):
     """Customer Lab: which bot (by username, never the token) plays which synthetic customer."""
 
     __tablename__ = "customer_bots"
-    username: str = Field(primary_key=True)
-    customer_id: str = Field(foreign_key="customers.id")
+    customer_id: str = Field(foreign_key="customers.id", primary_key=True)
+    username: str = Field(index=True)  # one bot voices several Lab customers (CR-C1)
     persona: str

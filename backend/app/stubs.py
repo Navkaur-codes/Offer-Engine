@@ -627,3 +627,21 @@ def ensure_rules_seeded() -> int:
 
 def run_rounds(n: int) -> list[Decision]:
     return [decide(cid, "lab") for cid in list(PROFILES)[:n]]
+
+
+def decide_batch(
+    items: list[tuple[str, TriggerType, dict]],
+    *,
+    dry_run: bool = False,
+    now: datetime | None = None,
+    agent_top_n: int = 5,
+) -> list[Decision]:
+    return [decide(cid, trigger, meta, dry_run=dry_run, now=now) for cid, trigger, meta in items]
+
+
+def llm_budget_status(now: datetime | None = None) -> dict:
+    return {
+        "agent": {"used": 0, "limit": 0, "model": "stub"},
+        "fast": {"used": 0, "limit": 0, "model": "stub"},
+        "mode": "rules",
+    }

@@ -196,6 +196,9 @@ rules.preview.impact(rule: Rule) -> dict      # {"customers_affected","budget_de
 agent.context.get_context(now: datetime) -> Context
 agent.harness.decide(customer_id: str, trigger: TriggerType, trigger_meta: dict = {},
                      *, dry_run: bool = False, now: datetime | None = None) -> Decision
+agent.harness.decide_batch(items: list[tuple[customer_id, trigger, meta]], *, dry_run=False,
+                           now=None, agent_top_n=5) -> list[Decision]   # agent for top N only (T26)
+agent.budget.status(now=None) -> dict   # {"agent"|"fast": {used, limit, model}, "mode": "70b"|"8b"|"rules"}
 agent.explainer.explain(decision: Decision) -> Explanation
 agent.digest.daily(day: date) -> str
 
@@ -268,3 +271,4 @@ A **light decision** is the `DecisionLight` model in `contracts.py`. It contains
 ## 6. Changelog
 - **v1** (22 Oct): initial draft. Added `DecisionLight` and the port-name list, then **frozen** at the Phase-0 gate.
 - **v1.1** (24 Oct): CR-D1 (`Kpis.deltas` now has one fractional delta per KPI field) and CR-D2 (`DecisionLight.festival` plus the `festival=` filter on `GET /api/decisions`). Both changes are backward-compatible.
+- **v1.1, additive** (25 Oct, GATE-3): CCR-B1 adds ports `decide_batch` and `llm_budget_status` (with stubs); `/health` gains `llm_budget`; campaign dry-runs use `decide_batch`. CR-C1: `customer_bots` is keyed by `customer_id` (`username` is an indexed column), migrated on Postgres at startup. No model changes, so the version string stays `v1.1`.

@@ -87,3 +87,16 @@ def test_telegram_ids_are_bigint():
         )
         s.commit()
         assert s.get(m.CustomerRow, "TG7123456789").telegram_chat_id == 7_123_456_789
+
+
+def test_customer_bots_keyed_by_customer():
+    """CR-C1: one Lab Shopper bot voices several Lab customers."""
+    engine = make_engine("sqlite://")
+    SQLModel.metadata.create_all(engine)
+    assert [c.name for c in m.CustomerBotRow.__table__.primary_key] == ["customer_id"]
+    with Session(engine) as s:
+        for cid in ("C900001", "C900005"):
+            s.add(m.CustomerBotRow(customer_id=cid, username="lab_shopper_1_bot", persona="vip"))
+        s.commit()
+        voiced = s.exec(select(m.CustomerBotRow).where(m.CustomerBotRow.username == "lab_shopper_1_bot"))
+        assert len(voiced.all()) == 2

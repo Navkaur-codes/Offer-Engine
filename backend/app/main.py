@@ -80,6 +80,7 @@ def health(request: Request) -> dict:
         "now": now().isoformat(),
         "bot": getattr(request.app.state, "tg", None) is not None,
         "ports": ports.status(),
+        "llm_budget": ports.llm_budget_status(),
     }
 
 

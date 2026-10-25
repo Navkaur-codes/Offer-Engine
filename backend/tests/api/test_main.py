@@ -15,6 +15,8 @@ def test_health(monkeypatch):
         body = client.get("/health").json()
     assert body["ok"] is True and body["contracts"] == "v1.1" and body["bot"] is False
     assert "decide" in body["ports"]
+    assert body["ports"]["llm_budget_status"] == "real" and "decide_batch" in body["ports"]
+    assert {"agent", "fast", "mode"} <= set(body["llm_budget"])
 
 
 def test_webhook_rejects_wrong_secret(monkeypatch):
