@@ -1,29 +1,33 @@
 import { NavLink } from 'react-router-dom'
 import { USE_MOCKS } from '@/lib/api'
-import { useKillswitch } from '@/lib/queries'
+import { useHealth, useKillswitch } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { NAV } from './nav'
 
 export function Wordmark() {
   return (
-    <div className="flex items-center gap-2">
-      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden>
+    <div className="flex items-start gap-2.5">
+      <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden className="mt-px shrink-0">
         <rect width="32" height="32" rx="7" fill="#1a1a1f" />
         <rect x="8" y="9" width="16" height="2.5" rx="1.25" fill="#F4F4F5" />
         <rect x="8" y="14.75" width="10" height="2.5" rx="1.25" fill="#F4F4F5" />
         <circle cx="22.5" cy="16" r="2.5" fill="#FF4F00" />
         <rect x="8" y="20.5" width="16" height="2.5" rx="1.25" fill="#F4F4F5" />
       </svg>
-      <span className="title text-[14px] text-rail-ink">Offer Engine</span>
+      <span className="flex flex-col leading-tight">
+        <span className="title text-[15px] tracking-[-0.03em] text-rail-ink">Holdout</span>
+        <span className="text-[10.5px] text-rail-muted">Offers only where they change the outcome.</span>
+      </span>
     </div>
   )
 }
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: ks } = useKillswitch()
+  const { data: health } = useHealth()
   return (
     <aside className="flex h-full w-[212px] shrink-0 flex-col border-r border-rail-line bg-rail text-rail-ink">
-      <div className="flex h-12 items-center px-4">
+      <div className="flex min-h-12 items-center px-4 py-3">
         <Wordmark />
       </div>
       <nav aria-label="Main" className="flex-1 px-2 py-2">
@@ -63,7 +67,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             Sending <b className="font-medium text-rail-ink">{ks ? (ks.on ? 'paused (kill switch on)' : 'live') : '…'}</b>
           </span>
         </div>
-        <div className="num text-[11px] text-rail-muted">{USE_MOCKS ? 'mock data' : 'live API'} · v0.2</div>
+        <div className="num text-[11px] text-rail-muted">
+          {USE_MOCKS ? 'mock data' : 'live API'}{health?.version ? ` · v${health.version}` : ''}
+        </div>
       </div>
     </aside>
   )
