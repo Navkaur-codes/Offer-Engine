@@ -418,3 +418,20 @@ def test_agent_no_offer_stands_when_no_free_perk_is_allowed(monkeypatch):
     )
     d = decide("C000002", "browse_interest", {"initiated_by": "customer"}, now=NOW, llm=MockLLM("no_offer"))
     assert d.status == "NO_OFFER" and d.decided_by == "AGENT"
+
+
+# ---------------------------------------------------------------- CR-D3: Playground "force LLM fail" per run
+def test_playground_can_force_the_fallback_on_a_dry_run(memory_db):
+    llm = MockLLM("good")
+    d = decide("C000001", "cart_abandoned", {"force_llm_fail": True}, dry_run=True, now=NOW, llm=llm)
+    assert d.decided_by == "RULES_FALLBACK" and d.fallback_reason == harness.LLM_OFF_FOR_RUN
+    assert llm.calls == 0 and "force_llm_fail" not in d.trigger_meta
+    assert rows(memory_db) == []
+
+
+def test_the_flag_is_ignored_and_stripped_on_live_sends(memory_db):
+    llm = MockLLM("good")
+    d = decide("C000001", "cart_abandoned", {"force_llm_fail": True}, now=NOW, llm=llm)
+    assert d.decided_by == "AGENT" and llm.calls == 1
+    assert "force_llm_fail" not in d.trigger_meta
+    assert "force_llm_fail" not in rows(memory_db)[0].payload["trigger_meta"]

@@ -50,6 +50,7 @@ AGENT_TIMEOUT_S = 20.0
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no 0/O, 1/I
 DRY_RUN_CODE = "PREVIEW"
 NOTHING_PAYS = "no allowed offer is expected to pay for itself"
+LLM_OFF_FOR_RUN = "the LLM is forced off for this run (Playground)"
 FREE_PERK_OVERRIDE = (
     "the agent chose no offer, but a free perk is allowed and costs nothing, so the rules sent it"
 )
@@ -341,6 +342,9 @@ def decide(
     started = timer.perf_counter()
     now = now or clock()
     meta = dict(trigger_meta or {})
+    # Playground switch (CR-D3): honoured on dry runs only, and never logged, so no caller can turn the
+    # agent off for real sends through trigger_meta
+    llm_off_for_run = bool(meta.pop("force_llm_fail", False)) and dry_run
     all_rules = load_rules()
     catalogue = load_offers()
     profile = with_trigger(ports.build_profile(customer_id, now), trigger, meta, now)
@@ -497,6 +501,8 @@ def decide(
     kind: budget.Kind | None = "agent"
     if not use_agent:
         return use_fallback("batch rule: only the top 5 by expected profit go to the agent", {})
+    if llm_off_for_run:
+        return use_fallback(LLM_OFF_FOR_RUN, {})
     if llm is None:
         llm, kind, why = pick_llm(now)
         if llm is None:
