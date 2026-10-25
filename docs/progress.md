@@ -10,18 +10,18 @@
 | v0.1 | Thu 22 Oct | Scaffold + contracts + bot "hello" deployed, link shared | ☑ |
 | v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☑ GATE-2 (25 Oct): the real pipeline is live in production |
 | v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☑ GATE-3 (25 Oct): dashboard on Vercel with live data |
-| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ◐ GATE-3: uplift, impact, Lab, Groq agent live; Experiments/Playground pages in Phase 4 |
-| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☐ |
+| v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☑ GATE-4 (25 Oct): Experiments, Playground and Lab live |
+| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ◐ GATE-4 (25 Oct): v1.0 live, README + screenshots done; classmate test round still to do |
 | Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ |
 
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☐ |
-| A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☐ |
-| B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☐ |
-| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☑ `2182b0e` |
-| D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☐ |
+| Main (Step 0 + gates + API + deploy) | ☑ Step 0 · ☑ GATE-1 | ☑ MAIN-API · ☑ GATE-2 | ☑ scheduler · ☑ GATE-3 | ☑ README · demo script · ☑ GATE-4 |
+| A: Data & Scoring | ☑ `8b2e903` | ☑ | ☑ `dad6a5a` `7cffbcd` | ☑ `142bdad` `5b8af06` `2d0b9e2` |
+| B: Decision Core | ☑ `0202dd8` | ☑ | ☑ `36e0313` `4d46263` `13a4cf4` | ☑ `aa0db26` `66ab57a` `b3dc666` `0feb781` `8fee9be` |
+| C: Telegram + Lab | ☑ `1e5e102` | ☑ | ☑ `fe3e883` | ☑ `bc337b9` `695444a` `44a5620` `2182b0e` `d43ac8d` |
+| D: Dashboard | ☑ `e5d9116` | ☑ | ☑ `82ada66` `f0fa291` `59015a5` | ☑ `daa709b`…`87d3b22`, `9d6b2b5`, `f355e42`, `c2d7145` |
 
 ## claude-progressive.md history
 | Version/Phase | Written | Summary of temporary rules |
@@ -31,6 +31,7 @@
 | v0.3 / Phase 2 | 24 Oct | Compressed schedule; real modules replace stubs as they merge; Neon seeded small (≈1,500 customers); still no real Groq calls |
 | v0.4 / Phase 3 | 25 Oct | PRIORITY 1: the no-offer fix (A uplift/impact, B zero-cost + welcome); conftest pins foreign ports in unit tests; Groq only via budget guard |
 | v1.0 / Phase 4 | 25 Oct | Last phase before the freeze (Mon 18:00): B tunes the agent's "no offer" threshold first; README + demo; Lab customers survive re-seeds; gpt-oss models |
+| v1.0 / Post-freeze | 25 Oct | Fixes, polish and docs only (T22); judging rule settings on prod; submit by Tue 10:00 |
 
 ## Detective overrides
 _none yet_ (format: `date · trap ID · session · reason`)
@@ -717,3 +718,16 @@ _none yet_ (format: `date · trap ID · session · reason`)
 - **Digest facts:** the model saw raw keys like `zero_cost_sent` and echoed "zero cost sent 0". The facts it gets now say "free perks sent", "spend" and "expected incremental profit".
 - **Tests:** `pytest tests/core -q` → 106 passed (new: cap 10 → 8 gives a negative delta and names "% off a category"; the suggestion has no codes and uses plain labels; a rewrite with a code is rejected; durations read naturally and the frequency detail reads "3 h 34 min"; the model facts use plain names). Property tests green. Full `pytest tests -q` → 301 passed. `ruff` is clean.
 - **Commits:** `0feb781` (digest suggestion + preview delta); durations and plain model facts: `8fee9be`
+
+### 2026-10-25 · Main · GATE-4 (v1.0)
+- **Merged (Phase 4):** A → `56fd8be`, B → `b9e1ef9`, C → `89407ea`, D → `4f5c5b9`. Conflicts were docs only, resolved with every entry kept. Full suite **324 passed**; frontend lint + build ✓; main JS chunk 289 kB (was ~1 MB).
+- **Scratch smoke (500 customers):** no stubs left; 79% would send, 0 validator failures, ~23 ms per fallback decision; kill switch → BLOCKED; force-LLM-fail dry run → RULES_FALLBACK and the flag is not logged; digest and rule impact real.
+- **Live findings and fixes (GATE-4b):**
+  - Experiments headline was negative (−₹22,909 profit) while every ROI row was positive: pooled treated vs control across campaigns (Simpson's paradox) on raw revenue. A `2d0b9e2`: every number now sums per-campaign cells, each campaign vs its own control. Live 12 months: **+₹91,760 revenue, +₹1,723 profit, ₹14,916 margin saved** (free shipping −₹24,320: an honest talking point).
+  - Overview hero used 30 days and showed ₹0; with the user's OK it now uses 12 months (`2eb3161`, test added); D labelled it `f355e42` and retook the screenshots `c2d7145`.
+  - B `0feb781`, `8fee9be`: plain-English digest suggestion, rule preview budget delta (deal cap 10→8 %: 6 customers, −₹328), durations like "3 h 34 min".
+  - C `d43ac8d`: Lab cards no longer reply to the wrong message in basic groups; Lab "Meera" now has a sleeping-dog history (no offer, rebuilt at the first `/lab run`).
+  - Merges: A `926a94a`, B `5828a8f`, C `984c6df`, D `38129cd`, screenshots `49d9f35`. Suite **337 passed**.
+- **Live checks:** `/health` v0.4 → all 25 ports real; Playground agent + force-fail ✓; every dashboard page loads with no console errors; `/simulate cart` → 2× points (agent); `/summary` ✓; Lab 5 rounds → 3 offers (VIP early access, deal hunter 10% over ₹999, at-risk free shipping) and 2 honest no-offers. The Karwa Chauth greeting reached the user only because they opted in.
+- **Judging settings (user decision, data not code):** on prod Rules → Global, `G_FREQ` min gap 2 days → **0** and `G_ONE_COUPON` 1 → **2**, so a judge's `/start` → `/simulate cart` gets an offer (both blocked it before). The 3-per-7-days cap and every other limit stay. **Revert both under History after judging.**
+- **Open:** B is fixing the agent declining a profitable offer with an invented reason (Rohan: free shipping +₹404, "fashion is not a hero category") — widen the override to any profitable candidate and make no-offer reasons deterministic. Classmate test round still to do.

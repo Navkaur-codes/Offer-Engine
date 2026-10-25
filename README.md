@@ -16,12 +16,22 @@ Most discount engines send 20% off to everyone and call the sales it "drove" a w
 | 2 | Telegram | `/simulate cart` | A cart-abandonment event goes through the full pipeline. You get a card with the exact value, expiry, a `monospace` coupon and 4 buttons |
 | 3 | Telegram | Tap **❓ Why this?** (or `/why`) | Plain English: why you, why this offer, which offers were rejected and why, which rules were checked, and who decided (AI agent or rules fallback) |
 | 4 | Telegram | `/simulate purchase`, then `/simulate cart` | **No offer.** The "no discount within 48 h of a purchase" rule blocks it, and the bot says so. The guardrails are visible |
-| 5 | Customer Lab group | `/lab run 3` | 3 synthetic customers (each voiced by a "Lab Shopper" bot) post activity. The Offer bot answers each one differently, because each persona has different rules. Some get **no offer on purpose** |
+| 5 | Customer Lab group | `/lab@navpreet_offers_bot run 3` | 3 synthetic customers (each voiced by a "Lab Shopper" bot) post activity. The Offer bot answers each one differently, because each persona has different rules. Some get **no offer on purpose** |
 | 6 | Dashboard → Overview | Watch the live stream | Your decisions from steps 1–5 appear within seconds, tagged **AI agent** or **Rules fallback** |
 | 7 | Dashboard → Playground | Pick a customer and trigger → Run | The **Decision Pipeline Lens**: Pre-gate → Policy → Agent → Validator → Sent, with every tool call and rule ✓/✗. Toggle "force LLM failure" to watch the fallback take over |
 | 8 | Dashboard → Rules | Change "Deal hunters get at most **10%**" to 8% | An **impact preview** (customers affected, budget change) appears before you save; Save gives you version history and one-click revert |
 
 A longer, timed walk-through for presenting is in [`docs/demo-script.md`](docs/demo-script.md).
+
+### Screenshots (live data)
+| | |
+|---|---|
+| ![Overview: incremental revenue vs holdout, live decision stream](frontend/screenshots/01-overview.png) **Overview**: the one orange number is revenue offers actually caused, vs the holdout | ![Playground: step-by-step pipeline trace](frontend/screenshots/09-playground.png) **Playground**: Pre-gate → Policy → Agent → Validator, every step explained |
+| ![Decision drawer with Pipeline Lens and agent trace](frontend/screenshots/03-decision-drawer.png) **Decision drawer**: explanation, rule ✓/✗, agent tool calls, card preview | ![Rules editor with sentence cards](frontend/screenshots/04-rules.png) **Rules**: sentences with editable numbers, impact preview, versions |
+| ![Experiments: treated vs holdout, uplift, ROI, Qini](frontend/screenshots/06-experiments.png) **Experiments**: each campaign vs its own control, ROI by offer type | ![Data realism with benchmark bands](frontend/screenshots/08-realism.png) **Realism**: synthetic data checked against real-world benchmarks |
+| ![Customers: recency × value scatter by policy](frontend/screenshots/05-customers.png) **Customers**: policies assigned live from scores | ![Festivals: phase calendar and strategy](frontend/screenshots/07-festivals.png) **Festivals**: phases, budgets, opt-in-only greetings |
+
+Dark mode: [`02-overview-dark.png`](frontend/screenshots/02-overview-dark.png).
 
 ---
 

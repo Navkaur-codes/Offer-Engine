@@ -7,62 +7,39 @@
 ---
 
 ## Now
-- **Version:** v1.0 (target **Mon 26 Oct 18:00 = feature freeze**). Submit by **Tue 27 Oct 10:00**.
-- **Phase:** 4, the last build phase. After the freeze: fixes, polish and docs only (detective T22).
-- **GATE-3 passed (25 Oct).**
-  - `main` has all Phase-3 merges plus B's fix `13a4cf4`; 279 backend tests pass and the frontend builds.
-  - Production uses the **real Groq agent** (gpt-oss-120b → gpt-oss-20b → rules, via `agent/budget.py`).
-  - The scratch smoke test shows 79% of decisions would send, mostly zero-cost offers.
+- **Version:** v1.0. **Feature freeze: Mon 26 Oct 18:00.** Submit by **Tue 27 Oct 10:00** (deadline 12:00).
+- **Phase:** post-GATE-4. **Fixes, polish and docs only.** Any new feature raises detective T22.
+- **GATE-4 passed (25 Oct).**
+  - `main` has all Phase-4 work and the GATE-4b fixes; 337 backend tests pass; frontend builds (289 kB main chunk).
+  - Every port is real; `/health` lists none as stub.
 - **Live:**
-  - API https://offer-engine-n4jx.onrender.com (v0.4, contracts v1.1)
+  - API https://offer-engine-n4jx.onrender.com (v1.0, contracts v1.1)
   - dashboard https://offer-engine-nu.vercel.app
   - bot `@navpreet_offers_bot`
-  - Neon re-seeded with 1,500 customers
-  - Customer Lab running in the group
-- **Still stubs:** `rule_impact` and `daily_digest` (both are B's Phase 4 tasks). Check with `/health`.
-- **Next gate:** GATE-4 = v1.0 at the freeze. Needs:
-  - classmates getting offers;
-  - every dashboard page on real data;
-  - the README "Demo in 5 minutes";
-  - a classmate test round done.
+  - Neon with ~1,500 customers; Customer Lab running in the group
+- **Live numbers (12 months, 25 Oct):** +₹91,760 incremental revenue, +₹1,723 profit, ₹14,916 margin saved.
 
-## 🔴 PRIORITY 0 for Phase 4
-- **B:** the live Lab showed the agent choosing "no offer is worth its cost" for a cart abandoner, a new user and a deal hunter, where the fallback would have sent a zero-cost perk.
-  - Make the agent prefer the best zero-cost allowed offer at profit ≥ 0.
-  - It may pick no-offer only when nothing allowed pays for itself.
-  - Ship this as its own checkpoint first.
-- **A + C (CR-C1 follow-up):**
-  - C writes one `CustomerBotRow` per Lab customer.
-  - A's seed skips `is_lab_bot` customers and their rows, so a re-seed never wipes the Lab.
+## ⚠️ Judging settings on production (data, not code)
+- Rules → Global: `G_FREQ` min gap **0 days** (was 2), `G_ONE_COUPON` **2** (was 1), so `/start` → `/simulate cart` gives an offer.
+- The 3-offers-per-7-days cap and all other limits are unchanged.
+- **Revert both under History after judging.** Never revert them silently before then.
 
-## Phase-4 goals (details in each context file)
-- **A:** benchmarks comfortably in range, `docs/data-dictionary.md`, edge cases, seed < 2 min, profile < 50 ms.
-- **B:** priority 0; then `agent/digest.py`, `rules/preview.py` (`impact`), profiling (fallback < 100 ms, agent p50 < 4 s).
-- **C:** admin commands (`/summary`, `/killswitch`, `/campaign run`, `/impersonate`), copy polish, resilience (403, 429/5xx backoff, `update_id` dedupe). The card image is optional.
-- **D:** Experiments (auto takeaways), Festivals, Realism (benchmark bands), Playground (step-by-step trace, the demo hero), campaign dry-run, code-splitting (bundle ~1 MB), screenshots for the README.
-- **Main:**
-  - README with "Demo in 5 minutes" and a demo script;
-  - GATE-4;
-  - keep Render/Vercel/cron-job.org healthy;
-  - organise the classmate test round with the user.
+## Open items
+- **B:** the agent must not decline when an allowed candidate has positive expected profit; no-offer reasons must be deterministic (no LLM-invented rules). In progress.
+- **User + Main:** classmate test round (share the bot link, collect outcomes); then SUBMIT (`prompts.md → SUBMIT`).
+- **Main:** keep Render, Vercel and cron-job.org healthy; gitleaks on the full history before submission.
 
-## Temporary rules for this phase
-- Notes in `sessions.md §7` are binding:
-  - festival keys don't include the year;
-  - offer params are `pct`, `amount`, `min_basket`, `multiplier`, `category`;
-  - write decisions only via `decision_store`;
-  - quiet hours apply to proactive sends only.
-- Groq models are `openai/gpt-oss-120b` / `openai/gpt-oss-20b`. Real calls go only through `agent/budget.py`; keep test runs small (free-tier TPM is about 3 agent decisions a minute).
-- Batches (campaigns, `/lab run` > 5) use `ports.decide_batch`, so the agent only handles the top 5 (T26).
-- `tests/conftest.py` pins foreign ports to stubs in your unit tests; mark a test `@pytest.mark.real_ports` to opt out.
-- **Never** run `--polling` with the production token. C uses the dev bot. In the Lab group, address the prod bot as `/lab@navpreet_offers_bot`.
-- BIGINT for external IDs; test anything number- or time-heavy against Postgres semantics (T29).
-- 📌 Give a checkpoint after every finished task. **No new features after Mon 18:00.**
+## Rules for this phase
+- Only fixes that a live check or a classmate found, copy polish and docs. Each fix gets a regression test.
+- Notes in `sessions.md §7` stay binding (festival keys without the year; offer params `pct`, `amount`, `min_basket`, `multiplier`, `category`; decisions only via `decision_store`; quiet hours for proactive sends only).
+- Groq models `openai/gpt-oss-120b` / `openai/gpt-oss-20b`, only via `agent/budget.py`; free-tier TPM is ~3 agent decisions a minute, so 429s fall back to rules by design.
+- **Never** `--polling` with the production token. In the Lab group, address the prod bot as `/lab@navpreet_offers_bot`; end any `/lab date` with `/lab date off`.
+- No re-seed of Neon from now on unless a fix needs it (it changes the live Experiments numbers and screenshots).
+- 📌 Give a checkpoint after every fix. The user does every git write.
 
 ## Known issues
-- The bundle is ~1 MB; code-split by route (D).
+- Uplift targeting is noisy (~80% of hidden types identifiable); the 90-day Experiments window holds one campaign with 47 controls.
 - `/api/customers` policy filter scans 600 rows, so counts show "N+".
-- `/lab date` moves the engine clock for the whole process (prod too); always end with `/lab date off`.
 - Real Telegram users get `is_holdout=False`; synthetic customers keep the 10% holdout.
 
 ## Worktree folders

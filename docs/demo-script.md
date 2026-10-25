@@ -8,6 +8,7 @@
 - [ ] Dashboard: the kill switch is **off** (the sidebar dot) and the admin passcode is entered (needed for rule edits).
 - [ ] Telegram: in the Customer Lab group, `/lab@navpreet_offers_bot who` lists the 10 Lab customers. If the engine clock was moved, run `/lab date off`.
 - [ ] Your own account: send `/stop`, then `/start` again, so the demo begins with a fresh welcome.
+- [ ] Rules → Global shows the **judging settings**: frequency cap "at least **0** days apart" and "**2** active coupons" (set 25 Oct so `/start` → `/simulate cart` gives an offer). The 3-offers-per-7-days cap stays. Revert both under History after judging.
 - [ ] Quiet hours (21:00–09:00 IST) only hold back **proactive** sends. Everything in this script is customer- or admin-initiated, so it works at any hour.
 
 ---
@@ -46,7 +47,8 @@ Point to the Overview hero number (incremental revenue vs holdout) and the "marg
 
 ## 4:15 – 5:00 · Proof it pays
 10. **Experiments:** treated vs holdout bars, uplift by policy, margin saved.
-    **"Ten percent of synthetic customers are a holdout: same decisions, nothing sent. Comparing the two groups shows the incremental revenue and the margin we didn't give away."**
+    **"Every campaign is compared with its own control group. Over 12 months offers caused about ₹92k of extra revenue, and we saved about ₹15k of margin by not discounting people who'd buy anyway. Look at ROI by offer type: flat ₹ off pays back nearly 2×, but blanket free shipping *lost* money, because it mostly went to people who'd have bought anyway. That's exactly why we target."**
+    (Numbers as of 25 Oct; read them off the page on the day.)
 11. **Realism** (one glance): **"The data is synthetic but behaves like real shoppers: Pareto revenue, about 70% cart abandonment, churn, seasonality, all checked against benchmarks."**
 
 **Close: "Rules set the limits, the AI personalises inside them, and every AI choice is re-checked before it reaches a customer. And we only pay people when it changes what they do."**
