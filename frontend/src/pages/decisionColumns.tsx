@@ -2,6 +2,7 @@ import { createColumnHelper } from '@tanstack/react-table'
 import { DecidedByBadge, PolicyBadge, StatusBadge } from '@/components/badges'
 import { Money } from '@/components/Money'
 import { PipelineLens } from '@/components/PipelineLens'
+import { festivalLabel } from '@/lib/festivals'
 import { TRIGGER_LABEL } from '@/lib/labels'
 import type { DecisionLight } from '@/lib/types'
 import { formatDateTime } from '@/lib/utils'
@@ -20,6 +21,10 @@ export const decisionColumns = [
   }),
   col.accessor('policy', { header: 'Policy', cell: (c) => <PolicyBadge policy={c.getValue()} /> }),
   col.accessor('trigger', { header: 'Trigger', cell: (c) => <span className="text-muted">{TRIGGER_LABEL[c.getValue()]}</span> }),
+  col.accessor('festival', {
+    header: 'Festival',
+    cell: (c) => (c.getValue() ? <span className="text-muted">{festivalLabel(c.getValue()!)}</span> : <span className="text-muted">—</span>),
+  }),
   col.accessor('explanation_title', {
     header: 'Decision',
     enableSorting: false,

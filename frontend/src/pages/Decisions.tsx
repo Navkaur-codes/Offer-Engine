@@ -10,23 +10,29 @@ import { Input } from '@/components/ui/input'
 import { NAV } from '@/app/nav'
 import { api } from '@/lib/api'
 import { useDecisionParam } from '@/lib/decisionParam'
+import { festivalKey } from '@/lib/festivals'
+import { useFestivals } from '@/lib/queries'
 import { DECIDED_BY_LABEL, POLICY_LABEL, STATUS_LABEL, TRIGGER_LABEL } from '@/lib/labels'
 import type { DecisionFilters } from '@/lib/types'
 import { decisionColumns } from './decisionColumns'
 
 const PAGE = 50
-const FILTERS = [
-  { key: 'status', label: 'Status', options: STATUS_LABEL },
-  { key: 'decided_by', label: 'Decided by', options: DECIDED_BY_LABEL },
-  { key: 'policy', label: 'Policy', options: POLICY_LABEL },
-  { key: 'trigger', label: 'Trigger', options: TRIGGER_LABEL },
-] as const
-type FilterKey = (typeof FILTERS)[number]['key'] | 'q'
-const KEYS: FilterKey[] = ['status', 'decided_by', 'policy', 'trigger', 'q']
+type FilterKey = 'status' | 'decided_by' | 'policy' | 'trigger' | 'festival' | 'q'
+const KEYS: FilterKey[] = ['status', 'decided_by', 'policy', 'trigger', 'festival', 'q']
 
 export function Decisions() {
   const [params, setParams] = useSearchParams()
   const { open } = useDecisionParam()
+  const { data: festivals } = useFestivals()
+  // One option per festival key ("diwali"), across years; the API matches any year.
+  const festivalOptions = Object.fromEntries((festivals ?? []).map((f) => [festivalKey(f.id), f.name]))
+  const FILTERS: { key: FilterKey; label: string; options: Record<string, string> }[] = [
+    { key: 'status', label: 'Status', options: STATUS_LABEL },
+    { key: 'decided_by', label: 'Decided by', options: DECIDED_BY_LABEL },
+    { key: 'policy', label: 'Policy', options: POLICY_LABEL },
+    { key: 'trigger', label: 'Trigger', options: TRIGGER_LABEL },
+    { key: 'festival', label: 'Festival', options: festivalOptions },
+  ]
   const filters = Object.fromEntries(KEYS.map((k) => [k, params.get(k) ?? undefined])) as Omit<DecisionFilters, 'limit' | 'cursor'>
   const active = KEYS.filter((k) => params.get(k))
 

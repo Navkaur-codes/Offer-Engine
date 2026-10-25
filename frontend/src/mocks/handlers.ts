@@ -1,7 +1,7 @@
 // In-memory mock backend for contracts.md §4. State resets on page reload.
 import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionLight, Digest,
-  Festival, Health, KillSwitch, Kpis, Meta, Page, Rule, RuleImpact, TriggerType,
+  Festival, Health, KillSwitch, Kpis, Meta, Page, Rule, RuleImpact, SchedulerStatus, TriggerType,
 } from '@/lib/types'
 import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, makeDecision, RULES } from './seed'
 
@@ -55,6 +55,7 @@ on('GET', '/api/decisions', (_m, q): Page<DecisionLight> => {
     (!q.get('decided_by') || d.decided_by === q.get('decided_by')) &&
     (!q.get('policy') || d.policy === q.get('policy')) &&
     (!q.get('trigger') || d.trigger === q.get('trigger')) &&
+    (!q.get('festival') || d.festival === q.get('festival') || Boolean(d.festival?.startsWith(`${q.get('festival')}_`))) &&
     (!text || `${d.id} ${d.customer_id} ${d.first_name} ${d.explanation_title}`.toLowerCase().includes(text)) &&
     (!q.get('cursor') || d.ts < q.get('cursor')!),
   ).sort(byTsDesc)
@@ -115,8 +116,9 @@ on('POST', '/api/rules/preview', (): RuleImpact => ({
   customers_affected: 312, budget_delta: -18400,
   examples: CUSTOMERS.slice(0, 3).map((c) => ({ customer_id: c.customer_id, first_name: c.first_name, policy: c.policy })),
 }))
+// Same order as the API: current version first, then older snapshots, newest first.
 on('GET', '/api/rules/:id/versions', (m): Rule[] => [
-  ...(state.history.get(m[1]) ?? []), ...state.rules.filter((r) => r.id === m[1]),
+  ...state.rules.filter((r) => r.id === m[1]), ...[...(state.history.get(m[1]) ?? [])].reverse(),
 ])
 on('POST', '/api/rules/:id/revert/:version', (m): Rule => {
   const old = state.history.get(m[1])?.find((r) => r.version === Number(m[2]))
@@ -127,6 +129,11 @@ on('POST', '/api/rules/:id/revert/:version', (m): Rule => {
 })
 
 on('GET', '/api/festivals', (): Festival[] => FESTIVALS)
+on('GET', '/api/scheduler', (): SchedulerStatus => {
+  const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
+  return { running: true, next_runs: { cart_abandonment: at(0.1), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
+})
+on('POST', '/api/scheduler/run/:job', (m) => ({ job: m[1], ran: true, decisions: 0 }))
 on('GET', '/api/digest', (): Digest => ({
   day: new Date().toISOString().slice(0, 10),
   text: 'Cart abandoners drove most claims today; free shipping beat 5% off on cost. 4 VIPs were left alone because they buy anyway, saving ₹3,120 of margin.',

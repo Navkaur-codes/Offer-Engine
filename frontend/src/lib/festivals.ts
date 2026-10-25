@@ -10,6 +10,16 @@ export function useUpcoming() {
   return upcoming(festivals ?? [], now)
 }
 
+/** "diwali_2026" → "diwali" (opt-in and filter keys carry no year). */
+export const festivalKey = (id: string) => id.replace(/_\d{4}$/, '')
+
+/** Display name for a festival id or key, from the calendar when available. */
+export function festivalLabel(id: string, festivals?: Festival[]): string {
+  const hit = festivals?.find((f) => f.id === id || festivalKey(f.id) === id)
+  if (hit) return hit.name
+  return festivalKey(id).split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
 export function phaseFor(f: Festival, days: number): FestivalPhase | null {
   for (const [phase, [from, to]] of Object.entries(f.phases) as [FestivalPhase, [number, number]][])
     if (-days >= from && -days <= to) return phase

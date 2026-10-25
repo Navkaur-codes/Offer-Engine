@@ -2,13 +2,8 @@ import { Money } from '@/components/Money'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { PHASE_LABEL } from '@/lib/labels'
 import { useBudget } from '@/lib/queries'
+import { festivalLabel } from '@/lib/festivals'
 import { cn } from '@/lib/utils'
-
-/** "karwa_chauth_2026" → "Karwa chauth". */
-const festivalName = (id: string) => {
-  const s = id.replace(/_\d{4}$/, '').replaceAll('_', ' ')
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
 
 function Bar({ used, cap, label }: { used: number; cap: number; label: string }) {
   const pct = cap ? Math.min(1, used / cap) : 0
@@ -56,7 +51,7 @@ export function BudgetMeter() {
         {f ? (
           <div className="flex justify-between gap-2 border-t border-line pt-2 text-[13px]">
             <span>
-              {festivalName(f.name)} pool
+              {festivalLabel(f.name)} pool
               {f.phase ? <span className="text-muted"> · {PHASE_LABEL[f.phase]}</span> : null}
             </span>
             <span>

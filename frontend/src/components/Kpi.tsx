@@ -10,7 +10,8 @@ export function Kpi({
 }: {
   label: string
   value: ReactNode
-  delta?: number
+  /** null = no comparison available (yesterday was 0); no arrow is shown. */
+  delta?: number | null
   goodWhen?: 'up' | 'down'
   spark?: number[]
   hero?: boolean
@@ -21,7 +22,7 @@ export function Kpi({
     <div className={cn('flex flex-col gap-2 rounded-[8px] border border-line bg-surface p-4', className)}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-[12px] font-medium text-muted">{label}</span>
-        {delta !== undefined ? <Delta value={delta} goodWhen={goodWhen} /> : null}
+        {delta != null ? <Delta value={delta} goodWhen={goodWhen} /> : null}
       </div>
       <div className={cn('num title leading-none', hero ? 'text-[40px] text-signal' : 'text-[28px] text-ink')}>{value}</div>
       <div className="flex min-h-6 items-end justify-between gap-3">

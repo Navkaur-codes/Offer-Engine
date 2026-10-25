@@ -5,7 +5,8 @@ import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useDecisionParam } from '@/lib/decisionParam'
-import { TRIGGER_LABEL } from '@/lib/labels'
+import { festivalLabel } from '@/lib/festivals'
+import { PHASE_LABEL, TRIGGER_LABEL } from '@/lib/labels'
 import type { Decision } from '@/lib/types'
 import { formatDateTime, formatInt } from '@/lib/utils'
 import { OutcomeBadge } from './badges'
@@ -84,7 +85,7 @@ function Body({ d }: { d: Decision }) {
     <div className="flex-1 space-y-5 overflow-y-auto p-4">
       <p className="num text-[12px] text-muted">
         {formatDateTime(d.ts)} · {TRIGGER_LABEL[d.trigger]}
-        {d.context.festival ? ` · ${d.context.festival.replace('_', ' ')} ${d.context.festival_phase?.replace('_', '-') ?? ''}` : ''}
+        {d.context.festival ? ` · ${festivalLabel(d.context.festival)}${d.context.festival_phase ? ` ${PHASE_LABEL[d.context.festival_phase]}` : ''}` : ''}
       </p>
       <ExplanationCard explanation={d.explanation} decidedBy={d.decided_by} status={d.status} fallbackReason={d.fallback_reason} />
 

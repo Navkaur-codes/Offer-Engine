@@ -1,13 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Money } from '@/components/Money'
+import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePasscode } from '@/lib/hooks'
 import { Countdown } from '@/app/topbar/UpcomingMoments'
 import { api } from '@/lib/api'
 import { useUpcoming } from '@/lib/festivals'
 import { DECIDED_BY_LABEL, PHASE_LABEL } from '@/lib/labels'
 import type { DecidedBy, DecisionLight, Kpis } from '@/lib/types'
-import { cn, formatDate, formatInt, formatPct } from '@/lib/utils'
+import { cn, formatDate, formatDateTime, formatInt, formatPct } from '@/lib/utils'
 
 /** sent → claimed → redeemed, from the most recent decisions. */
 export function Funnel({ decisions, className }: { decisions: DecisionLight[]; className?: string }) {
@@ -145,6 +149,57 @@ export function MomentsStrip({ className }: { className?: string }) {
             </p>
           </li>
         ))}
+      </ul>
+    </Card>
+  )
+}
+
+const JOB_LABEL: Record<string, string> = {
+  cart_abandonment: 'Abandoned-cart check',
+  daily_digest: 'Daily AI digest',
+  flush_quiet_queue: 'Send queued offers (after quiet hours)',
+  points_expiry: 'Points-expiry reminders',
+}
+
+/** Proactive triggers the scheduler runs on its own; admins can run one now for a demo. */
+export function AutomationsCard({ className }: { className?: string }) {
+  const qc = useQueryClient()
+  const { unlocked } = usePasscode()
+  const { data } = useQuery({ queryKey: ['scheduler'], queryFn: api.scheduler, refetchInterval: 60_000 })
+  const run = useMutation({
+    mutationFn: api.runJob,
+    onSuccess: (_r, job) => {
+      toast(`${JOB_LABEL[job] ?? job}: ran now`)
+      qc.invalidateQueries({ queryKey: ['decisions'] })
+      qc.invalidateQueries({ queryKey: ['scheduler'] })
+    },
+  })
+  const jobs = Object.entries(data?.next_runs ?? {}).sort((a, b) => (a[1] ?? '~').localeCompare(b[1] ?? '~'))
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>Automations</CardTitle>
+        <span className="num text-[11.5px] text-muted">{data ? (data.running ? 'scheduler on' : '✗ scheduler off') : '…'}</span>
+      </CardHeader>
+      <ul className="divide-y divide-line">
+        {jobs.map(([job, at]) => (
+          <li key={job} className="flex items-center justify-between gap-2 px-4 py-2 text-[13px]">
+            <div className="min-w-0">
+              <p className="truncate text-ink">{JOB_LABEL[job] ?? job}</p>
+              <p className="num text-[11.5px] text-muted">{at ? `next ${formatDateTime(at)}` : 'paused'}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!unlocked || run.isPending}
+              title={unlocked ? undefined : 'Unlock edits with the admin passcode first'}
+              onClick={() => run.mutate(job)}
+            >
+              <Play /> Run now
+            </Button>
+          </li>
+        ))}
+        {data && !jobs.length ? <li className="px-4 py-3 text-[13px] text-muted">No scheduled jobs.</li> : null}
       </ul>
     </Card>
   )
