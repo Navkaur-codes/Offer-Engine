@@ -19,6 +19,7 @@ import csv
 import json
 import random
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -35,16 +36,27 @@ class Api:
     def __init__(self, base: str):
         self.base = base.rstrip("/")
 
+    def _open(self, req: urllib.request.Request | str):
+        # Render's proxy answers 502/503/504 while the free instance wakes up or is busy: retry those
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(req, timeout=120) as r:
+                    return json.load(r)
+            except urllib.error.HTTPError as exc:
+                if exc.code not in (502, 503, 504) or attempt == 2:
+                    raise
+            time.sleep(5 * (attempt + 1))
+        raise AssertionError("unreachable")
+
     def get(self, path: str):
-        with urllib.request.urlopen(self.base + path, timeout=120) as r:
-            return json.load(r)
+        return self._open(self.base + path)
 
     def post(self, path: str, body: dict):
-        req = urllib.request.Request(
-            self.base + path, data=json.dumps(body).encode(), headers={"content-type": "application/json"}
+        return self._open(
+            urllib.request.Request(
+                self.base + path, data=json.dumps(body).encode(), headers={"content-type": "application/json"}
+            )
         )
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.load(r)
 
 
 def customers_for(api: Api, spec: str, rng: random.Random) -> list[str]:

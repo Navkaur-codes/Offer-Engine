@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
@@ -17,6 +20,12 @@ from app.models import CustomerRow, EventRow
 router = APIRouter(prefix="/api", tags=["customers"])
 
 MAX_SCAN = 600  # rows scanned per request when filtering by a computed policy
+# a profile is ~5 round trips on Neon, so a sequential policy scan could pass Render's proxy timeout (502)
+SCAN_CHUNK = 24
+SCAN_WORKERS = 6  # stays inside the engine's pool (5 + 5 overflow) next to the bot
+PROFILE_TTL_S = 300
+_profile_cache: dict[str, tuple[float, CustomerProfile]] = {}
+_cache_lock = threading.Lock()
 
 
 class SimulateIn(BaseModel):
@@ -47,19 +56,33 @@ def _rows(q: str | None, after: str | None, limit: int) -> list[CustomerRow]:
         return list(s.exec(stmt.limit(limit)).all())
 
 
+def _cached_profile(customer_id: str, at: datetime) -> CustomerProfile:
+    clock = time.monotonic()
+    with _cache_lock:
+        hit = _profile_cache.get(customer_id)
+    if hit and clock - hit[0] < PROFILE_TTL_S:
+        return hit[1]
+    profile = ports.build_profile(customer_id, at)
+    with _cache_lock:
+        _profile_cache[customer_id] = (clock, profile)
+    return profile
+
+
 def _profiles(q: str | None, policy: str | None, cursor: str | None, limit: int) -> tuple[list, str | None]:
     at = now()
+    rows = _rows(q, cursor, limit if not policy else MAX_SCAN)
     out: list[CustomerProfile] = []
     last = cursor
-    for row in _rows(q, cursor, limit if not policy else MAX_SCAN):
-        last = row.id
-        p = ports.build_profile(row.id, at)
-        if not policy or p.policy == policy:
-            out.append(p)
-        if len(out) == limit:
-            break
-    more = len(out) == limit
-    return out, (last if more else None)
+    with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
+        for start in range(0, len(rows), SCAN_CHUNK):
+            chunk = rows[start : start + SCAN_CHUNK]
+            for row, p in zip(chunk, pool.map(lambda r: _cached_profile(r.id, at), chunk), strict=True):
+                last = row.id
+                if not policy or p.policy == policy:
+                    out.append(p)
+                if len(out) == limit:
+                    return out, last
+    return out, None
 
 
 @router.get("/customers")

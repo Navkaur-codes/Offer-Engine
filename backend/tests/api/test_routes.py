@@ -156,3 +156,29 @@ def test_kpi_hero_uses_twelve_months(client, monkeypatch):
     monkeypatch.setattr(ports, "experiments_compute", spy)
     assert client.get("/api/kpis").status_code == 200
     assert windows and set(windows) == {365}
+
+
+def test_policy_scan_is_parallel_cached_and_ordered(monkeypatch):
+    """A sequential policy scan on Neon took ~45 s and Render answered 502."""
+    from types import SimpleNamespace
+
+    from app.api import customers
+
+    rows = [SimpleNamespace(id=f"C{i:06d}") for i in range(1, 61)]
+    calls = []
+
+    def fake_profile(cid, at):
+        calls.append(cid)
+        policy = "vip" if int(cid[1:]) % 7 == 0 else "default"
+        return SimpleNamespace(customer_id=cid, policy=policy)
+
+    monkeypatch.setattr(customers, "_rows", lambda q, after, limit: rows[:limit])
+    monkeypatch.setattr(ports, "build_profile", fake_profile)
+    monkeypatch.setattr(customers, "_profile_cache", {})
+
+    found, nxt = customers._profiles(None, "vip", None, 3)
+    assert [p.customer_id for p in found] == ["C000007", "C000014", "C000021"]
+    assert nxt == "C000021"
+    first = len(calls)
+    customers._profiles(None, "vip", None, 3)
+    assert len(calls) == first  # second request served from the cache
