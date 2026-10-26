@@ -76,8 +76,9 @@ Event (Telegram · Customer Lab · scheduler · dashboard)
 - **Abandoned carts:** every 5 minutes, a Telegram customer's cart left for 30 min to 6 h gets one nudge decision.
 - **Morning flush (09:05):** offers that came due during quiet hours are re-decided with the morning's rules and consent.
 - **Points expiry (10:00):** customers whose points expire within 3 days get a reminder decision, at most one every 3 days.
+- **Personal picks (11:00 and 18:00, or "Run now" on Overview):** every Telegram customer and every Lab customer gets one decision built on their own profile (top category, policy, predicted uplift). Telegram picks arrive as a DM (held until 09:00 in quiet hours); Lab picks are posted in the Lab group and the shoppers react. A run report shows who got what, the offer mix and the cost, and Overview's "today" line updates: money spent on offers and margin kept by sending nothing.
 - **Daily digest (21:00):** today's summary goes to the admins.
-- Synthetic customers are never messaged by jobs; a failing job never stops the others.
+- Synthetic customers are never DMed by jobs (Lab picks go to the bots' group); a failing job never stops the others.
 
 ### 3.4 Marketer dashboard ("Signal" design)
 Every page has a one-line "Why this page exists" note, and the most common actions are one click or ⌘K away.

@@ -368,6 +368,48 @@ export interface RuleImpact {
   /** Contract leaves the item shape open: customer IDs or small objects. */
   examples: unknown[]
 }
+/** GET /api/today (main, outside contracts §4): today's offer money, live from the decision log. */
+export interface Today {
+  decisions: number
+  sent: number
+  spent: number
+  expected_incremental_profit: number
+  no_offer: number
+  /** What the offers the engine chose not to send would have cost. */
+  margin_kept: number
+  blocked: number
+  held_out: number
+}
+/** One customer's line in a personal-picks run report (scheduler/runner.pick_row). */
+export interface PickRow {
+  decision_id: string
+  customer_id: string
+  first_name: string
+  where: 'telegram' | 'lab'
+  policy: PolicyName
+  category: string | null
+  category_share: number | null
+  status: DecisionStatus
+  title: string
+  offer_id: string | null
+  decided_by: DecidedBy
+  cost: number
+  expected_incremental_profit: number
+}
+/** POST /api/scheduler/run/{job}: counts for every job; personal_picks adds the report. */
+export interface JobResult {
+  job?: string
+  decisions?: number
+  sent?: number
+  queued?: number
+  admins_messaged?: number
+  error?: string
+  blocked?: number
+  no_offer?: number
+  spent?: number
+  lab_posting?: number
+  rows?: PickRow[]
+}
 /** GET /api/scheduler (main, outside contracts §4). */
 export interface SchedulerStatus {
   running: boolean

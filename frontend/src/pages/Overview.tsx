@@ -59,7 +59,7 @@ export function Overview() {
         <div className="grid gap-3 sm:grid-cols-2 sm:grid-rows-[auto_auto_1fr]">
           <Funnel className="sm:col-span-2" decisions={ds} />
           <DecidedByShare kpis={k} decisions={ds} />
-          <MarginCallout kpis={k} decisions={ds} />
+          <MarginCallout kpis={k} />
           <AutomationsCard className="sm:col-span-2" />
         </div>
       </div>

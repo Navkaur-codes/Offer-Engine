@@ -26,6 +26,7 @@ Base URL (production): `https://offer-engine-n4jx.onrender.com` · locally `http
 
 | Method | Path | Returns |
 |---|---|---|
+| GET | `/api/today?day=` | today's offer money from the decision log: `{decisions, sent, spent, expected_incremental_profit, no_offer, margin_kept, blocked, held_out}`; `margin_kept` = for each NO_OFFER decision, what its costliest allowed offer would have cost |
 | GET | `/api/kpis?day=` | `Kpis`: sent today, claim rate, budget used, blocked by rules, agent/fallback share, and `incremental_revenue` and `margin_saved` over the **last 12 months**; `deltas` vs yesterday (null when there's nothing to compare) |
 | GET | `/api/experiments?start=&end=` | `ExperimentStats`: treatment vs control, incremental revenue and profit, margin saved on sure-things, uplift by policy, ROI by offer type, Qini points, festival vs baseline. Each campaign is compared with its own control |
 | GET | `/api/realism` | `RealismStats`: benchmark statistics with target bands and sources |
@@ -77,7 +78,7 @@ Triggers: `welcome`, `cart_abandoned`, `browse_interest`, `inactivity`, `points_
 | Method | Path | Auth | Returns |
 |---|---|---|---|
 | GET | `/api/scheduler` | – | `{running, next_runs: {job: iso_time}}` |
-| POST | `/api/scheduler/run/{job}` | admin | runs `cart_abandonment`, `flush_quiet_queue`, `points_expiry` or `daily_digest` now |
+| POST | `/api/scheduler/run/{job}` | admin | runs `cart_abandonment`, `flush_quiet_queue`, `points_expiry`, `personal_picks` or `daily_digest` now; `personal_picks` also returns `blocked`, `no_offer`, `spent`, `lab_posting` and one `rows[]` entry per customer (name, Telegram/Lab, top category and share, policy, status, explanation title, decided by, cost) |
 
 ## Examples
 

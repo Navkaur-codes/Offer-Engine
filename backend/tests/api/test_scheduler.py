@@ -32,7 +32,7 @@ def env(monkeypatch, tmp_path):
     config.set_time_override(None)
 
 
-def _customer(cid: str, chat: int | None) -> None:
+def _customer(cid: str, chat: int | None, lab: bool = False) -> None:
     with Session(db.engine) as s:
         s.add(
             m.CustomerRow(
@@ -47,6 +47,7 @@ def _customer(cid: str, chat: int | None) -> None:
                 persona="cart_abandoner",
                 response_type="persuadable",
                 telegram_chat_id=chat,
+                is_lab_bot=lab,
             )
         )
         s.commit()
@@ -122,3 +123,75 @@ def test_scheduler_api(env, monkeypatch):
         body = c.post("/api/scheduler/run/cart_abandonment", headers={"X-Admin-Passcode": "pw"}).json()
         assert body == {"job": "cart_abandonment", "decisions": 0, "sent": 0, "queued": 0}
         assert c.post("/api/scheduler/run/nope", headers={"X-Admin-Passcode": "pw"}).status_code == 404
+
+
+@pytest.fixture
+def picks(env, monkeypatch):
+    """Telegram, Lab and plain synthetic customers; decide_batch records what it was asked."""
+    _customer("TG3", 3)
+    _customer("C900002", None, lab=True)
+    _customer("C000001", None)
+    affinity = {"fashion": 0.6, "beauty": 0.4}
+    profile = stubs.PROFILES["C000001"].model_copy(update={"category_affinity": affinity})
+    monkeypatch.setattr(ports, "build_profile", lambda cid, at: profile)
+    calls = []
+
+    def batch(items, **kw):
+        calls.append((items, kw))
+        return [
+            ports.decide(cid, trigger, meta).model_copy(
+                update={"channel": "lab_group" if trigger == "lab" else "dm"}
+            )
+            for cid, trigger, meta in items
+        ]
+
+    monkeypatch.setattr(ports, "decide_batch", batch)
+    return calls
+
+
+def test_personal_picks_cover_telegram_and_lab_customers_only(env, picks):
+    decisions = jobs.personal_picks()
+    items, kw = picks[0]
+    assert [(cid, trigger) for cid, trigger, _ in items] == [("TG3", "campaign"), ("C900002", "lab")]
+    assert kw == {"dry_run": False, "agent_top_n": 5}  # one batch: the agent only for the top 5 (T26)
+    assert items[0][2] == {
+        "campaign": "personal_picks", "source": "scheduler", "category": "fashion", "category_share": 0.6
+    }
+    assert "initiated_by" not in items[0][2]  # proactive: quiet hours still hold DMs to real people
+    assert env == [("TG3", "campaign")]  # only Telegram gets a DM; the runner posts the Lab pick
+    assert len(decisions) == 2
+
+
+def test_personal_picks_run_report_and_lab_post(env, picks, monkeypatch):
+    posted = []
+    monkeypatch.setattr(
+        ports, "post_lab_picks", lambda ds: posted.append([d.customer_id for d in ds]) or len(ds)
+    )
+    monkeypatch.setattr(settings, "telegram_bot_token", "")
+    monkeypatch.setattr(settings, "admin_passcode", "pw")
+    with TestClient(main.app) as c:
+        body = c.post("/api/scheduler/run/personal_picks", headers={"X-Admin-Passcode": "pw"}).json()
+    assert body["job"] == "personal_picks" and body["decisions"] == 2 and body["lab_posting"] == 1
+    rows = {r["customer_id"]: r for r in body["rows"]}
+    assert rows["TG3"]["where"] == "telegram" and rows["C900002"]["where"] == "lab"
+    assert rows["TG3"]["category"] == "fashion" and rows["TG3"]["title"]
+    assert body["spent"] == sum(r["cost"] for r in body["rows"] if r["status"] == "SENT")
+    assert posted == [["C900002"]]
+
+
+def test_personal_picks_with_nobody_to_pick(env, monkeypatch):
+    monkeypatch.setattr(ports, "decide_batch", lambda *a, **k: pytest.fail("no customers, no batch"))
+    assert jobs.personal_picks() == []
+
+
+def test_today_numbers_follow_the_decision_log(env):
+    sent = stubs.decide("C000001", "campaign", {}, now=NOW)
+    skipped = stubs.decide("C000003", "campaign", {}, now=NOW)  # stub VIP: NO_OFFER
+    assert sent.status == "SENT" and skipped.status == "NO_OFFER"
+    decision_store.save(sent)
+    decision_store.save(skipped)
+    with TestClient(main.app) as c:
+        today = c.get("/api/today").json()
+    assert today["sent"] == 1 and today["spent"] == sent.cost and today["no_offer"] == 1
+    assert today["margin_kept"] == max((x.est_cost for x in skipped.candidates), default=0)
+    assert today["decisions"] == 2

@@ -172,10 +172,6 @@ async def play_round(
 ) -> Decision:
     """One round. `prepared` = (activity already written, decision already made) for batched runs.
     `threaded` = reply-link across bots (supergroups only); otherwise the name headers carry the thread."""
-
-    def link(message: Message) -> Message | None:
-        return message if threaded else None
-
     act = prepared[0] if prepared else await asyncio.to_thread(scripts.activity, customer, now(), turn)
     header = f"👤 <b>{escape(customer.name)}</b> · {escape(customer.label)}"
     post = await _post(voice, chat_id, f"{header}\n{act.line}")
@@ -187,11 +183,32 @@ async def play_round(
         decision = prepared[1]
     else:
         decision = await asyncio.to_thread(ports.decide, customer.id, "lab", act.meta)
-    answer = await _offer_reply(offer_bot, chat_id, decision, offer_reply(decision, customer), link(post))
+    return await _answer_and_react(
+        offer_bot, voice, chat_id, customer, decision, offer_reply(decision, customer), pause, post, threaded
+    )
+
+
+async def _answer_and_react(
+    offer_bot: Bot,
+    voice: Bot,
+    chat_id: int,
+    customer: LabCustomer,
+    decision: Decision,
+    text: str,
+    pause: Callable[[], Awaitable[None]],
+    post: Message | None,
+    threaded: bool,
+) -> Decision:
+    """The Offer bot answers with the decision; for an offer, the customer reacts in character."""
+
+    def link(message: Message | None) -> Message | None:
+        return message if threaded else None
+
+    answer = await _offer_reply(offer_bot, chat_id, decision, text, link(post))
     sender.remember(decision)
     await asyncio.to_thread(store.set_message_id, decision.id, answer.message_id)
     remember_message(answer.message_id, decision.id)  # the Offer bot's own id: right for reply-/why anywhere
-    if threaded:
+    if threaded and post is not None:
         remember_message(post.message_id, decision.id)
     if decision.status not in OFFER_STATUSES or not decision.final_offer_id:
         return decision
@@ -244,6 +261,65 @@ async def run_rounds_async(
         return decisions
     finally:
         _running = False
+
+
+def pick_reply(decision: Decision, customer: LabCustomer) -> str:
+    """A personal pick is unprompted: the header says the scheduler sent it and what it was built on."""
+    category = decision.trigger_meta.get("category")
+    basis = f" · top category {escape(category.replace('_', ' '))}" if category else ""
+    return f"🎯 <b>Personal pick</b> (scheduler){basis}\n{offer_reply(decision, customer)}"
+
+
+async def post_picks_async(
+    offer_bot: Bot,
+    chat_id: int,
+    decisions: list[Decision],
+    *,
+    bot_factory: Callable[[str], Bot] = Bot,
+    pause: Callable[[], Awaitable[None]] = _pause,
+) -> int:
+    """Posts already-made personal-pick decisions for Lab customers; the shoppers react as in a round.
+    Waits for a running Lab round to finish instead of interleaving with it."""
+    global _running
+    cast = [(BY_ID[d.customer_id], d) for d in decisions if d.customer_id in BY_ID]
+    voices_tokens = tokens()
+    if not cast or not voices_tokens:
+        return 0
+    for _ in range(150):
+        if not _running:
+            break
+        await asyncio.sleep(2)
+    else:
+        raise LabError("A Lab run kept the group busy; personal picks were logged but not posted.")
+    _running = True
+    try:
+        async with AsyncExitStack() as stack:
+            voices = [await stack.enter_async_context(bot_factory(t)) for t in voices_tokens]
+            threaded = await shared_message_ids(offer_bot, chat_id)
+            for customer, decision in cast:
+                voice = voices[voice_index(customer, len(voices))]
+                text = pick_reply(decision, customer)
+                await _answer_and_react(
+                    offer_bot, voice, chat_id, customer, decision, text, pause, None, threaded
+                )
+                await pause()
+        return len(cast)
+    finally:
+        _running = False
+
+
+def post_picks(decisions: list[Decision]) -> int:
+    """The sync port for the scheduler: posts Lab customers' personal picks into the registered Lab group."""
+    chat_id = runtime.lab_group_chat_id()
+    if chat_id is None or not settings.telegram_bot_token:
+        log.info("personal picks: no Lab group or bot token, %d picks logged only", len(decisions))
+        return 0
+
+    async def go() -> int:
+        async with Bot(settings.telegram_bot_token) as bot:
+            return await post_picks_async(bot, chat_id, decisions)
+
+    return asyncio.run(go())
 
 
 def _prepare_batch(cast: list[tuple[LabCustomer, int]]) -> list[tuple[scripts.Activity, Decision]]:

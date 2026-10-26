@@ -8,15 +8,19 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram import Bot
 
+from app import ports
 from app.config import IST, settings
+from app.contracts import Decision
 from app.scheduler import jobs
 
 log = logging.getLogger(__name__)
+_TASKS: set[asyncio.Task] = set()  # background Lab posts; referenced so they aren't garbage-collected
 
 SCHEDULE = {  # job -> APScheduler trigger kwargs (IST)
     "cart_abandonment": {"trigger": "interval", "minutes": 5},
     "flush_quiet_queue": {"trigger": "cron", "hour": 9, "minute": 5},
     "points_expiry": {"trigger": "cron", "hour": 10, "minute": 0},
+    "personal_picks": {"trigger": "cron", "hour": "11,18", "minute": 0},
     "daily_digest": {"trigger": "cron", "hour": 21, "minute": 0},
 }
 
@@ -35,11 +39,58 @@ async def run_job(name: str) -> dict:
             "sent": sum(d.status == "SENT" for d in decisions),
             "queued": sum(d.status == "QUEUED" for d in decisions),
         }
+        if name == jobs.PICKS:
+            summary.update(_picks_summary(decisions))
         log.info("scheduler %s", summary)
         return summary
     except Exception as exc:  # a broken job must not stop the others
         log.exception("scheduler job %s failed: %s", name, type(exc).__name__)
         return {"job": name, "error": type(exc).__name__}
+
+
+def pick_row(d: Decision) -> dict:
+    """One line of the dashboard's run report: who, what it was based on, what happened and why."""
+    e = d.explanation
+    return {
+        "decision_id": d.id,
+        "customer_id": d.customer_id,
+        "first_name": d.profile_snapshot.first_name,
+        "where": "lab" if d.channel == "lab_group" or d.trigger == "lab" else "telegram",
+        "policy": d.profile_snapshot.policy,
+        "category": d.trigger_meta.get("category"),
+        "category_share": d.trigger_meta.get("category_share"),
+        "status": d.status,
+        "title": e.title,
+        "offer_id": d.final_offer_id,
+        "decided_by": d.decided_by,
+        "cost": d.cost,
+        "expected_incremental_profit": d.expected_incremental_profit,
+    }
+
+
+def _picks_summary(decisions: list[Decision]) -> dict:
+    """Run report for the dashboard, plus the Lab posts, which run in the background so the response is quick
+    (each Lab round takes a few seconds of readable pacing in the group)."""
+    lab = [d for d in decisions if d.trigger == "lab"]
+    if lab:
+        task = asyncio.get_running_loop().create_task(_post_lab(lab))
+        _TASKS.add(task)
+        task.add_done_callback(_TASKS.discard)
+    return {
+        "blocked": sum(d.status == "BLOCKED" for d in decisions),
+        "no_offer": sum(d.status == "NO_OFFER" for d in decisions),
+        "spent": sum(d.cost for d in decisions if d.status == "SENT"),
+        "lab_posting": len(lab),
+        "rows": [pick_row(d) for d in decisions],
+    }
+
+
+async def _post_lab(decisions: list[Decision]) -> None:
+    try:
+        posted = await asyncio.to_thread(ports.post_lab_picks, decisions)
+        log.info("personal picks: %d posted in the Lab group", posted)
+    except Exception as exc:  # the decisions are already logged; a failed post must not crash the scheduler
+        log.warning("personal picks Lab post failed: %s", type(exc).__name__)
 
 
 async def send_to_admins(html: str) -> int:

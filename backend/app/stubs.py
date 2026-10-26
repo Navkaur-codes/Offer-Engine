@@ -629,6 +629,10 @@ def run_rounds(n: int) -> list[Decision]:
     return [decide(cid, "lab") for cid in list(PROFILES)[:n]]
 
 
+def post_lab_picks(decisions: list[Decision]) -> int:
+    return 0
+
+
 def decide_batch(
     items: list[tuple[str, TriggerType, dict]],
     *,

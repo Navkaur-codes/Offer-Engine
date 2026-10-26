@@ -1,7 +1,8 @@
 """Proactive triggers (owned by Main). Each job is a plain sync function so it can be tested and run by hand.
 
 The harness decides and stores; jobs only find who is due, call `ports.decide`, and hand SENT decisions to the
-bot through `ports.deliver`. Jobs never send to synthetic customers (they have no Telegram chat).
+bot through `ports.deliver`. Jobs never DM synthetic customers (they have no Telegram chat); personal
+picks for the 10 Lab customers are posted in the Lab group, the bots' own stage.
 """
 
 from __future__ import annotations
@@ -22,6 +23,8 @@ CART_IDLE = timedelta(minutes=30)  # a cart counts as abandoned after this long
 CART_LOOKBACK = timedelta(hours=6)  # older carts are left alone
 POINTS_REPEAT = timedelta(days=3)  # one points-expiry reminder per 3 days
 FLUSHED = "queue_flushed"  # settings key: ids of QUEUED decisions already re-run
+PICKS = "personal_picks"
+PICKS_AGENT_TOP_N = 5
 
 
 def _telegram_customers(s: Session) -> list[CustomerRow]:
@@ -126,6 +129,36 @@ def points_expiry() -> list[Decision]:
     return out
 
 
+def _pick_meta(customer_id: str, at) -> dict:
+    """What the pick is built on: the customer's strongest category (60% spend share + 40% browsing share)."""
+    affinity = ports.build_profile(customer_id, at).category_affinity
+    meta: dict = {"campaign": PICKS, "source": "scheduler"}
+    if affinity:
+        top = max(affinity, key=affinity.get)
+        meta.update(category=top, category_share=round(affinity[top], 2))
+    return meta
+
+
+def personal_picks() -> list[Decision]:
+    """11:00 and 18:00 IST: one profile-based pick for every Telegram customer (DM, quiet hours apply) and
+    every Lab customer (posted in the Lab group). One batch, so only the top 5 by expected profit use the
+    agent (T26); every pick still goes through the full pipeline and every limit, and every outcome is
+    logged."""
+    at = now()
+    with Session(db.engine) as s:
+        telegram = [c.id for c in _telegram_customers(s) if not c.is_lab_bot]
+        lab = list(s.exec(select(CustomerRow.id).where(CustomerRow.is_lab_bot)).all())
+    items: list[tuple[str, TriggerType, dict]] = [(cid, "campaign", _pick_meta(cid, at)) for cid in telegram]
+    items += [(cid, "lab", _pick_meta(cid, at)) for cid in sorted(lab)]
+    if not items:
+        return []
+    decisions = ports.decide_batch(items, dry_run=False, agent_top_n=PICKS_AGENT_TOP_N)
+    for d in decisions:
+        if d.status == "SENT" and d.channel == "dm":
+            ports.deliver(d, "dm")
+    return decisions
+
+
 def daily_digest_text() -> str:
     """21:00 IST: the day's digest (sent to admins by the runner)."""
     return ports.daily_digest(now().date())
@@ -135,4 +168,5 @@ JOBS = {
     "cart_abandonment": cart_abandonment,
     "flush_quiet_queue": flush_quiet_queue,
     "points_expiry": points_expiry,
+    PICKS: personal_picks,
 }
