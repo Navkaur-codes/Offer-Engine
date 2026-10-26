@@ -153,7 +153,13 @@ on('GET', '/api/scheduler', (): SchedulerStatus => {
   const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
   return { running: true, next_runs: { cart_abandonment: at(0.1), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
 })
-on('POST', '/api/scheduler/run/:job', (m) => ({ job: m[1], ran: true, decisions: 0 }))
+// Same shapes as scheduler/runner.run_job: digest → admins_messaged; jobs → counts.
+on('POST', '/api/scheduler/run/:job', (m) =>
+  m[1] === 'daily_digest'
+    ? { job: m[1], admins_messaged: 1 }
+    : m[1] === 'cart_abandonment'
+      ? { job: m[1], decisions: 3, sent: 1, queued: 0 }
+      : { job: m[1], decisions: 0, sent: 0, queued: 0 })
 on('GET', '/api/digest', (): Digest => ({
   day: new Date().toISOString().slice(0, 10),
   text: 'Cart abandoners drove most claims today; free shipping beat 5% off on cost. 4 VIPs were left alone because they buy anyway, saving ₹3,120 of margin.',
