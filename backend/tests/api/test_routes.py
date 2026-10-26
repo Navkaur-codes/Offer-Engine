@@ -182,3 +182,17 @@ def test_policy_scan_is_parallel_cached_and_ordered(monkeypatch):
     first = len(calls)
     customers._profiles(None, "vip", None, 3)
     assert len(calls) == first  # second request served from the cache
+
+
+def test_simulate_delivers_a_sent_offer(client, monkeypatch):
+    """The dashboard's Simulate trigger logged SENT offers that never reached Telegram."""
+    sent = []
+    monkeypatch.setattr(ports, "deliver", lambda d, channel: sent.append((d.status, channel)))
+    r = client.post(
+        "/api/customers/C000001/simulate",
+        json={"trigger": "cart_abandoned"},
+        headers={"X-Admin-Passcode": "test-pass"},
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "SENT"
+    assert sent == [("SENT", "dm")]

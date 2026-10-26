@@ -111,8 +111,12 @@ def get_customer(customer_id: str) -> dict:
 
 @router.post("/customers/{customer_id}/simulate", dependencies=[Depends(require_admin)])
 def simulate(customer_id: str, body: SimulateIn) -> Decision:
-    """Runs the real pipeline (the harness stores and the bot delivers); not a dry run."""
-    return ports.decide(customer_id, body.trigger, {**body.meta, "initiated_by": "admin"})
+    """Runs the real pipeline, not a dry run. The harness stores but never sends, so (as in the scheduler) a
+    SENT offer is delivered here; synthetic customers have no chat, so deliver skips them."""
+    decision = ports.decide(customer_id, body.trigger, {**body.meta, "initiated_by": "admin"})
+    if decision.status == "SENT" and decision.channel == "dm":
+        ports.deliver(decision, "dm")
+    return decision
 
 
 @router.post("/playground/run")
