@@ -154,11 +154,53 @@ export function MomentsStrip({ className }: { className?: string }) {
   )
 }
 
-const JOB_LABEL: Record<string, string> = {
-  cart_abandonment: 'Abandoned-cart check',
-  daily_digest: 'Daily AI digest',
-  flush_quiet_queue: 'Send queued offers (after quiet hours)',
-  points_expiry: 'Points-expiry reminders',
+// Plain-English description of each proactive job: what it does and who it targets.
+const JOBS: Record<string, { label: string; what: string; empty: string }> = {
+  cart_abandonment: {
+    label: 'Abandoned carts',
+    what: 'Every 5 min: nudges Telegram customers whose cart is 30 min – 6 h old, unbought and not yet nudged.',
+    empty: 'nothing due right now (only Telegram customers with a 30 min – 6 h old cart)',
+  },
+  flush_quiet_queue: {
+    label: 'Queued offers',
+    what: '09:05 IST: re-decides offers that quiet hours (21:00–09:00) held overnight, under today’s rules and consent.',
+    empty: 'nothing queued from last night',
+  },
+  points_expiry: {
+    label: 'Points expiry',
+    what: '10:00 IST: reminds Telegram customers whose points expire within 3 days (at most once per 3 days).',
+    empty: 'no Telegram customer has points expiring in the next 3 days',
+  },
+  daily_digest: {
+    label: 'Daily digest',
+    what: '21:00 IST: sends the day’s plain-English summary to the admins on Telegram.',
+    empty: 'no admin received it',
+  },
+}
+const jobLabel = (job: string) => JOBS[job]?.label ?? job.replaceAll('_', ' ')
+
+type JobResult = { job?: string; decisions?: number; sent?: number; queued?: number; admins_messaged?: number; error?: string }
+
+/** Turns the runner's summary into one honest sentence (it never claims work that didn't happen). */
+function reportJob(job: string, r: JobResult) {
+  const name = jobLabel(job)
+  if (r.error) {
+    toast.error(`${name}: failed`, { description: `The job raised ${r.error}. Nothing was sent.` })
+    return
+  }
+  if (r.admins_messaged !== undefined) {
+    toast(r.admins_messaged
+      ? `${name} sent to ${r.admins_messaged} admin${r.admins_messaged === 1 ? '' : 's'} on Telegram`
+      : `${name}: ${JOBS[job]?.empty ?? 'nothing sent'}`)
+    return
+  }
+  if (!r.decisions) {
+    toast(`${name}: ${JOBS[job]?.empty ?? 'nothing due right now'}`)
+    return
+  }
+  toast(`${name}: ${r.decisions} decision${r.decisions === 1 ? '' : 's'} · ${r.sent ?? 0} sent · ${r.queued ?? 0} queued`, {
+    description: 'Every one is in the Decisions log with its reason.',
+  })
 }
 
 /** Proactive triggers the scheduler runs on its own; admins can run one now for a demo. */
@@ -168,10 +210,11 @@ export function AutomationsCard({ className }: { className?: string }) {
   const { data } = useQuery({ queryKey: ['scheduler'], queryFn: api.scheduler, refetchInterval: 60_000 })
   const run = useMutation({
     mutationFn: api.runJob,
-    onSuccess: (_r, job) => {
-      toast(`${JOB_LABEL[job] ?? job}: ran now`)
+    onSuccess: (r, job) => {
+      reportJob(job, r as JobResult)
       qc.invalidateQueries({ queryKey: ['decisions'] })
       qc.invalidateQueries({ queryKey: ['scheduler'] })
+      qc.invalidateQueries({ queryKey: ['kpis'] })
     },
   })
   const jobs = Object.entries(data?.next_runs ?? {}).sort((a, b) => (a[1] ?? '~').localeCompare(b[1] ?? '~'))
@@ -181,21 +224,29 @@ export function AutomationsCard({ className }: { className?: string }) {
         <CardTitle>Automations</CardTitle>
         <span className="num text-[11.5px] text-muted">{data ? (data.running ? 'scheduler on' : '✗ scheduler off') : '…'}</span>
       </CardHeader>
+      {!unlocked ? (
+        <p className="border-b border-line bg-amber-soft px-4 py-2 text-[12px] text-amber-text">
+          ⚠ Unlock with the admin passcode (top bar) to run jobs now. They also run on their own schedule.
+        </p>
+      ) : null}
       <ul className="divide-y divide-line">
         {jobs.map(([job, at]) => (
-          <li key={job} className="flex items-center justify-between gap-2 px-4 py-2 text-[13px]">
+          <li key={job} className="flex items-start justify-between gap-3 px-4 py-2.5 text-[13px]">
             <div className="min-w-0">
-              <p className="truncate text-ink">{JOB_LABEL[job] ?? job}</p>
-              <p className="num text-[11.5px] text-muted">{at ? `next ${formatDateTime(at)}` : 'paused'}</p>
+              <p className="text-ink">
+                {jobLabel(job)} <span className="num text-[11.5px] text-muted">· {at ? `next ${formatDateTime(at)}` : 'paused'}</span>
+              </p>
+              {JOBS[job] ? <p className="text-[12px] text-muted">{JOBS[job].what}</p> : null}
             </div>
             <Button
               size="sm"
-              variant="ghost"
+              variant="secondary"
+              className="shrink-0"
               disabled={!unlocked || run.isPending}
-              title={unlocked ? undefined : 'Unlock edits with the admin passcode first'}
               onClick={() => run.mutate(job)}
+              aria-label={`Run ${jobLabel(job)} now`}
             >
-              <Play /> Run now
+              <Play /> {run.isPending && run.variables === job ? 'Running…' : 'Run now'}
             </Button>
           </li>
         ))}
