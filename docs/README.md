@@ -19,6 +19,7 @@ Start with the [project README](../README.md) for the pitch and the 5-minute dem
 |---|---|
 | [`architecture.md`](architecture.md) | components, the decision lifecycle, rules engine, scoring, data model, bot, scheduler, security |
 | [`api.md`](api.md) | every REST endpoint, authentication and examples |
+| [`testing/`](testing/README.md) | a scenario test pack: 20 scenarios run as dry runs against the live engine, with automatic checks |
 | [`operations.md`](operations.md) | hosting, environment variables, deploy, daily checks, common tasks, judging settings, troubleshooting |
 | [`data-dictionary.md`](data-dictionary.md) | every table and column, how the synthetic data is generated and why |
 | [`contracts.md`](contracts.md) | shared models and interfaces between modules (contract v1.1) |

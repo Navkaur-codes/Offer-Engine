@@ -36,3 +36,6 @@ Thumbs.db
 # claude code local
 .claude/settings.local.json
 .claude/worktrees/
+
+# scenario test output
+docs/testing/results.csv

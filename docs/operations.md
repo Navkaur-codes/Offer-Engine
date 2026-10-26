@@ -78,6 +78,8 @@ ruff check backend
 cd frontend && npm run lint && npm run build
 ```
 
+Black-box checks against the live engine (dry runs, nothing sent): `python docs/testing/run_scenarios.py` (see [`testing/README.md`](testing/README.md)).
+
 `backend/tests/conftest.py` pins other teams' ports to stubs in unit tests; mark a test `@pytest.mark.real_ports` to use the real modules.
 
 ## 5. Deploy
@@ -104,7 +106,7 @@ Database changes are applied at startup by `db.init_db()` (create missing tables
 |---|---|
 | **Stop all sends now** | dashboard kill switch, `/killswitch on` in Telegram (admin), or `POST /api/settings/killswitch {"on":true}` |
 | Edit a rule | dashboard → Rules → change the number → check the impact preview → Save; revert from History |
-| Test as a fresh customer | in your bot chat: `/impersonate C000129` … `/impersonate off` (admin only; lost on restart) |
+| Test as a fresh customer | copy a customer id from the dashboard's Customers page (filtered by policy), then in your bot chat `/impersonate <id>` … `/impersonate off` (admin only; lost on restart). Policies drift as real time passes, so pick the id on the day |
 | Run a scheduler job now | `POST /api/scheduler/run/{job}` with the passcode |
 | Customer Lab setup | add the Holdout bot and Lab Shopper bots to the group, then `/lab@navpreet_offers_bot here` once |
 | Run Lab rounds | `/lab@navpreet_offers_bot run 3` (each round counts toward that customer's weekly cap) |

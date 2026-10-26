@@ -1,0 +1,21 @@
+id,customer,trigger,meta,now,use_ai,expect
+S01,policy:cart_abandoner,cart_abandoned,"{""minutes"": 40}",,no,offer;types=cart_nudge|free_shipping|pct_off|bonus_points;pct<=5
+S02,policy:cart_abandoner,cart_abandoned,"{""minutes"": 40}",,yes,offer_or_reasoned_no_offer
+S03,policy:vip,browse_interest,"{""views"": 3}",,no,no_discount;types=early_access|bonus_points|free_shipping|free_express|points_reminder
+S04,policy:vip,browse_interest,"{""views"": 3}",,yes,no_discount
+S05,policy:deal_hunter,browse_interest,"{""views"": 4}",,no,pct<=10;min_basket>=999
+S06,policy:deal_hunter,cart_abandoned,"{""minutes"": 45}",,yes,pct<=10;min_basket>=999
+S07,policy:high_returner,cart_abandoned,"{""minutes"": 40}",,no,types=bonus_points|points_reminder
+S08,policy:window_shopper,browse_interest,"{""views"": 5}",,no,types=free_shipping|flat_off|cart_nudge|early_access;amount<=150
+S09,policy:new_user,browse_interest,"{""views"": 2}",,no,pct<=15
+S10,policy:at_risk,inactivity,"{""days"": 45}",,no,pct<=20
+S11,policy:dormant,inactivity,"{""days"": 150}",,no,pct<=15
+S12,C900008,lab,"{""category"": ""gifting""}",,no,no_offer
+S13,C000129,cart_abandoned,"{""minutes"": 40}",,no,fallback_only
+S14,C000129,cart_abandoned,"{""minutes"": 40}",,yes,offer_or_reasoned_no_offer
+S15,C000075,festival,"{""festival"": ""diwali"", ""phase"": ""build_up""}",2026-11-05T12:00:00+05:30,no,festival_safe
+S16,C000056,festival,"{""festival"": ""diwali"", ""phase"": ""last_minute""}",2026-11-07T18:00:00+05:30,no,festival_safe;pct<=10
+S17,C000162,payday,"{""day"": 1}",2026-11-01T11:00:00+05:30,no,valid
+S18,C000083,points_expiry,"{""points"": 400, ""expires_on"": ""2026-10-29""}",,no,valid
+S19,policy:default,browse_interest,"{""views"": 3}",,no,valid
+S20,random:25,cart_abandoned|browse_interest|inactivity|payday,"{""minutes"": 40, ""views"": 3, ""days"": 60}",,no,valid

@@ -7,7 +7,7 @@
 - [ ] Open https://offer-engine-n4jx.onrender.com/health. It wakes Render; check `"bot": true`, all ports `real`, and `llm_budget.mode` is `70b` or `8b`.
 - [ ] Dashboard: the kill switch is **off** (the sidebar dot) and the admin passcode is entered (needed for rule edits).
 - [ ] Telegram: in the Customer Lab group, `/lab@navpreet_offers_bot who` lists the 10 Lab customers. If the engine clock was moved, run `/lab date off`.
-- [ ] **Rehearse on your own phone without new accounts:** `/impersonate C000129` (admin only) makes your chat act as a fresh synthetic customer. Then `/simulate cart` → picture card → **❓ Why this?** → `/simulate purchase` + `/simulate cart` (blocked by the 48 h rule) → `/impersonate off`. Other fresh picks: `C000075` (VIP), `C000056` (deal hunter). Impersonation is kept in memory, so redo it after a Render restart.
+- [ ] **Rehearse on your own phone without new accounts:** open the dashboard's **Customers** page, filter by a policy (for example Cart abandoner) and copy the first customer's id. Then in the bot: `/impersonate <that id>` (admin only) → `/simulate cart` → picture card → **❓ Why this?** → `/simulate purchase` + `/simulate cart` (blocked by the 48 h rule) → `/impersonate off`. Policies change as real time passes (a cart older than 3 days stops counting), so pick the id on the day. Impersonation is kept in memory, so redo it after a Render restart.
 - [ ] **Don't run the Lab the day before the demo.** Every round counts toward each Lab customer's "3 offers per 7 days"; a capped Lab shows mostly "Blocked" (honest, but not the story you want to tell first).
 - [ ] Your own account: send `/stop`, then `/start` again, so the demo begins with a fresh welcome.
 - [ ] Rules → Global shows the **judging settings**: frequency cap "at least **0** days apart" and "**2** active coupons" (set 25 Oct so `/start` → `/simulate cart` gives an offer). The 3-offers-per-7-days cap stays. Revert both under History after judging.
@@ -40,7 +40,7 @@ Point to the Overview hero number (incremental revenue vs holdout) and the "marg
 7. Reply `/why` to one of the Offer bot's cards for the explanation in the group.
 
 ## 3:15 – 4:15 · The dashboard: trust and control
-8. **Playground:** click the **Cart abandoner** quick-pick (`C000129` Wishi), trigger `cart_abandoned`, Run. Other good picks (checked 26 Oct): VIP `C000075` Krish → early access, deal hunter `C000056` Gautami → 5% off ethnic wear with a minimum basket. **Don't use Lab customers here:** after many Lab rounds they hit "3 offers per 7 days" and show Blocked.
+8. **Playground:** click the **Cart abandoner** quick-pick, trigger `cart_abandoned`, Run. The quick-picks always choose a customer who is in that policy *now*; try **VIP** (early access, never a discount) and **Deal hunter** (capped % off with a minimum basket) too. **Don't use Lab customers here:** after many Lab rounds they can hit their weekly cap and show Blocked.
    **"This is the Decision Pipeline Lens: pre-gate, policy, agent, validator, sent. Here are the agent's tool calls and every rule ✓ or ✗."**
    Toggle **force LLM failure** → Run again.
    **"If the AI fails, times out or runs out of budget, the deterministic fallback decides, and it's checked by the same rule code. The bot never goes silent."**
