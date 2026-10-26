@@ -352,3 +352,35 @@ def test_deployed_meera_without_declines_is_repaired(memory_db):
             s.delete(e)
         s.commit()
     assert registry.ensure_lab_customers() == 1
+
+
+# ---------------------------------------------------------------- personal picks (scheduler)
+async def test_personal_picks_are_posted_unprompted_and_shoppers_react(four_bots, monkeypatch):
+    log, factory = four_bots
+    monkeypatch.setattr(runner, "react", lambda d, c: "claim")
+    picks = [
+        stubs.decide("C000001", "lab", {"campaign": "personal_picks", "category": "fashion"}).model_copy(
+            update={"customer_id": cid}
+        )
+        for cid in ("C900001", "C900002")
+    ]
+    offer = FakeBot("offer_bot", log)
+    posted = await runner.post_picks_async(
+        offer, GROUP, picks, bot_factory=factory.__getitem__, pause=_no_pause
+    )
+    offers = [m for m in log if m.bot == "offer_bot"]
+    assert posted == 2 and len(offers) == 2
+    header = "🎯 <b>Personal pick</b> (scheduler) · top category fashion\n"
+    assert offers[0].text.startswith(header + "📨 <b>For Arjun")
+    assert not any(m.text.startswith("👤") for m in log)  # no shopper activity: the scheduler started it
+    assert sum(m.bot.startswith("lab_shopper") for m in log) == 2  # each shopper reacted once
+
+
+async def test_personal_picks_skip_non_lab_customers_and_missing_bots(four_bots, monkeypatch):
+    log, factory = four_bots
+    synthetic = stubs.decide("C000001", "campaign", {})
+    assert await runner.post_picks_async(FakeBot("offer_bot", log), GROUP, [synthetic], pause=_no_pause) == 0
+    monkeypatch.setattr(settings, "customer_bot_tokens", "[]")
+    lab_pick = synthetic.model_copy(update={"customer_id": "C900001"})
+    assert await runner.post_picks_async(FakeBot("offer_bot", log), GROUP, [lab_pick], pause=_no_pause) == 0
+    assert log == []

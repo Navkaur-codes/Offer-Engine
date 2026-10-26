@@ -2,8 +2,8 @@
 import { toast } from 'sonner'
 import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionFilters, DecisionLight,
-  Digest, ExperimentStats, Festival, Health, KillSwitch, Kpis, Meta, Offer, Page, PolicyName,
-  RealismStats, Rule, RuleImpact, RuleLayer, SchedulerStatus, TriggerType,
+  Digest, ExperimentStats, Festival, Health, JobResult, KillSwitch, Kpis, Meta, Offer, Page, PolicyName,
+  RealismStats, Rule, RuleImpact, RuleLayer, SchedulerStatus, Today, TriggerType,
 } from './types'
 
 const PROD_API = 'https://offer-engine-n4jx.onrender.com'
@@ -111,5 +111,6 @@ export const api = {
   setKillswitch: (on: boolean) => post<KillSwitch>('/api/settings/killswitch', { on }),
   budget: () => get<Budget>('/api/budget'),
   scheduler: () => get<SchedulerStatus>('/api/scheduler'),
-  runJob: (job: string) => post<Record<string, unknown>>(`/api/scheduler/run/${encodeURIComponent(job)}`),
+  runJob: (job: string) => post<JobResult>(`/api/scheduler/run/${encodeURIComponent(job)}`),
+  today: () => get<Today>('/api/today'),
 }

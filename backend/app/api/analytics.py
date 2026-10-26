@@ -72,6 +72,29 @@ def kpis(day: date | None = None) -> Kpis:
     return Kpis(**today, deltas={k: _relative(today[k], yday[k]) for k in DELTA_KEYS})
 
 
+@router.get("/today")
+def today(day: date | None = None) -> dict:
+    """Today's money in and out of offers, live from the decision log (the KPIs' 12-month figures only move
+    when a randomised control group can measure them). `margin_kept` is what the offers the engine chose not
+    to send would have cost: per NO_OFFER decision, its costliest allowed candidate (as the Lab says)."""
+    rows = decision_store.day_rows(day or now().date())
+    sent = [r for r in rows if r.status == "SENT"]
+    skipped = [r for r in rows if r.status == "NO_OFFER"]
+    kept = sum(
+        max((c.get("est_cost", 0) for c in r.payload.get("candidates", [])), default=0) for r in skipped
+    )
+    return {
+        "decisions": len(rows),
+        "sent": len(sent),
+        "spent": sum(r.cost for r in sent),
+        "expected_incremental_profit": sum(r.expected_incremental_profit for r in sent),
+        "no_offer": len(skipped),
+        "margin_kept": int(max(kept, 0)),
+        "blocked": sum(r.status == "BLOCKED" for r in rows),
+        "held_out": sum(r.status == "HELD_OUT" for r in rows),
+    }
+
+
 @router.get("/experiments")
 def experiments(start: date | None = None, end: date | None = None) -> ExperimentStats:
     end = end or now().date()

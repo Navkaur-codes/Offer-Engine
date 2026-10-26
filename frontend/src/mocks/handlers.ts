@@ -1,7 +1,8 @@
 // In-memory mock backend for contracts.md §4. State resets on page reload.
 import type {
   Budget, CampaignDryRun, CustomerDetail, CustomerProfile, Decision, DecisionLight, Digest,
-  Festival, Health, KillSwitch, Kpis, Meta, Page, Rule, RuleImpact, SchedulerStatus, TriggerType,
+  Festival, Health, JobResult, KillSwitch, Kpis, Meta, Page, PickRow, Rule, RuleImpact, SchedulerStatus, Today,
+  TriggerType,
 } from '@/lib/types'
 import { CUSTOMERS, DECISIONS, eventsFor, FESTIVALS, fullDecision, KPIS, makeDecision, RULES } from './seed'
 
@@ -151,15 +152,41 @@ on('PATCH', '/api/festivals/:id', (m, _q, body): Festival => {
 })
 on('GET', '/api/scheduler', (): SchedulerStatus => {
   const at = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString()
-  return { running: true, next_runs: { cart_abandonment: at(0.1), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
+  return { running: true, next_runs: { cart_abandonment: at(0.1), personal_picks: at(2), daily_digest: at(5), flush_quiet_queue: at(17), points_expiry: at(18) } }
 })
+on('GET', '/api/today', (): Today => {
+  const today = DECISIONS.filter((d) => Date.now() - new Date(d.ts).getTime() < 86_400_000)
+  const sent = today.filter((d) => d.status === 'SENT')
+  return {
+    decisions: today.length, sent: sent.length, spent: sent.reduce((a, d) => a + d.cost, 0),
+    expected_incremental_profit: sent.reduce((a, d) => a + d.expected_incremental_profit, 0),
+    no_offer: today.filter((d) => d.status === 'NO_OFFER').length, margin_kept: 1840,
+    blocked: today.filter((d) => d.status === 'BLOCKED').length, held_out: today.filter((d) => d.status === 'HELD_OUT').length,
+  }
+})
+// personal_picks: one report row per Telegram and Lab customer, as scheduler/runner.pick_row builds it.
+function picksResult(): JobResult {
+  const rows: PickRow[] = DECISIONS.slice(0, 12).map((d, i) => ({
+    decision_id: d.id, customer_id: d.customer_id, first_name: d.first_name, where: i < 10 ? 'lab' : 'telegram',
+    policy: d.policy, category: ['fashion', 'electronics', 'beauty', 'home'][i % 4], category_share: 0.4 + (i % 5) / 10,
+    status: d.status, title: d.explanation_title, offer_id: d.final_offer_id, decided_by: d.decided_by,
+    cost: d.cost, expected_incremental_profit: d.expected_incremental_profit,
+  }))
+  const count = (s: string) => rows.filter((r) => r.status === s).length
+  return {
+    job: 'personal_picks', decisions: rows.length, sent: count('SENT'), queued: count('QUEUED'), blocked: count('BLOCKED'),
+    no_offer: count('NO_OFFER'), spent: rows.reduce((a, r) => a + (r.status === 'SENT' ? r.cost : 0), 0), lab_posting: 10, rows,
+  }
+}
 // Same shapes as scheduler/runner.run_job: digest → admins_messaged; jobs → counts.
 on('POST', '/api/scheduler/run/:job', (m) =>
   m[1] === 'daily_digest'
     ? { job: m[1], admins_messaged: 1 }
     : m[1] === 'cart_abandonment'
       ? { job: m[1], decisions: 3, sent: 1, queued: 0 }
-      : { job: m[1], decisions: 0, sent: 0, queued: 0 })
+      : m[1] === 'personal_picks'
+        ? picksResult()
+        : { job: m[1], decisions: 0, sent: 0, queued: 0 })
 on('GET', '/api/digest', (): Digest => ({
   day: new Date().toISOString().slice(0, 10),
   text: 'Cart abandoners drove most claims today; free shipping beat 5% off on cost. 4 VIPs were left alone because they buy anyway, saving ₹3,120 of margin.',

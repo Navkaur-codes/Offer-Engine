@@ -71,6 +71,7 @@ _PORTS: dict[str, tuple[str, str, Any]] = {
     "build_application": ("app.bot.app", "build_application", stubs.build_application),
     "set_bot_commands": ("app.bot.app", "set_commands", stubs.set_bot_commands),
     "run_rounds": ("app.lab.runner", "run_rounds", stubs.run_rounds),
+    "post_lab_picks": ("app.lab.runner", "post_picks", stubs.post_lab_picks),
 }
 
 
@@ -225,3 +226,8 @@ async def set_bot_commands(application) -> None:
 
 def run_rounds(n: int) -> list[Decision]:
     return _call("run_rounds")(n)
+
+
+def post_lab_picks(decisions: list[Decision]) -> int:
+    """Posts Lab customers' personal-pick decisions into the Lab group; returns how many were posted."""
+    return _call("post_lab_picks")(decisions)

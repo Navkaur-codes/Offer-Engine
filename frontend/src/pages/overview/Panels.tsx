@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Play } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Money } from '@/components/Money'
@@ -10,8 +11,9 @@ import { Countdown } from '@/app/topbar/UpcomingMoments'
 import { api } from '@/lib/api'
 import { useUpcoming } from '@/lib/festivals'
 import { DECIDED_BY_LABEL, PHASE_LABEL } from '@/lib/labels'
-import type { DecidedBy, DecisionLight, Kpis } from '@/lib/types'
+import type { DecidedBy, DecisionLight, JobResult, Kpis } from '@/lib/types'
 import { cn, formatDate, formatDateTime, formatInt, formatPct } from '@/lib/utils'
+import { PicksReport } from './PicksReport'
 
 /** sent → claimed → redeemed, from the most recent decisions. */
 export function Funnel({ decisions, className }: { decisions: DecisionLight[]; className?: string }) {
@@ -112,8 +114,8 @@ export function DigestCard({ className }: { className?: string }) {
   )
 }
 
-export function MarginCallout({ kpis, decisions, className }: { kpis?: Kpis; decisions: DecisionLight[]; className?: string }) {
-  const skipped = decisions.filter((d) => d.status === 'NO_OFFER' || d.status === 'HELD_OUT').length
+export function MarginCallout({ kpis, className }: { kpis?: Kpis; className?: string }) {
+  const { data: today } = useQuery({ queryKey: ['today'], queryFn: api.today, refetchInterval: 30_000 })
   return (
     <Card className={cn('flex flex-col justify-between p-4', className)}>
       <div className="space-y-1">
@@ -121,7 +123,13 @@ export function MarginCallout({ kpis, decisions, className }: { kpis?: Kpis; dec
         <p className="num title text-[28px] leading-none text-ink">{kpis ? <Money value={kpis.margin_saved} /> : '…'}</p>
       </div>
       <p className="mt-3 text-[12.5px] text-muted">
-        <span className="num text-ink">{skipped}</span> recent decisions sent nothing because the customer would likely buy anyway.{' '}
+        {today ? (
+          <>
+            Today: <Money value={today.margin_kept} className="text-ink" /> kept by sending nothing to{' '}
+            <span className="num text-ink">{formatInt(today.no_offer)}</span> customer{today.no_offer === 1 ? '' : 's'} ·{' '}
+            <Money value={today.spent} className="text-ink" /> spent on <span className="num text-ink">{formatInt(today.sent)}</span> offer{today.sent === 1 ? '' : 's'}.{' '}
+          </>
+        ) : null}
         <Link to="/experiments" className="text-ink underline-offset-2 hover:underline">See the proof →</Link>
       </p>
     </Card>
@@ -166,6 +174,11 @@ const JOBS: Record<string, { label: string; what: string; empty: string }> = {
     what: '09:05 IST: re-decides offers that quiet hours (21:00–09:00) held overnight, under today’s rules and consent.',
     empty: 'nothing queued from last night',
   },
+  personal_picks: {
+    label: 'Personal picks',
+    what: '11:00 + 18:00 IST: one offer per Telegram and Lab customer, built on their own profile (top category, policy, uplift). Lab picks post in the Lab group.',
+    empty: 'no Telegram or Lab customers to pick for yet',
+  },
   points_expiry: {
     label: 'Points expiry',
     what: '10:00 IST: reminds Telegram customers whose points expire within 3 days (at most once per 3 days).',
@@ -178,8 +191,6 @@ const JOBS: Record<string, { label: string; what: string; empty: string }> = {
   },
 }
 const jobLabel = (job: string) => JOBS[job]?.label ?? job.replaceAll('_', ' ')
-
-type JobResult = { job?: string; decisions?: number; sent?: number; queued?: number; admins_messaged?: number; error?: string }
 
 /** Turns the runner's summary into one honest sentence (it never claims work that didn't happen). */
 function reportJob(job: string, r: JobResult) {
@@ -208,13 +219,15 @@ export function AutomationsCard({ className }: { className?: string }) {
   const qc = useQueryClient()
   const { unlocked } = usePasscode()
   const { data } = useQuery({ queryKey: ['scheduler'], queryFn: api.scheduler, refetchInterval: 60_000 })
+  const [report, setReport] = useState<JobResult | null>(null)
   const run = useMutation({
     mutationFn: api.runJob,
     onSuccess: (r, job) => {
-      reportJob(job, r as JobResult)
-      qc.invalidateQueries({ queryKey: ['decisions'] })
-      qc.invalidateQueries({ queryKey: ['scheduler'] })
-      qc.invalidateQueries({ queryKey: ['kpis'] })
+      reportJob(job, r)
+      if (r.rows) setReport(r)
+      for (const key of ['decisions', 'scheduler', 'kpis', 'today', 'budget']) qc.invalidateQueries({ queryKey: [key] })
+      // Lab customers react in the group over the next minute; their claims move the claim rate
+      if (r.lab_posting) setTimeout(() => ['decisions', 'kpis'].forEach((key) => qc.invalidateQueries({ queryKey: [key] })), 45_000)
     },
   })
   const jobs = Object.entries(data?.next_runs ?? {}).sort((a, b) => (a[1] ?? '~').localeCompare(b[1] ?? '~'))
@@ -252,6 +265,7 @@ export function AutomationsCard({ className }: { className?: string }) {
         ))}
         {data && !jobs.length ? <li className="px-4 py-3 text-[13px] text-muted">No scheduled jobs.</li> : null}
       </ul>
+      <PicksReport result={report} onClose={() => setReport(null)} />
     </Card>
   )
 }

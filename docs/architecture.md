@@ -140,9 +140,10 @@ The column-level dictionary and the generation logic are in [`data-dictionary.md
 | `cart_abandonment` | every 5 min | Telegram customers with a cart 30 min – 6 h old and not yet nudged → `decide("cart_abandoned")` → deliver |
 | `flush_quiet_queue` | 09:05 | re-decides QUEUED decisions from the last 24 h with the morning's rules and consent |
 | `points_expiry` | 10:00 | points expiring within 3 days, at most one reminder per 3 days |
+| `personal_picks` | 11:00, 18:00 | one profile-based pick for every Telegram customer (`campaign`, DM; quiet hours apply) and every Lab customer (`lab`, posted in the Lab group in the background, shoppers react); one `decide_batch`, so the agent only handles the top 5 |
 | `daily_digest` | 21:00 | digest to `ADMIN_TELEGRAM_IDS` |
 
-Jobs never message synthetic customers, and one failing job never stops the others. `GET /api/scheduler` shows the next runs; `POST /api/scheduler/run/{job}` (admin) runs one now.
+Jobs never DM synthetic customers (Lab picks go to the bots' group), and one failing job never stops the others. `GET /api/scheduler` shows the next runs; `POST /api/scheduler/run/{job}` (admin) runs one now.
 
 ## 9. LLM budget guard
 
