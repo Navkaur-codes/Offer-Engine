@@ -34,7 +34,8 @@
 | v1.0 / Post-freeze | 25 Oct | Fixes, polish and docs only (T22); judging rule settings on prod; submit by Tue 10:00 |
 
 ## Detective overrides
-_none yet_ (format: `date · trap ID · session · reason`)
+- 26 Oct 17:10 · T22 (features after the freeze) + T21 (one session across owned paths) · Main · the user lifted the 18:00 freeze and asked for one polish session to resolve open queries and polish features; it works on its own branch and every change is tested and merged by Main.
+- 26 Oct · T19 (spamming classmates) · Main · the user approved merging the polish job `personal_picks` with its automatic 11:00 and 18:00 IST schedule: it DMs a profile-based pick to every real Telegram user (all rules, consent and quiet hours still apply) and posts picks for the Lab customers.
 
 ---
 
