@@ -4,6 +4,8 @@
 **Worktree:** its own worktree
 **Read first:** `CLAUDE.md`, `docs/claude-progressive.md`, `docs/contracts.md`, `docs/detective.md`, `docs/PLAN.md §5, §4b`
 
+> **Final status (27 Oct 2026): done, merged into `main`, live.** `@navpreet_offers_bot` in webhook mode: `/start` onboarding with consent and festival opt-in, `/simulate` (cart, browse, purchase, inactive, points_expiry, festival, payday, persona), picture offer cards with 4 buttons, `/why /offers /history /profile /pause /resume /stop /help`, admin `/summary /killswitch /campaign /impersonate`, resilience (retry, 403, duplicates). Customer Lab: 10 personas voiced by 4 Lab Shopper bots, `/lab here|run|who|persona|date|reset`, and (Polish session) **personal picks** posted into the Lab group by the scheduler with in-character reactions. This brief is kept as the historical plan for Session C.
+
 ## Mission
 Make offers **reach real classmates** with clear, attractive messages. Turn the bot into a **simulation console** (`/simulate …`, `/why`). Build the **Customer Lab**, where a few "Lab Shopper" bots act out 10 personas in a Telegram group and the Offer bot responds live.
 This session covers the **core functionality (delivery)** and **design (messages)** criteria and is the centrepiece of the demo.

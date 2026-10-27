@@ -11,8 +11,8 @@
 | v0.2 | Fri 23 Oct | `/simulate cart` end-to-end (decision → validator → Telegram → log) | ☑ GATE-2 (25 Oct): the real pipeline is live in production |
 | v0.3 | Sat 24 Oct | Dashboard live on the real API (Overview, Decisions, Rules) | ☑ GATE-3 (25 Oct): dashboard on Vercel with live data |
 | v0.4 | Sun 25 Oct | Uplift + holdout + Customer Lab + Experiments + Playground | ☑ GATE-4 (25 Oct): Experiments, Playground and Lab live |
-| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ◐ GATE-4 (25 Oct): v1.0 live, README + screenshots done; classmate test round still to do |
-| Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ |
+| v1.0 | Mon 26 Oct 18:00 | Feature freeze, classmate test round done, README done | ☑ v1.0 live; Polish batch (personal picks automation, run report, docs) added 26–27 Oct with the user's OK |
+| Submit | Tue 27 Oct ≤ 10:00 | Repo + bot username submitted | ☐ final docs pushed 27 Oct; waiting for the organisers to open submissions |
 
 ## Phase status per session
 | Session | P1 | P2 | P3 | P4 |
@@ -32,10 +32,14 @@
 | v0.4 / Phase 3 | 25 Oct | PRIORITY 1: the no-offer fix (A uplift/impact, B zero-cost + welcome); conftest pins foreign ports in unit tests; Groq only via budget guard |
 | v1.0 / Phase 4 | 25 Oct | Last phase before the freeze (Mon 18:00): B tunes the agent's "no offer" threshold first; README + demo; Lab customers survive re-seeds; gpt-oss models |
 | v1.0 / Post-freeze | 25 Oct | Fixes, polish and docs only (T22); judging rule settings on prod; submit by Tue 10:00 |
+| v1.0 / Closed | 27 Oct | Final: emergency fixes only; revert the three judging settings after judging |
 
 ## Detective overrides
 - 26 Oct 17:10 · T22 (features after the freeze) + T21 (one session across owned paths) · Main · the user lifted the 18:00 freeze and asked for one polish session to resolve open queries and polish features; it works on its own branch and every change is tested and merged by Main.
 - 26 Oct · T19 (spamming classmates) · Main · the user approved merging the polish job `personal_picks` with its automatic 11:00 and 18:00 IST schedule: it DMs a profile-based pick to every real Telegram user (all rules, consent and quiet hours still apply) and posts picks for the Lab customers.
+
+(format: `date · trap ID · session · reason`)
+- 26 Oct · T22 · Polish · the user lifted the freeze for one session to answer a reviewer's feedback ("where does ₹91k come from", "offers should reach customers by themselves"): personal-picks automation + run report + `/api/today`, each with tests.
 
 ---
 
@@ -794,3 +798,14 @@
   - Finding: Lab customers Arjun, Priya, Aisha and Neha are at the **3-offers-per-7-days cap** after tonight's testing (Rohan close), so the Playground and a Lab run show "Blocked" for them. `/lab reset` rebuilds history but rightly keeps the decision log. Demo script now uses fresh synthetic customers in the Playground (`C000129`, `C000075`, `C000056`) and says not to run the Lab the day before. **Open user decision:** raise the `G_FREQ` weekly cap for the judging window or not.
 - 26 Oct · Main · **User decision:** `G_FREQ` weekly cap 3 → **10** for the judging window (Rules page). Verified live: Lab customer Arjun gets an offer again. Judging settings to revert afterwards: weekly cap 10 → 3, gap 0 → 2 days, active coupons 2 → 1. The demo script now has an admin rehearsal with `/impersonate`.
 - 26 Oct · Main · **Fix `dad8cd9`:** the policy-filtered customer list (Playground quick-picks, Customers filter) built profiles one at a time on Neon and could take ~45 s, so Render answered 502. Profiles are now built 6 in parallel with a 5-minute cache: quick-picks take 0.4–7.5 s when cold, a rare-policy page ~25 s cold and 0.5 s cached. Found by the new scenario pack (`docs/testing/`), which passes 56/56 on the new build.
+
+### 2026-10-27 · Polish session (`claude/polish-2d7333`) · Final batch and project close
+- **Why:** a reviewer said the numbers felt unexplained and the flow scattered, and that offers should reach customers by themselves. The user lifted the freeze for this one session (see Detective overrides).
+- **Did:**
+  - **Personal picks automation** (`f122fca`): new scheduler job at 11:00 and 18:00 IST, also **Run now** on Overview → Automations. One `decide_batch` (agent for the top 5 only) over every real Telegram customer (DM; quiet hours still apply) and every Lab customer (posted in the Lab group in the background via the new `post_lab_picks` port; shoppers react and outcomes are recorded). The run returns one row per customer; the dashboard shows a **run report** (top category and share, policy, decision, status, decided by, cost, offer-mix chips).
+  - **`GET /api/today`**: today's sent, spent, no-offer and `margin_kept`; Overview's margin card shows a live "Today: ₹… kept · ₹… spent" line.
+  - **Docs:** voiceover script and spoken pitch (`docs/voiceover-script.md`); README with a **QR + every command** ("Try it yourself"), "Show it in 6 minutes", and **Prove the numbers** (campaign, control group, a Neon SQL query that recomputes ₹91,760); 2-page summary PDF rebuilt; CLAUDE.md status; `claude-progressive.md` final; context 1–4 final status; PLAN outcome; api/architecture/final updated.
+- **Tests:** backend 369 passed (new tests in `tests/api/test_scheduler.py`, `tests/bot/test_lab.py`); ruff clean; frontend lint + build ✓. Contracts unchanged.
+- **Not done, by choice:** at-risk welcome for "monthly + balanced" (44/48), receipt panel, numbered sidebar flow, spending-profile line, festival campaign card, realism chips.
+- **After judging:** revert `G_FREQ` weekly cap 10 → 3, gap 0 → 2 days, `G_ONE_COUPON` 2 → 1 (Rules → History).
+- **Commits:** `f122fca`, `a047a5b`, final docs commit pending.

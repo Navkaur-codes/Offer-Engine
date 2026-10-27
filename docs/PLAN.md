@@ -1,5 +1,7 @@
 # Personalised Offer Engine: Plan v2 (Analytics + Agentic Decisioning Platform)
 
+> **Outcome (27 Oct 2026): delivered and live.** Everything in §2 MUST and SHOULD shipped: the bot (onboarding, `/simulate`, picture cards, `/why`), the harness with one `evaluate()` and a rules fallback, layered rules editable as sentences, uplift + 10% holdout + Experiments, festivals with opt-in greetings, the Customer Lab, the full dashboard and the scheduler. Additions beyond this plan: personal-picks automation with a run report (11:00/18:00 and Run now), deterministic explanations, an LLM token budget guard, picture offer cards, and a 20-scenario live test pack. Changed from the plan: Groq `gpt-oss-120b/20b` instead of Llama (the key had no Llama access); ~1,500 customers on Neon instead of 5,000 (free tier). Results: +₹91,760 incremental revenue and ₹14,916 margin saved over 12 months; 369 backend tests. Details: `docs/progress.md` (last entry) and `README.md`. The plan below is kept unchanged as written on 22 Oct.
+
 ## Context
 **The brief** (Punjab Jobs AI Bootcamp, J-PAL SA, individual project):
 - Decide which offer each e-commerce customer gets, and when, and deliver it to classmates through a **Telegram bot**.

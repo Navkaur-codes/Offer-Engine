@@ -4,6 +4,8 @@
 **Worktree:** its own worktree
 **Read first:** `CLAUDE.md`, `docs/claude-progressive.md`, `docs/contracts.md`, `docs/detective.md`, `docs/PLAN.md §2, §4b, §8`
 
+> **Final status (27 Oct 2026): done, merged into `main`, live.** Generator (12 months, ~1,500 customers on Neon, 5,000 locally), 10 personas with hidden response types, 6 campaigns with a 10% control group (`data/generator.py`, `CAMPAIGNS`), live profiles and policies (`scoring/profile.py`, `POLICY_THRESHOLDS`), churn model (AUC ≈ 0.78), T-learner uplift, impact estimate, realism benchmarks (all ✓), experiment statistics (+₹91,760 incremental revenue, ₹14,916 margin saved, about ₹1.7k profit over 12 months), `/start` onboarding history, Lab-safe re-seed and `data-dictionary.md`. Open by choice: "monthly + balanced" new users become `at_risk` (44/48 answer combinations get a welcome offer). This brief is kept as the historical plan for Session A.
+
 ## Mission
 Produce **synthetic customer data that behaves like real Indian e-commerce data**, and the **scores** the decision engine runs on:
 - RFM, churn risk, uplift, impact estimate, dynamic policy membership;

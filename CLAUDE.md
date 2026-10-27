@@ -10,6 +10,7 @@ Build an **analytics + agentic decisioning platform**. It decides which offer ea
 - **Rules set the limits.** An AI agent picks and personalises offers within those limits. **Every AI choice is re-checked by deterministic rule code before sending.**
 - **Core idea:** *"Don't pay people who'd buy anyway."* The engine is incrementality-first, with uplift scores, a holdout group, and "margin saved" reporting.
 - **Deadline:** Tue 27 Oct 2026, 12:00 IST.
+- **Status (27 Oct 2026):** v1.0 complete and live; the project is closed. The final state is recorded in `docs/progress.md` (last entry) and `docs/claude-progressive.md`.
 - **Submission:** GitHub repo (source + README + this CLAUDE.md), plus the Telegram bot username. The bot must stay live until judging is complete.
 - **Judging criteria:** core functionality · data realism · usability for marketers · design · advanced functionality · business relevance.
 
@@ -31,7 +32,7 @@ Build an **analytics + agentic decisioning platform**. It decides which offer ea
    - Restricted promotions per festival are enforced by the validator.
 10. **Consent:**
     - `/stop` and `/pause` are honoured immediately by the pre-gate.
-    - No **proactive** sends during quiet hours (21:00–09:00 IST); those sends are queued until 09:00. Proactive means campaigns, scheduled nudges, inactivity, points expiry, festival and payday triggers.
+    - No **proactive** sends during quiet hours (21:00–09:00 IST); those sends are queued until 09:00. Proactive means campaigns, scheduled nudges and personal picks, inactivity, points expiry, festival and payday triggers.
     - Replies to something the customer asked for just now are **not** queued, because the person is awake and waiting. These are marked `trigger_meta["initiated_by"] = "customer"` (`/start` welcome, `/simulate`, button taps) or `"admin"` (dashboard simulate). Lab rounds (`trigger="lab"`) are also exempt, because they post to a group of bots.
     - Kill switch, `/stop`, `/pause`, frequency caps and every other rule still apply to them.
 11. **Stay within your session's owned paths** (see §4). Shared contracts change **only** through the main session.
