@@ -4,6 +4,8 @@
 **Worktree:** its own worktree
 **Read first:** `CLAUDE.md`, `docs/claude-progressive.md`, `docs/contracts.md`, `docs/detective.md`, `docs/PLAN.md §3, §4, §4b, §6`
 
+> **Final status (27 Oct 2026): done, merged into `main`, live.** Layered rules engine with one `evaluate()` used by the pre-gate, the agent's `check_offer` tool and the final validator (hypothesis property test green); harness with Groq `gpt-oss-120b` agent (read-only tools, strict JSON, 20 s), retry once, deterministic rules fallback; token budget guard (120B → 20B → rules); `decide_batch` with the agent only for the top 5 (T26); message validator (numbers, dates, greetings, banned phrases); deterministic explainer (never the AI's own words); the rules send the best paying offer if the agent declines one; daily digest. This brief is kept as the historical plan for Session B.
+
 ## Mission
 Build the brain and the guardrails:
 - the **layered dynamic rules engine** (Global → Festival → Persona → Individual) with one `evaluate()`;

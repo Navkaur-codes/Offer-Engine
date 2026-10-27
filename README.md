@@ -10,32 +10,94 @@ Most discount engines send 20% off to everyone and call the sales it "drove" a w
 
 > Built for the Punjab Jobs AI Bootcamp (J-PAL South Asia) hackathon. All customer data is **synthetic**; no real or scraped personal data is used.
 
-### Results so far (live, last 12 months of synthetic history plus live decisions)
+## Try it yourself: scan and start
+
+<img src="docs/screenshots/bot-qr.svg" alt="QR code for t.me/navpreet_offers_bot" width="160" align="right">
+
+1. **Scan the QR** with your phone camera (or open [t.me/navpreet_offers_bot](https://t.me/navpreet_offers_bot)). The same QR is behind the **Telegram icon in the dashboard's top bar**.
+2. Send **`/start`** and answer 3 taps: what you like to buy, how often you shop, deals or quality (plus an optional festival-greeting opt-in). A profile is built for you and a **welcome offer card** arrives.
+3. Play the shopper with the commands below and watch the engine decide. Tap **❓ Why this?** on any card for the full reason.
+4. From then on, offers also arrive **automatically**: a nudge 30 min after you leave a cart, a reminder before points expire, and a **personal pick** at 11:00 and 18:00 IST. Nothing is sent 21:00–09:00; those wait until morning.
+
+| Command | What it does |
+|---|---|
+| `/start` | Join (or change your answers) and get a welcome offer |
+| `/simulate` | Opens a button menu of shopper actions; or type one directly: |
+| `/simulate cart` | You left an item in your cart → the engine decides an offer |
+| `/simulate browse` | You browsed a category several times |
+| `/simulate purchase` | You bought something → discounts are blocked for 48 h (try `/simulate cart` right after) |
+| `/simulate inactive` | You haven't visited for a while → win-back logic |
+| `/simulate points_expiry` | Your reward points are about to expire |
+| `/simulate festival` | A festival is coming up (greeting only if you opted in) |
+| `/simulate payday` | It's the 1st of the month, salaries just landed |
+| `/simulate persona deal_hunter` | Switch to another shopper type (vip, deal_hunter, …) to see different rules apply |
+| `/why` | Why you got (or didn't get) the last message |
+| `/offers` | Your active coupons |
+| `/history` | Your last 5 decisions, including blocked and "no offer" |
+| `/profile` | What the engine knows about you, in plain words |
+| `/pause` · `/resume` | No offers for a while (7 days, or `/pause 3`) · start again |
+| `/stop` | Unsubscribe immediately |
+| `/help` | All commands |
+
+**Card buttons:** ✅ Claim · ⏰ Remind me tonight · 🙅 Not for me (mutes that category for 14 days) · ❓ Why this?
+
+**Customer Lab group** (10 synthetic shoppers voiced by bots): `/lab@navpreet_offers_bot run 3` shows three personas getting three different answers. Admins also have `/summary`, `/killswitch on|off`, `/campaign run <policy>` and `/impersonate <customer>`.
+
+### Results (live, last 12 months)
 | | |
 |---|---|
 | **+₹91,760** | incremental revenue vs the holdout, each campaign compared with its own control group |
 | **₹14,916** | margin saved by *not* discounting customers who'd have bought anyway |
-| **ROI by offer type** | flat ₹ off pays back 1.9×, 2× points are almost free, while blanket free shipping **lost ₹24,320**, because it mostly went to people who'd buy anyway. That is the case for targeting |
+| **about ₹1.7k** | incremental profit after coupon costs: small because the year includes one loss-making blanket campaign (the last 90 days alone: about ₹5.4k) |
+| **ROI by offer type** | flat ₹ off pays back 1.9×, 2× points are almost free, while blanket free shipping **lost ₹24,320**: the customers who got it bought *less* than their control group (negative lift), not because shipping was expensive. That is the case for targeting |
 | **~2 s** | per AI decision (gpt-oss-120b, one call); about 25 ms when the rules fallback decides |
 
-Numbers change as classmates use the bot; the dashboard's Experiments page always shows the current ones.
+These are measured against control groups, so they don't change when offers are sent; [Prove the numbers](#prove-the-numbers) shows how to recompute them from the raw data.
 
 ---
 
-## Demo in 5 minutes
+## Show it in 6 minutes
+
+The same order as the demo video ([`docs/voiceover-script.md`](docs/voiceover-script.md)): the numbers first, then how they're made, then try it yourself.
 
 | # | Where | Do this | What you'll see |
 |---|---|---|---|
-| 1 | Telegram | Open [@navpreet_offers_bot](https://t.me/navpreet_offers_bot), send `/start`, answer 3 taps | A profile is built for you (persona plus 6 months of matching synthetic history) and a **welcome perk** arrives as an offer card |
-| 2 | Telegram | `/simulate cart` | A cart-abandonment event goes through the full pipeline. You get a card with the exact value, expiry, a `monospace` coupon and 4 buttons |
-| 3 | Telegram | Tap **❓ Why this?** (or `/why`) | Plain English: why you, why this offer, which offers were rejected and why, which rules were checked, and who decided (AI agent or rules fallback) |
-| 4 | Telegram | `/simulate purchase`, then `/simulate cart` | **No offer.** The "no discount within 48 h of a purchase" rule blocks it, and the bot says so. The guardrails are visible |
-| 5 | Customer Lab group | `/lab@navpreet_offers_bot run 3` | 3 synthetic customers (each voiced by a "Lab Shopper" bot) post activity. The Offer bot answers each one differently, because each persona has different rules. Some get **no offer on purpose** |
-| 6 | Dashboard → Overview | Watch the live stream | Your decisions from steps 1–5 appear within seconds, tagged **AI agent** or **Rules fallback** |
-| 7 | Dashboard → Playground | Pick a customer and trigger → Run | The **Decision Pipeline Lens**: Pre-gate → Policy → Agent → Validator → Sent, with every tool call and rule ✓/✗. Toggle "force LLM failure" to watch the fallback take over |
-| 8 | Dashboard → Rules | Change "Deal hunters get at most **10%**" to 8% | An **impact preview** (customers affected, budget change) appears before you save; Save gives you version history and one-click revert |
+| 1 | Dashboard → **Overview** | Open https://offer-engine-nu.vercel.app | The orange hero **₹91,760** (extra sales offers caused), **₹14,916** margin saved, sent today, the live decision stream, the Automations card |
+| 2 | Overview → proof | Explain one **campaign** (one offer to many customers) and its **control group** (a random 10% who get nothing). Then show [`generator.py:156`](backend/app/data/generator.py) and run the SQL in [Prove the numbers](#prove-the-numbers) on Neon | Six campaigns in code with `CONTROL_SHARE = 0.10`; the raw `campaign_history` rows recompute the same ₹91,760 |
+| 3 | Overview → live stream | Click any line | The **Decision Pipeline Lens**: Pre-gate → Policy → Agent → Validator → Sent, each ✓/✗/↺, with the plain-English reason |
+| 4 | **Customers**, **Realism** | Open one customer; glance at the benchmarks | ~1,500 synthetic customers plus 10 Lab customers plus real Telegram users; policies from behaviour; every realism benchmark ✓ |
+| 5 | **Playground** | Cart abandoner → Run, then toggle **Force LLM failure** → Run | The AI's choice with every rule ✓, then the **rules fallback** deciding safely |
+| 6 | Overview → **Automations** | Unlock with the admin passcode (🔒), then **Personal picks → ▶ Run now** | A **run report**: every Telegram and Lab customer, their top category, the offer or the reason for none, who decided, the cost. Lab picks appear in the Customer Lab group and the shopper bots react; real users get a DM; Sent today, Budget used and the margin card's "Today: ₹… kept · ₹… spent" update |
+| 7 | **Try it yourself** | Telegram icon in the top bar → **QR**, or open [@navpreet_offers_bot](https://t.me/navpreet_offers_bot); `/start` → 3 taps → `/simulate cart` → **❓ Why this?** → `/simulate purchase` + `/simulate cart` | A welcome card; an offer card with value, expiry, coupon and 4 buttons; the full explanation; then a **block** by the 48-hour rule, with the reason. From then on, offers also arrive **automatically** (cart nudges, points reminders, personal picks at 11:00 and 18:00, never 21:00–09:00) |
 
-A longer, timed walk-through for presenting is in [`docs/demo-script.md`](docs/demo-script.md). Every feature is explained in [`docs/final.md`](docs/final.md), and the 2-page summary for the panel is [`docs/Holdout-summary.pdf`](docs/Holdout-summary.pdf). All documentation (user guide, architecture, API, operations) is indexed in [`docs/README.md`](docs/README.md).
+Customer Lab group: `/lab@navpreet_offers_bot run 3` shows three personas getting three different answers, some with **no offer on purpose**.
+
+### Prove the numbers
+- **Campaign:** one offer sent to many customers at once, with its own coupon code. The synthetic year has six (Diwali 2025 `DIWALI15`, Black Friday `BF300`, Lohri `LOHRISHIP`, Holi `HOLI2X`, Summer sale `SUMMER10`, Independence Day `AZADI200`); five fall in the last 12 months.
+- **Control group:** in every campaign a random 10% get nothing. Random means the only difference between the groups is the offer, so *(offer group's buy rate − control's buy rate) × customers who got it × typical basket* = sales the offer **caused**. The sum over campaigns is the hero number: **measured, not counted**.
+- **Margin saved:** the control group also shows how many coupon users would have bought anyway; that share of the coupon cost is ₹14,916.
+- **Honest loss:** Lohri's blanket free shipping went to 205 customers who bought *less* than their control group (−₹88,918 revenue, −₹24,320 profit; the shipping itself cost only ₹1,010). That is the case for targeting.
+- **Why it doesn't move when you send offers:** real Telegram users are never held out, so live offers have no control group yet; they join the number only once a fair comparison exists. It is a rolling 12-month window: the next change is around 25 Nov 2026, when Black Friday 2025 leaves it.
+
+Recompute it on Neon (SQL Editor, read-only):
+```sql
+WITH c AS (
+  SELECT campaign_id,
+         COUNT(*) FILTER (WHERE NOT is_control) AS treated,
+         COUNT(*) FILTER (WHERE is_control)     AS control,
+         AVG(converted::int) FILTER (WHERE NOT is_control) AS t,
+         AVG(converted::int) FILTER (WHERE is_control)     AS k,
+         SUM(revenue) FILTER (WHERE converted)::numeric
+           / NULLIF(COUNT(*) FILTER (WHERE converted), 0)   AS basket
+  FROM campaign_history
+  WHERE sent_at >= now() - interval '365 days'
+  GROUP BY campaign_id
+)
+SELECT campaign_id, treated, control, ROUND((t - k) * treated * basket) AS extra_revenue
+FROM c WHERE control >= 20 ORDER BY campaign_id;
+```
+
+The spoken pitch and the scene-by-scene video script are in [`docs/voiceover-script.md`](docs/voiceover-script.md); a timed live walk-through with backup answers is in [`docs/demo-script.md`](docs/demo-script.md). Every feature is explained in [`docs/final.md`](docs/final.md), and the 2-page summary for the panel is [`docs/Holdout-summary.pdf`](docs/Holdout-summary.pdf). All documentation (user guide, architecture, API, operations) is indexed in [`docs/README.md`](docs/README.md).
 
 ### Screenshots (live data)
 | | |
@@ -82,7 +144,7 @@ flowchart LR
 - **It can never go silent.** If Groq times out, returns invalid JSON, hits a rate limit, fails validation twice or exceeds its daily token budget, the deterministic fallback picks the offer with the best expected incremental profit. A budget guard steps down from `gpt-oss-120b` to `gpt-oss-20b` at 80% of the daily budget and to rules-only at 100%.
 - **Every decision is logged**, including blocked, held-out and "no offer" decisions, with why this customer, why this offer, the alternatives rejected, the rules applied and who decided.
 - **Explanations never come from the AI's own words.** They are built from the candidates, numbers and rule results, so an invented reason can't reach a customer, a judge or the log. If the agent declines while an allowed offer pays for itself, the rules send the best one.
-- **Tested:** 340 backend tests, including a hypothesis property test on `evaluate()`, LLM failure and retry cases, escaping of customer-typed text, and a test that runs every fallback message through the validator.
+- **Tested:** 369 backend tests, including a hypothesis property test on `evaluate()`, LLM failure and retry cases, escaping of customer-typed text, and a test that runs every fallback message through the validator.
 
 ### Rules marketers can read
 Rules are database rows, not `if persona == …` code. Each one renders as a sentence with editable numbers, for example *"Deal hunters can get at most **10%** off, only on baskets above **₹999**."*
@@ -114,9 +176,9 @@ A lower layer can only make limits **tighter**.
 
 | Part | Highlights |
 |---|---|
-| **Telegram bot** | `/start` onboarding · `/simulate cart\|browse\|purchase\|inactive\|points_expiry\|festive\|payday` · `/why` · `/offers` · `/history` · `/profile` · `/pause` · `/resume` · `/stop` · buttons ✅ Claim · ⏰ Remind me tonight · 🙅 Not for me · ❓ Why this? · admin `/summary`, `/killswitch`, `/campaign run`, `/impersonate` |
+| **Telegram bot** | `/start` onboarding · `/simulate cart\|browse\|purchase\|inactive\|points_expiry\|festival\|payday` · `/why` · `/offers` · `/history` · `/profile` · `/pause` · `/resume` · `/stop` · buttons ✅ Claim · ⏰ Remind me tonight · 🙅 Not for me · ❓ Why this? · admin `/summary`, `/killswitch`, `/campaign run`, `/impersonate` |
 | **Customer Lab** | A Telegram group where 10 synthetic customers (`C900001–C900010`), voiced by "Lab Shopper" bots, shop and react in character: `/lab here\|run\|who\|persona\|date\|reset` |
-| **Scheduler** | Abandoned-cart nudges, a 09:05 flush of offers queued during quiet hours, points-expiry reminders, a 21:00 digest for admins |
+| **Scheduler** | Abandoned-cart nudges (every 5 min), a 09:05 flush of offers queued during quiet hours, points-expiry reminders (10:00), **personal picks** for every Telegram and Lab customer from their own profile (11:00 and 18:00, or **Run now** with a per-customer run report), a 21:00 digest for admins |
 | **Dashboard** | Overview (bento KPIs, live decision stream), Decisions (filters, drawer with Pipeline Lens and agent trace), Rules (sentence cards, impact preview, versions), Customers (segment scatter, simulate), Experiments, Festivals, Realism, Playground; ⌘K for the most common actions; kill switch always visible |
 | **Synthetic data** | ~1,500 customers in production (5,000 locally), simulated day by day over 12 months. See [`docs/data-dictionary.md`](docs/data-dictionary.md) |
 

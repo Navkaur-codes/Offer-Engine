@@ -4,6 +4,8 @@
 **Worktree:** its own worktree
 **Read first:** `CLAUDE.md` (especially §7, Design), `docs/claude-progressive.md`, `docs/contracts.md §2, §4, §5`, `docs/detective.md`, `docs/PLAN.md §7`
 
+> **Final status (27 Oct 2026): done, merged into `main`, live** at https://offer-engine-nu.vercel.app. Signal design system, app shell with kill switch, budget meter, degraded-AI chip, bot link + QR and ⌘K; Overview (hero KPI, live stream, funnel, who decided, margin card with a live "today" line, Automations with Run now and the **personal picks run report**), Decisions with the Pipeline Lens, Rules as sentences with impact preview and versions, Customers, Experiments, Festivals, Realism, Playground with "force LLM failure", campaign dry-run; Lighthouse accessibility 100. Proposed but not built: receipt panel for ₹91,760, numbered sidebar flow. This brief is kept as the historical plan for Session D.
+
 ## Mission
 A dashboard a **marketing team understands and adjusts without help**:
 - distinctive, modern **"Signal"** design: cool monochrome with one orange signal accent; not beige or skin-toned, not the blue-green AI look;

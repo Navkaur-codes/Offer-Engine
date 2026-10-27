@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="200" height="200" preserveAspectRatio="xMinYMin meet" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="200" height="200"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-200)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="200" height="200" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
+			<g transform="">
+				<rect x="0" y="0" width="200" height="200" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: none; fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="169.6969696969697" width="42.424242424242415" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="169.6969696969697" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="115.15151515151516" y="169.6969696969697" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="169.6969696969697" width="42.42424242424241" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="163.63636363636363" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="163.63636363636363" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="90.9090909090909" y="163.63636363636363" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="115.15151515151516" y="163.63636363636363" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="163.63636363636363" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="163.63636363636363" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="157.57575757575756" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="157.57575757575756" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="109.0909090909091" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="157.57575757575756" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="157.57575757575756" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="151.5151515151515" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="109.0909090909091" y="151.5151515151515" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="151.5151515151515" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="151.5151515151515" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="145.45454545454544" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="145.45454545454544" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="145.45454545454544" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="78.78787878787878" y="145.45454545454544" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="109.0909090909091" y="145.45454545454544" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="145.45454545454544" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="145.45454545454544" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="145.45454545454544" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="139.39393939393938" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="139.39393939393938" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="139.39393939393938" width="36.36363636363636" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="139.39393939393938" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="139.39393939393938" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="133.33333333333331" width="42.424242424242415" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="133.33333333333331" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="133.33333333333331" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="133.33333333333331" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="109.0909090909091" y="133.33333333333331" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="133.33333333333331" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="133.33333333333331" width="42.42424242424241" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="127.27272727272728" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="103.03030303030303" y="127.27272727272728" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="127.27272727272728" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="121.21212121212122" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="48.484848484848484" y="121.21212121212122" width="36.36363636363636" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="103.03030303030303" y="121.21212121212122" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="127.27272727272727" y="121.21212121212122" width="12.12121212121211" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="157.57575757575756" y="121.21212121212122" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="30.303030303030305" y="115.15151515151516" width="12.121212121212118" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="48.484848484848484" y="115.15151515151516" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="66.66666666666667" y="115.15151515151516" width="24.242424242424235" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="115.15151515151516" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="115.15151515151516" width="24.24242424242425" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="115.15151515151516" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="109.0909090909091" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="109.0909090909091" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="54.54545454545455" y="109.0909090909091" width="18.181818181818173" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="109.0909090909091" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="127.27272727272727" y="109.0909090909091" width="6.060606060606048" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="109.0909090909091" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="157.57575757575756" y="109.0909090909091" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="48.484848484848484" y="103.03030303030303" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="66.66666666666667" y="103.03030303030303" width="18.181818181818173" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="103.03030303030303" y="103.03030303030303" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="127.27272727272727" y="103.03030303030303" width="12.12121212121211" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="103.03030303030303" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="30.303030303030305" y="96.96969696969697" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="54.54545454545455" y="96.96969696969697" width="18.181818181818173" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="96.96969696969697" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="103.03030303030303" y="96.96969696969697" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="96.96969696969697" width="24.24242424242425" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="151.5151515151515" y="96.96969696969697" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="96.96969696969697" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="90.9090909090909" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="48.484848484848484" y="90.9090909090909" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="66.66666666666667" y="90.9090909090909" width="18.181818181818173" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="90.9090909090909" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="90.9090909090909" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="151.5151515151515" y="90.9090909090909" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="90.9090909090909" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="84.84848484848484" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="84.84848484848484" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="84.84848484848484" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="84.84848484848484" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="139.3939393939394" y="84.84848484848484" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="157.57575757575756" y="84.84848484848484" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="30.303030303030305" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="48.484848484848484" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="66.66666666666667" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="78.78787878787878" width="24.24242424242425" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="78.78787878787878" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="72.72727272727273" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="42.42424242424242" y="72.72727272727273" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="54.54545454545455" y="72.72727272727273" width="18.181818181818173" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="78.78787878787878" y="72.72727272727273" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="72.72727272727273" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="115.15151515151516" y="72.72727272727273" width="42.42424242424241" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="66.66666666666666" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="66.66666666666666" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="109.0909090909091" y="66.66666666666666" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="66.66666666666666" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="66.66666666666666" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="60.606060606060595" width="42.424242424242415" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="60.606060606060595" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="60.606060606060595" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="60.606060606060595" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="115.15151515151516" y="60.606060606060595" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="133.33333333333334" y="60.606060606060595" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="60.606060606060595" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="60.606060606060595" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="54.54545454545456" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="54.54545454545456" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="54.54545454545456" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="48.4848484848485" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="48.4848484848485" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="48.4848484848485" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="48.4848484848485" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="48.4848484848485" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="48.4848484848485" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="48.4848484848485" width="36.363636363636346" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="48.4848484848485" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="42.424242424242436" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="42.424242424242436" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="42.424242424242436" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="78.78787878787878" y="42.424242424242436" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="42.424242424242436" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="42.424242424242436" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="139.3939393939394" y="42.424242424242436" width="36.363636363636346" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="36.36363636363636" y="36.363636363636374" width="18.18181818181818" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="84.84848484848484" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="36.363636363636374" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="115.15151515151516" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="169.6969696969697" y="36.363636363636374" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="30.30303030303031" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="60.60606060606061" y="30.30303030303031" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="30.30303030303031" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="30.30303030303031" width="30.30303030303031" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="145.45454545454544" y="30.30303030303031" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="30.30303030303031" width="6.060606060606062" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="24.242424242424242" y="24.24242424242425" width="42.424242424242415" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="72.72727272727272" y="24.24242424242425" width="18.181818181818187" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="96.96969696969697" y="24.24242424242425" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="121.21212121212122" y="24.24242424242425" width="24.24242424242425" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+				<rect x="163.63636363636363" y="24.24242424242425" width="12.121212121212125" height="6.060606060606062" style="stroke: none; stroke-linecap: butt; stroke-width: 0; fill: rgb(0%,0%,0%); fill-rule: evenodd;"/>
+			</g>
+		</g>
+	</g>
+</svg>
