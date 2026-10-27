@@ -58,8 +58,6 @@ These are measured against control groups, so they don't change when offers are 
 
 ## Show it in 6 minutes
 
-The same order as the demo video ([`docs/voiceover-script.md`](docs/voiceover-script.md)): the numbers first, then how they're made, then try it yourself.
-
 | # | Where | Do this | What you'll see |
 |---|---|---|---|
 | 1 | Dashboard → **Overview** | Open https://offer-engine-nu.vercel.app | The orange hero **₹91,760** (extra sales offers caused), **₹14,916** margin saved, sent today, the live decision stream, the Automations card |
@@ -70,7 +68,6 @@ The same order as the demo video ([`docs/voiceover-script.md`](docs/voiceover-sc
 | 6 | Overview → **Automations** | Unlock with the admin passcode (🔒), then **Personal picks → ▶ Run now** | A **run report**: every Telegram and Lab customer, their top category, the offer or the reason for none, who decided, the cost. Lab picks appear in the Customer Lab group and the shopper bots react; real users get a DM; Sent today, Budget used and the margin card's "Today: ₹… kept · ₹… spent" update |
 | 7 | **Try it yourself** | Telegram icon in the top bar → **QR**, or open [@navpreet_offers_bot](https://t.me/navpreet_offers_bot); `/start` → 3 taps → `/simulate cart` → **❓ Why this?** → `/simulate purchase` + `/simulate cart` | A welcome card; an offer card with value, expiry, coupon and 4 buttons; the full explanation; then a **block** by the 48-hour rule, with the reason. From then on, offers also arrive **automatically** (cart nudges, points reminders, personal picks at 11:00 and 18:00, never 21:00–09:00) |
 
-Customer Lab group: `/lab@navpreet_offers_bot run 3` shows three personas getting three different answers, some with **no offer on purpose**.
 
 ### Prove the numbers
 - **Campaign:** one offer sent to many customers at once, with its own coupon code. The synthetic year has six (Diwali 2025 `DIWALI15`, Black Friday `BF300`, Lohri `LOHRISHIP`, Holi `HOLI2X`, Summer sale `SUMMER10`, Independence Day `AZADI200`); five fall in the last 12 months.
@@ -96,8 +93,6 @@ WITH c AS (
 SELECT campaign_id, treated, control, ROUND((t - k) * treated * basket) AS extra_revenue
 FROM c WHERE control >= 20 ORDER BY campaign_id;
 ```
-
-The spoken pitch and the scene-by-scene video script are in [`docs/voiceover-script.md`](docs/voiceover-script.md); a timed live walk-through with backup answers is in [`docs/demo-script.md`](docs/demo-script.md). Every feature is explained in [`docs/final.md`](docs/final.md), and the 2-page summary for the panel is [`docs/Holdout-summary.pdf`](docs/Holdout-summary.pdf). All documentation (user guide, architecture, API, operations) is indexed in [`docs/README.md`](docs/README.md).
 
 ### Screenshots (live data)
 | | |
